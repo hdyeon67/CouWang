@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/widgets/app_tab_scaffold.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,7 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppTabScaffold(
+      currentTab: BottomTabItem.settings,
       appBar: AppBar(
         title: const Text('설정'),
       ),
@@ -32,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             AppSpacing.md,
             AppSpacing.sm,
             AppSpacing.md,
-            AppSpacing.xl,
+            160,
           ),
           children: [
             const _BrandCard(),

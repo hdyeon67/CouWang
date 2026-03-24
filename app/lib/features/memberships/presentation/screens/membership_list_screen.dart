@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/widgets/app_tab_scaffold.dart';
 
 class MembershipListScreen extends StatelessWidget {
   const MembershipListScreen({super.key});
@@ -42,7 +43,8 @@ class MembershipListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppTabScaffold(
+      currentTab: BottomTabItem.membership,
       appBar: AppBar(
         title: const Text('멤버십'),
       ),
@@ -51,7 +53,7 @@ class MembershipListScreen extends StatelessWidget {
           AppSpacing.md,
           AppSpacing.sm,
           AppSpacing.md,
-          AppSpacing.xxl,
+          160,
         ),
         children: [
           Container(

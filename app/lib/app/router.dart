@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import '../features/coupons/presentation/screens/coupon_create_screen.dart';
 import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
@@ -10,6 +9,7 @@ import '../features/memberships/presentation/screens/membership_detail_screen.da
 import '../features/memberships/presentation/screens/membership_list_screen.dart';
 import '../features/notifications/presentation/screens/notification_list_screen.dart';
 import '../features/notifications/presentation/screens/notification_settings_screen.dart';
+import '../features/settings/presentation/screens/settings_screen.dart';
 
 class AppRouter {
   static const intro = '/intro';
@@ -21,6 +21,7 @@ class AppRouter {
   static const membershipDetail = '/memberships/detail';
   static const notificationList = '/notifications';
   static const notificationSettings = '/notifications/settings';
+  static const settingsRoute = '/settings';
   static const authGate = '/auth-gate';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -41,9 +42,11 @@ class AppRouter {
         return _pageRoute(const NotificationListScreen());
       case notificationSettings:
         return _pageRoute(const NotificationSettingsScreen());
+      case settingsRoute:
+        return _pageRoute(const SettingsScreen());
       case home:
       default:
-        return _pageRoute(const AppTabShell());
+        return _pageRoute(const HomeDashboardScreen());
     }
   }
 
@@ -62,49 +65,5 @@ class AppRouter {
 
   static PageRoute<dynamic> _pageRoute(Widget child) {
     return CupertinoPageRoute<void>(builder: (_) => child);
-  }
-}
-
-class AppTabShell extends StatefulWidget {
-  const AppTabShell({super.key});
-
-  @override
-  State<AppTabShell> createState() => _AppTabShellState();
-}
-
-class _AppTabShellState extends State<AppTabShell> {
-  int _currentIndex = 0;
-
-  static const _screens = [
-    CouponListScreen(),
-    NotificationListScreen(),
-  ];
-
-  void _onTap(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: _onTap,
-        height: 74,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.ticket),
-            label: '쿠폰',
-          ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.bell),
-            label: '알림',
-          ),
-        ],
-      ),
-    );
   }
 }
