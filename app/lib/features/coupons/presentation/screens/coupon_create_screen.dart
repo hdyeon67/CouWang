@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -6,7 +7,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import 'coupon_camera_scan_screen.dart';
-import 'coupon_image_auto_fill_screen.dart';
 
 class CouponCreateScreen extends StatefulWidget {
   const CouponCreateScreen({super.key});
@@ -18,11 +18,17 @@ class CouponCreateScreen extends StatefulWidget {
 class _CouponCreateScreenState extends State<CouponCreateScreen> {
   final _titleController = TextEditingController();
   final _memoController = TextEditingController();
+  final _codeController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
 
   String? _selectedBrand;
   DateTime? _selectedExpiryDate;
   CouponType _selectedCouponType = CouponType.barcode;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImagePath;
+  bool _isProcessingImage = false;
+  bool _usedAutoFill = false;
+  String? _detectedCodeFormatLabel;
 
   static const List<String> _brands = [
     '스타벅스',
@@ -37,7 +43,118 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   void dispose() {
     _titleController.dispose();
     _memoController.dispose();
+    _codeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final selectedImage = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (selectedImage == null || !mounted) {
+      return;
+    }
+
+    final imageBytes = await selectedImage.readAsBytes();
+
+    setState(() {
+      _selectedImageBytes = imageBytes;
+      _selectedImagePath = selectedImage.path;
+    });
+
+    _showMessage('이미지를 불러왔어요. 아래 OCR 버튼으로 스캔할 수 있어요.');
+  }
+
+  Future<void> _runImageOcr() async {
+    if (kIsWeb) {
+      _showMessage('웹에서는 OCR과 바코드/QR 이미지 분석을 지원하지 않아요. 모바일 기기에서 테스트해 주세요.');
+      return;
+    }
+
+    final imagePath = _selectedImagePath;
+    if (imagePath == null) {
+      return;
+    }
+
+    setState(() {
+      _isProcessingImage = true;
+    });
+
+    final detectedCode = await _detectCodeFromImage(imagePath);
+    final detectedText = await _extractTextFromImage(imagePath);
+    final extracted = _buildAutoFillResult(
+      detectedCode: detectedCode,
+      detectedText: detectedText,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isProcessingImage = false;
+    });
+
+    if (!extracted.isRecognized) {
+      _showMessage('이미지에서 텍스트나 코드를 읽지 못했어요.');
+      return;
+    }
+
+    _applyAutoFillResult(extracted);
+    _showMessage('이미지 스캔 결과를 입력란에 채웠어요.');
+  }
+
+  Future<void> _startCameraScanFlow() async {
+    if (kIsWeb) {
+      _showMessage('웹에서는 실시간 코드 인식을 지원하지 않아요. 모바일 기기에서 테스트해 주세요.');
+      return;
+    }
+
+    final scanResult = await Navigator.of(context).push<CameraScanResult>(
+      CupertinoPageRoute<CameraScanResult>(
+        builder: (_) => const CouponCameraScanScreen(),
+      ),
+    );
+
+    if (scanResult == null || !mounted) {
+      return;
+    }
+
+    final extracted = _buildAutoFillResult(
+      detectedCode: _DetectedCouponCode(
+        rawValue: scanResult.rawValue,
+        couponTypeLabel: scanResult.couponTypeLabel,
+        codeFormatLabel: scanResult.codeFormatLabel,
+      ),
+      detectedText: null,
+    );
+
+    _applyAutoFillResult(extracted);
+    _showMessage('코드 스캔 결과를 입력란에 채웠어요.');
+  }
+
+  void _applyAutoFillResult(_AutoFillExtractionResult extracted) {
+    setState(() {
+      _usedAutoFill = true;
+      _titleController.text = extracted.title.startsWith('인식 결과')
+          ? _titleController.text
+          : extracted.title;
+      _memoController.text = extracted.memo;
+      _codeController.text = extracted.detectedCode == '인식된 코드가 없어요'
+          ? _codeController.text
+          : extracted.detectedCode;
+      _selectedBrand = extracted.brand == '미확인' ? _selectedBrand : extracted.brand;
+      _selectedCouponType = switch (extracted.couponType) {
+        '바코드' => CouponType.barcode,
+        'QR' => CouponType.qr,
+        _ => _selectedCouponType,
+      };
+      if (extracted.expiryDate != '미확인') {
+        _selectedExpiryDate = _parseDate(extracted.expiryDate);
+      }
+      _detectedCodeFormatLabel = extracted.codeFormatLabel;
+    });
   }
 
   Future<void> _selectBrand() async {
@@ -85,12 +202,10 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                       trailing: _selectedBrand == brand
                           ? const Icon(
                               CupertinoIcons.check_mark_circled_solid,
-                              color: Color(0xFF2F6BFF),
+                              color: Color(0xFF64CAFA),
                             )
                           : null,
-                      onTap: () {
-                        Navigator.of(context).pop(brand);
-                      },
+                      onTap: () => Navigator.of(context).pop(brand),
                     ),
                   ),
                 ],
@@ -125,134 +240,6 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         _selectedExpiryDate = picked;
       });
     }
-  }
-
-  Future<void> _startGalleryAutoFillFlow() async {
-    final selectedImage = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
-
-    if (selectedImage == null || !mounted) {
-      return;
-    }
-
-    final detectedCode = await _detectCodeFromImage(selectedImage.path);
-    final detectedText = await _extractTextFromImage(selectedImage.path);
-    final extracted = _buildAutoFillResult(
-      detectedCode: detectedCode,
-      detectedText: detectedText,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    final draft = await Navigator.of(context).push<CouponAutoFillDraft>(
-      CupertinoPageRoute<CouponAutoFillDraft>(
-        builder: (_) => CouponImageAutoFillScreen(
-          draft: CouponAutoFillDraft(
-            title: extracted.title,
-            brand: extracted.brand,
-            expiryDate: extracted.expiryDate,
-            couponType: extracted.couponType,
-            memo: extracted.memo,
-            detectedCode: extracted.detectedCode,
-            imagePath: selectedImage.path,
-            isRecognized: extracted.isRecognized,
-            statusTitle: extracted.statusTitle,
-            statusDescription: extracted.statusDescription,
-          ),
-        ),
-      ),
-    );
-
-    if (draft == null || !mounted) {
-      return;
-    }
-
-    if (!draft.isRecognized) {
-      _showMessage('다른 이미지로 다시 시도해보세요.');
-      return;
-    }
-
-    setState(() {
-      _titleController.text = draft.title;
-      _memoController.text = draft.memo;
-      _selectedBrand = draft.brand;
-      _selectedCouponType = switch (draft.couponType) {
-        '바코드' => CouponType.barcode,
-        'QR' => CouponType.qr,
-        _ => CouponType.none,
-      };
-      _selectedExpiryDate = _parseDate(draft.expiryDate);
-    });
-
-    _showMessage('자동 입력 결과를 등록 화면에 채웠어요.');
-  }
-
-  Future<void> _startCameraScanFlow() async {
-    final scanResult = await Navigator.of(context).push<CameraScanResult>(
-      CupertinoPageRoute<CameraScanResult>(
-        builder: (_) => const CouponCameraScanScreen(),
-      ),
-    );
-
-    if (scanResult == null || !mounted) {
-      return;
-    }
-
-    final extracted = _buildAutoFillResult(
-      detectedCode: _DetectedCouponCode(
-        rawValue: scanResult.rawValue,
-        couponTypeLabel: scanResult.couponTypeLabel,
-        codeFormatLabel: scanResult.codeFormatLabel,
-      ),
-      detectedText: null,
-    );
-
-    final draft = await Navigator.of(context).push<CouponAutoFillDraft>(
-      CupertinoPageRoute<CouponAutoFillDraft>(
-        builder: (_) => CouponImageAutoFillScreen(
-          draft: CouponAutoFillDraft(
-            title: extracted.title,
-            brand: extracted.brand,
-            expiryDate: extracted.expiryDate,
-            couponType: extracted.couponType,
-            memo: extracted.memo,
-            detectedCode: extracted.detectedCode,
-            imagePath: null,
-            isRecognized: extracted.isRecognized,
-            statusTitle: extracted.statusTitle,
-            statusDescription: extracted.statusDescription,
-          ),
-        ),
-      ),
-    );
-
-    if (draft == null || !mounted) {
-      return;
-    }
-
-    if (!draft.isRecognized) {
-      _showMessage('다시 스캔해보세요.');
-      return;
-    }
-
-    setState(() {
-      _titleController.text = draft.title;
-      _memoController.text = draft.memo;
-      _selectedBrand = draft.brand == '미확인' ? null : draft.brand;
-      _selectedCouponType = switch (draft.couponType) {
-        '바코드' => CouponType.barcode,
-        'QR' => CouponType.qr,
-        _ => CouponType.none,
-      };
-      if (draft.expiryDate != '미확인') {
-        _selectedExpiryDate = _parseDate(draft.expiryDate);
-      }
-    });
-
-    _showMessage('스캔 결과를 등록 화면에 채웠어요.');
   }
 
   Future<_DetectedCouponText?> _extractTextFromImage(String imagePath) async {
@@ -370,58 +357,20 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         couponType: '미확인',
         memo: '이미지 안의 텍스트와 바코드/QR이 선명한지 다시 확인해보세요.',
         detectedCode: '인식된 코드가 없어요',
+        codeFormatLabel: null,
         isRecognized: false,
-        statusTitle: '자동 입력에 실패했어요',
-        statusDescription: '텍스트나 바코드를 읽지 못했어요. 더 선명한 이미지로 다시 시도해보세요.',
-      );
-    }
-
-    final title = detectedText?.title ?? '쿠폰 정보를 일부 읽어왔어요';
-    final brand = detectedText?.brand ?? '미확인';
-    final expiryDate = detectedText?.expiryDate ?? '미확인';
-    final couponType = detectedCode?.couponTypeLabel ?? '미확인';
-    final detectedCodeText = detectedCode?.rawValue ?? '인식된 코드가 없어요';
-    final memo = _buildMemo(detectedCode: detectedCode, detectedText: detectedText);
-
-    if (hasCode && hasText) {
-      return _AutoFillExtractionResult(
-        title: title,
-        brand: brand,
-        expiryDate: expiryDate,
-        couponType: couponType,
-        memo: memo,
-        detectedCode: detectedCodeText,
-        isRecognized: true,
-        statusTitle: '코드와 텍스트를 읽어왔어요',
-        statusDescription: '바코드/QR 값과 이미지 속 텍스트를 함께 분석해 등록 후보를 만들었어요.',
-      );
-    }
-
-    if (hasText) {
-      return _AutoFillExtractionResult(
-        title: title,
-        brand: brand,
-        expiryDate: expiryDate,
-        couponType: couponType,
-        memo: memo,
-        detectedCode: detectedCodeText,
-        isRecognized: true,
-        statusTitle: '텍스트를 읽어왔어요',
-        statusDescription: 'OCR로 읽은 텍스트를 바탕으로 등록 후보를 만들었어요. 코드값은 확인되지 않았어요.',
       );
     }
 
     return _AutoFillExtractionResult(
-      title: title,
-      brand: brand,
-      expiryDate: expiryDate,
-      couponType: couponType,
-      memo: memo,
-      detectedCode: detectedCodeText,
+      title: detectedText?.title ?? '쿠폰 정보를 일부 읽어왔어요',
+      brand: detectedText?.brand ?? '미확인',
+      expiryDate: detectedText?.expiryDate ?? '미확인',
+      couponType: detectedCode?.couponTypeLabel ?? '미확인',
+      memo: _buildMemo(detectedCode: detectedCode, detectedText: detectedText),
+      detectedCode: detectedCode?.rawValue ?? '인식된 코드가 없어요',
+      codeFormatLabel: detectedCode?.codeFormatLabel,
       isRecognized: true,
-      statusTitle: '코드 인식이 완료됐어요',
-      statusDescription:
-          '${detectedCode!.codeFormatLabel} 형식을 읽어 등록 화면에 반영할 준비를 마쳤어요.',
     );
   }
 
@@ -468,7 +417,6 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         .where((line) => line.isNotEmpty)
         .toList();
 
-    // If a validity-range line exists, prefer the last date on that line.
     for (final line in lines) {
       if (line.contains('유효기간') ||
           line.contains('사용기간') ||
@@ -559,8 +507,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       return;
     }
 
-    // Later, real save logic can be connected here.
-    _showMessage('쿠폰이 등록되었어요.');
+    final entryType = _usedAutoFill ? '자동 입력' : '수동 입력';
+    _showMessage('$entryType 방식으로 쿠폰이 등록되었어요.');
     Future<void>.delayed(const Duration(milliseconds: 250), () {
       if (mounted) {
         Navigator.of(context).pop();
@@ -577,6 +525,25 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+  }
+
+  String _formatDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}.$month.$day';
+  }
+
+  DateTime _parseDate(String formattedDate) {
+    final parts = formattedDate.split('.');
+    if (parts.length != 3) {
+      return DateTime.now().add(const Duration(days: 7));
+    }
+
+    return DateTime(
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+      int.parse(parts[2]),
+    );
   }
 
   @override
@@ -611,47 +578,42 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
           ),
           children: [
             Text(
-              '직접 입력해서 가장 간단하게 쿠폰을 등록할 수 있어요.',
+              '자동 입력 또는 수동 입력으로 쿠폰을 등록할 수 있어요.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.lg),
             _ModeSection(
               title: '자동 입력',
-              subtitle: '이미지나 코드 인식을 붙일 수 있는 확장 영역이에요.',
+              subtitle: '이미지를 업로드하거나 코드를 스캔해 입력을 도와줄 수 있어요.',
               child: _FormSection(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _AutoEntryCard(
-                          icon: CupertinoIcons.photo,
-                          title: '이미지 업로드',
-                          subtitle: '앨범 이미지로 자동 입력',
-                          onTap: () {
-                            _startGalleryAutoFillFlow();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: _AutoEntryCard(
-                          icon: CupertinoIcons.camera_viewfinder,
-                          title: '코드 인식',
-                          subtitle: '바코드/QR 읽기',
-                          onTap: () {
-                            _startCameraScanFlow();
-                          },
-                        ),
-                      ),
-                    ],
+                  _AutoEntryCard(
+                    icon: CupertinoIcons.photo,
+                    title: _selectedImagePath == null ? '이미지 업로드' : '이미지 변경',
+                    subtitle: _selectedImagePath == null
+                        ? '갤러리 이미지로 쿠폰을 불러와요.'
+                        : '다른 이미지를 선택해서 다시 시도할 수 있어요.',
+                    onTap: _pickImage,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    '이미지 업로드와 카메라 스캔 중 편한 방식으로 자동 입력을 시작할 수 있어요.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 13,
-                      color: const Color(0xFF8A94A6),
+                  _OcrActionButton(
+                    enabled: _selectedImagePath != null && !_isProcessingImage,
+                    isLoading: _isProcessingImage,
+                    onTap: _runImageOcr,
+                  ),
+                  if (_selectedImagePath != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _SelectedImagePreview(
+                      imageBytes: _selectedImageBytes,
+                      onTap: _pickImage,
                     ),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  _AutoEntryCard(
+                    icon: CupertinoIcons.camera_viewfinder,
+                    title: '코드 인식',
+                    subtitle: '바코드/QR 코드를 실시간으로 스캔해요.',
+                    onTap: _startCameraScanFlow,
                   ),
                 ],
               ),
@@ -659,7 +621,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
             const SizedBox(height: AppSpacing.lg),
             _ModeSection(
               title: '수동 입력',
-              subtitle: '이번 MVP에서는 가장 안정적인 등록 방식입니다.',
+              subtitle: '직접 값을 입력해 가장 안정적으로 등록할 수 있어요.',
               child: _FormSection(
                 children: [
                   _SectionLabel(label: '제목'),
@@ -709,6 +671,24 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  _SectionLabel(label: '바코드 / 링크 / 번호'),
+                  TextField(
+                    controller: _codeController,
+                    maxLines: 2,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: '바코드 번호 또는 QR 링크를 입력해주세요',
+                    ),
+                  ),
+                  if (_codeController.text.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    CouponCodePreview(
+                      code: _codeController.text.trim(),
+                      couponType: _selectedCouponType,
+                      codeFormatLabel: _detectedCodeFormatLabel,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
                   _SectionLabel(label: '메모(선택)'),
                   TextField(
                     controller: _memoController,
@@ -721,84 +701,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            _ModeSection(
-              title: '이미지 추가',
-              subtitle: '수동 등록과 함께 쿠폰 이미지를 보관하는 영역입니다.',
-              child: _FormSection(
-                children: [
-                  _SectionLabel(label: '이미지 추가(선택)'),
-                  const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 28),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FBFF),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: const Color(0xFFD8E2F1),
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 52,
-                          width: 52,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAF1FF),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.camera,
-                            color: Color(0xFF2F6BFF),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          '이미지 추가',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '지금은 UI만 준비되어 있어요.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    '이미지 보관 기능은 아직 placeholder 상태입니다.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 13,
-                      color: const Color(0xFF8A94A6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}.$month.$day';
-  }
-
-  DateTime _parseDate(String formattedDate) {
-    final parts = formattedDate.split('.');
-    if (parts.length != 3) {
-      return DateTime.now().add(const Duration(days: 7));
-    }
-
-    return DateTime(
-      int.parse(parts[0]),
-      int.parse(parts[1]),
-      int.parse(parts[2]),
     );
   }
 }
@@ -837,9 +742,8 @@ class _AutoFillExtractionResult {
     required this.couponType,
     required this.memo,
     required this.detectedCode,
+    required this.codeFormatLabel,
     required this.isRecognized,
-    required this.statusTitle,
-    required this.statusDescription,
   });
 
   final String title;
@@ -848,9 +752,8 @@ class _AutoFillExtractionResult {
   final String couponType;
   final String memo;
   final String detectedCode;
+  final String? codeFormatLabel;
   final bool isRecognized;
-  final String statusTitle;
-  final String statusDescription;
 }
 
 enum CouponType {
@@ -944,14 +847,14 @@ class _AutoEntryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: const Color(0xFFF9FBFF),
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: const Color(0xFFD8E2F1)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
             Container(
               height: 42,
@@ -960,24 +863,324 @@ class _AutoEntryCard extends StatelessWidget {
                 color: const Color(0xFFEAF1FF),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: const Color(0xFF2F6BFF)),
+              child: Icon(icon, color: const Color(0xFF64CAFA)),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              subtitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 13,
+            const Icon(
+              CupertinoIcons.chevron_right,
+              color: Color(0xFF98A2B3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OcrActionButton extends StatelessWidget {
+  const _OcrActionButton({
+    required this.enabled,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  final bool enabled;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1 : 0.45,
+      child: IgnorePointer(
+        ignoring: !enabled,
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: isLoading ? null : onTap,
+            icon: isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(CupertinoIcons.doc_text_viewfinder),
+            label: Text(isLoading ? '이미지 스캔 중...' : '이미지 스캔 (OCR)'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectedImagePreview extends StatelessWidget {
+  const _SelectedImagePreview({
+    required this.imageBytes,
+    required this.onTap,
+  });
+
+  final Uint8List? imageBytes;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFD),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFDDE5F0)),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (imageBytes != null)
+              Image.memory(
+                imageBytes!,
+                fit: BoxFit.cover,
+              )
+            else
+              const ColoredBox(color: Color(0xFFF8FAFD)),
+            Positioned(
+              right: AppSpacing.sm,
+              top: AppSpacing.sm,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(125),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      CupertinoIcons.arrow_clockwise,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '이미지 변경',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class CouponCodePreview extends StatelessWidget {
+  const CouponCodePreview({
+    super.key,
+    required this.code,
+    required this.couponType,
+    required this.codeFormatLabel,
+  });
+
+  final String code;
+  final CouponType couponType;
+  final String? codeFormatLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final isQr = couponType == CouponType.qr;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFD8E2F1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isQr ? 'QR 미리보기' : '바코드 미리보기',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (codeFormatLabel != null && codeFormatLabel!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              codeFormatLabel!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF667085),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          Center(
+            child: isQr
+                ? _FakeQrWidget(value: code)
+                : _FakeBarcodeWidget(value: code),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            code,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF667085),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FakeBarcodeWidget extends StatelessWidget {
+  const _FakeBarcodeWidget({
+    required this.value,
+  });
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final bars = value.codeUnits.isEmpty ? [1, 2, 3, 1, 2] : value.codeUnits;
+
+    return Container(
+      width: double.infinity,
+      height: 88,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final unit in bars.take(40)) ...[
+            SizedBox(width: (unit % 3 + 1).toDouble()),
+            Container(
+              width: (unit % 4 + 1).toDouble(),
+              margin: EdgeInsets.symmetric(
+                vertical: unit % 5 == 0 ? 10 : 4,
+              ),
+              color: Colors.black,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FakeQrWidget extends StatelessWidget {
+  const _FakeQrWidget({
+    required this.value,
+  });
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(148, 148),
+      painter: _FakeQrPainter(value),
+    );
+  }
+}
+
+class _FakeQrPainter extends CustomPainter {
+  _FakeQrPainter(this.value);
+
+  final String value;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final backgroundPaint = Paint()..color = Colors.white;
+    final blackPaint = Paint()..color = Colors.black;
+    final cell = size.width / 21;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Offset.zero & size,
+        const Radius.circular(16),
+      ),
+      backgroundPaint,
+    );
+
+    for (var row = 0; row < 21; row++) {
+      for (var col = 0; col < 21; col++) {
+        final inFinder = _isFinder(row, col);
+        final shouldFill = inFinder || _hashFill(row, col);
+        if (!shouldFill) {
+          continue;
+        }
+
+        canvas.drawRect(
+          Rect.fromLTWH(col * cell, row * cell, cell, cell),
+          blackPaint,
+        );
+      }
+    }
+  }
+
+  bool _isFinder(int row, int col) {
+    bool inSquare(int top, int left) {
+      return row >= top &&
+          row < top + 5 &&
+          col >= left &&
+          col < left + 5 &&
+          (row == top ||
+              row == top + 4 ||
+              col == left ||
+              col == left + 4 ||
+              (row >= top + 1 &&
+                  row <= top + 3 &&
+                  col >= left + 1 &&
+                  col <= left + 3));
+    }
+
+    return inSquare(1, 1) || inSquare(1, 15) || inSquare(15, 1);
+  }
+
+  bool _hashFill(int row, int col) {
+    final hash = value.hashCode;
+    final seed = (hash + row * 31 + col * 17) & 0x7fffffff;
+    return seed % 3 == 0;
+  }
+
+  @override
+  bool shouldRepaint(covariant _FakeQrPainter oldDelegate) {
+    return oldDelegate.value != value;
   }
 }
 

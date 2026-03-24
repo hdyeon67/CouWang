@@ -132,73 +132,13 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     Navigator.of(context).pushNamed(AppRouter.couponDetail);
   }
 
-  Future<void> _handleFabClick() async {
+  void _handleFabClick() {
     if (widget.onFabClick != null) {
       widget.onFabClick!.call();
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '쿠폰 등록 방식',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 20,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    '자동 입력이나 수동 입력 중 편한 방식을 선택해 주세요.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  _BottomSheetActionTile(
-                    icon: CupertinoIcons.photo,
-                    title: '자동 입력으로 등록',
-                    subtitle: '이미지 업로드나 코드 인식으로 빠르게 채워요.',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pushNamed(AppRouter.createCoupon);
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _BottomSheetActionTile(
-                    icon: CupertinoIcons.square_pencil,
-                    title: '수동 입력으로 등록',
-                    subtitle: '직접 입력하면서 필요한 정보만 정리해요.',
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pushNamed(AppRouter.createCoupon);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    Navigator.of(context).pushNamed(AppRouter.createCoupon);
   }
 
   @override
@@ -686,30 +626,6 @@ class DdayBadge extends StatelessWidget {
   }
 }
 
-class FloatingAddButton extends StatelessWidget {
-  const FloatingAddButton({
-    super.key,
-    required this.onPressed,
-  });
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 58,
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        backgroundColor: const Color(0xFF64CAFA),
-        foregroundColor: Colors.white,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(CupertinoIcons.add, size: 28),
-      ),
-    );
-  }
-}
-
 class _HeaderIconButton extends StatelessWidget {
   const _HeaderIconButton({
     required this.icon,
@@ -735,74 +651,6 @@ class _HeaderIconButton extends StatelessWidget {
   }
 }
 
-class _BottomSheetActionTile extends StatelessWidget {
-  const _BottomSheetActionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF7F9FC),
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: const Color(0xFF64CAFA)),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF667085),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(
-                CupertinoIcons.chevron_right,
-                size: 18,
-                color: Color(0xFF98A2B3),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _BadgeStyle {
   const _BadgeStyle({

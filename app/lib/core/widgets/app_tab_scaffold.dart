@@ -33,41 +33,42 @@ class AppTabScaffold extends StatelessWidget {
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
-      bottomNavigationBar: BottomTabBar(
-        currentTab: currentTab,
+      extendBody: true,
+      bottomNavigationBar: BottomTabBarContainer(
+        selectedTab: currentTab,
         onMembershipTabClick: () {
           if (currentTab == BottomTabItem.membership) {
             return;
           }
-          Navigator.of(context).pushReplacementNamed(AppRouter.membershipList);
+          AppRouter.replaceWithTabRoute(context, BottomTabItem.membership);
         },
         onHomeTabClick: () {
           if (currentTab == BottomTabItem.home) {
             return;
           }
-          Navigator.of(context).pushReplacementNamed(AppRouter.home);
+          AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
         },
         onSettingsTabClick: () {
           if (currentTab == BottomTabItem.settings) {
             return;
           }
-          Navigator.of(context).pushReplacementNamed(AppRouter.settingsRoute);
+          AppRouter.replaceWithTabRoute(context, BottomTabItem.settings);
         },
       ),
     );
   }
 }
 
-class BottomTabBar extends StatelessWidget {
-  const BottomTabBar({
+class BottomTabBarContainer extends StatelessWidget {
+  const BottomTabBarContainer({
     super.key,
-    required this.currentTab,
+    required this.selectedTab,
     required this.onMembershipTabClick,
     required this.onHomeTabClick,
     required this.onSettingsTabClick,
   });
 
-  final BottomTabItem currentTab;
+  final BottomTabItem selectedTab;
   final VoidCallback onMembershipTabClick;
   final VoidCallback onHomeTabClick;
   final VoidCallback onSettingsTabClick;
@@ -77,63 +78,92 @@ class BottomTabBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        height: 88,
-        margin: const EdgeInsets.fromLTRB(
+        color: Colors.transparent,
+        padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
           0,
           AppSpacing.md,
           AppSpacing.sm,
         ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 6,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x08162033),
-              blurRadius: 14,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _BottomTabButton(
-                label: '멤버십',
-                icon: CupertinoIcons.creditcard,
-                isActive: currentTab == BottomTabItem.membership,
-                onTap: onMembershipTabClick,
-              ),
-            ),
-            Expanded(
-              child: _BottomTabButton(
-                label: '홈',
-                icon: CupertinoIcons.house_fill,
-                isActive: currentTab == BottomTabItem.home,
-                onTap: onHomeTabClick,
-              ),
-            ),
-            Expanded(
-              child: _BottomTabButton(
-                label: '설정',
-                icon: CupertinoIcons.gear_alt_fill,
-                isActive: currentTab == BottomTabItem.settings,
-                onTap: onSettingsTabClick,
-              ),
-            ),
-          ],
+        child: FloatingTabCard(
+          selectedTab: selectedTab,
+          onMembershipTabClick: onMembershipTabClick,
+          onHomeTabClick: onHomeTabClick,
+          onSettingsTabClick: onSettingsTabClick,
         ),
       ),
     );
   }
 }
 
-class _BottomTabButton extends StatelessWidget {
-  const _BottomTabButton({
+class FloatingTabCard extends StatelessWidget {
+  const FloatingTabCard({
+    super.key,
+    required this.selectedTab,
+    required this.onMembershipTabClick,
+    required this.onHomeTabClick,
+    required this.onSettingsTabClick,
+  });
+
+  final BottomTabItem selectedTab;
+  final VoidCallback onMembershipTabClick;
+  final VoidCallback onHomeTabClick;
+  final VoidCallback onSettingsTabClick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 92,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14162033),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: BottomTabNavItem(
+              label: '멤버십',
+              icon: CupertinoIcons.creditcard,
+              isActive: selectedTab == BottomTabItem.membership,
+              onTap: onMembershipTabClick,
+            ),
+          ),
+          Expanded(
+            child: BottomTabNavItem(
+              label: '홈',
+              icon: CupertinoIcons.house_fill,
+              isActive: selectedTab == BottomTabItem.home,
+              onTap: onHomeTabClick,
+            ),
+          ),
+          Expanded(
+            child: BottomTabNavItem(
+              label: '설정',
+              icon: CupertinoIcons.gear_alt_fill,
+              isActive: selectedTab == BottomTabItem.settings,
+              onTap: onSettingsTabClick,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BottomTabNavItem extends StatelessWidget {
+  const BottomTabNavItem({
+    super.key,
     required this.label,
     required this.icon,
     required this.isActive,
@@ -150,28 +180,61 @@ class _BottomTabButton extends StatelessWidget {
     final foreground = isActive ? const Color(0xFF64CAFA) : const Color(0xFF8B929E);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       onTap: onTap,
-      child: Container(
+      child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFE9F7FF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: foreground),
-            const SizedBox(height: 2),
+            Container(
+              width: 44,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isActive ? const Color(0xFFE6F7FF) : Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                color: foreground,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 6),
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: foreground,
-                fontWeight: FontWeight.w700,
+                color: isActive ? const Color(0xFF64CAFA) : const Color(0xFF8B929E),
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class FloatingAddButton extends StatelessWidget {
+  const FloatingAddButton({
+    super.key,
+    required this.onPressed,
+  });
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 58,
+      child: FloatingActionButton(
+        onPressed: onPressed,
+        backgroundColor: const Color(0xFF64CAFA),
+        foregroundColor: Colors.white,
+        elevation: 6,
+        shape: const CircleBorder(),
+        child: const Icon(CupertinoIcons.add, size: 28),
       ),
     );
   }

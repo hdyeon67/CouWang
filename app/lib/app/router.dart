@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/widgets/app_tab_scaffold.dart';
+import '../features/auth/presentation/screens/auth_entry_screen.dart';
 import '../features/coupons/presentation/screens/coupon_create_screen.dart';
 import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
 import '../features/coupons/presentation/screens/coupon_list_screen.dart';
-import '../features/intro/presentation/screens/intro_screen.dart';
 import '../features/memberships/presentation/screens/membership_create_screen.dart';
 import '../features/memberships/presentation/screens/membership_detail_screen.dart';
 import '../features/memberships/presentation/screens/membership_list_screen.dart';
@@ -12,7 +13,6 @@ import '../features/notifications/presentation/screens/notification_settings_scr
 import '../features/settings/presentation/screens/settings_screen.dart';
 
 class AppRouter {
-  static const intro = '/intro';
   static const home = '/';
   static const createCoupon = '/coupons/create';
   static const couponDetail = '/coupons/detail';
@@ -26,8 +26,8 @@ class AppRouter {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case intro:
-        return _pageRoute(const IntroScreen());
+      case authGate:
+        return _pageRoute(const AuthEntryScreen());
       case createCoupon:
         return _pageRoute(const CouponCreateScreen());
       case couponDetail:
@@ -50,20 +50,37 @@ class AppRouter {
     }
   }
 
-  // MVP starts directly on the home tab.
-  // Later, this can change to intro or authGate when server-driven
-  // initialization or auth flow is added.
+  // App starts on the auth entry screen.
+  // Later, this can check the real server-driven session state.
   static String resolveAppStartRoute() {
-    return home;
-  }
-
-  // Later, this launch target can change from home -> authGate
-  // without changing the intro screen itself.
-  static String resolvePostIntroRoute() {
-    return home;
+    return authGate;
   }
 
   static PageRoute<dynamic> _pageRoute(Widget child) {
     return CupertinoPageRoute<void>(builder: (_) => child);
+  }
+
+  static void replaceWithTabRoute(BuildContext context, BottomTabItem tab) {
+    Widget target;
+
+    switch (tab) {
+      case BottomTabItem.membership:
+        target = const MembershipListScreen();
+        break;
+      case BottomTabItem.home:
+        target = const HomeDashboardScreen();
+        break;
+      case BottomTabItem.settings:
+        target = const SettingsScreen();
+        break;
+    }
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder<void>(
+        pageBuilder: (_, __, ___) => target,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
   }
 }
