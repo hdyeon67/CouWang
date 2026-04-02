@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
 import '../core/widgets/app_tab_scaffold.dart';
-import '../features/auth/presentation/screens/auth_entry_screen.dart';
 import '../features/coupons/presentation/screens/coupon_create_screen.dart';
 import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
 import '../features/coupons/presentation/screens/coupon_list_screen.dart';
@@ -22,16 +21,18 @@ class AppRouter {
   static const notificationList = '/notifications';
   static const notificationSettings = '/notifications/settings';
   static const settingsRoute = '/settings';
-  static const authGate = '/auth-gate';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case authGate:
-        return _pageRoute(const AuthEntryScreen());
       case createCoupon:
         return _pageRoute(const CouponCreateScreen());
       case couponDetail:
-        return _pageRoute(const CouponDetailScreen());
+        final coupon = settings.arguments;
+        return _pageRoute(
+          coupon is CouponDetailModel
+              ? CouponDetailScreen(coupon: coupon)
+              : const CouponDetailScreen(),
+        );
       case membershipList:
         return _pageRoute(const MembershipListScreen());
       case createMembership:
@@ -50,10 +51,8 @@ class AppRouter {
     }
   }
 
-  // App starts on the auth entry screen.
-  // Later, this can check the real server-driven session state.
   static String resolveAppStartRoute() {
-    return authGate;
+    return home;
   }
 
   static PageRoute<dynamic> _pageRoute(Widget child) {

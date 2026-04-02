@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
 
 class NotificationListScreen extends StatelessWidget {
   const NotificationListScreen({super.key});
@@ -13,26 +14,56 @@ class NotificationListScreen extends StatelessWidget {
       message: '3일 안에 사용하지 않으면 혜택이 사라져요.',
       timeLabel: '오늘 오전 9:20',
       typeLabel: '쿠폰 만료 임박',
+      coupon: CouponDetailModel(
+        brand: '스타벅스',
+        avatarText: 'S',
+        title: '아메리카노 Tall',
+        status: CouponDetailStatus.urgent,
+        dDay: 3,
+        expiryDate: '2026-04-03',
+        couponType: '바코드',
+        createdAt: '2026-03-24',
+        couponNumber: 'STB-3029-1148',
+        memo: '매장 내 사용 가능',
+      ),
     ),
     _NotificationItem(
-      title: '올리브영 멤버십',
-      message: '계산 전에 바로 보여줄 수 있도록 준비해두었어요.',
+      title: '배스킨라빈스 파인트 교환권',
+      message: '곧 만료되는 쿠폰이에요. 외출 전에 한 번 더 확인해보세요.',
       timeLabel: '어제 오후 6:10',
-      typeLabel: '멤버십 리마인드',
+      typeLabel: '사용 리마인드',
+      coupon: CouponDetailModel(
+        brand: '배스킨라빈스',
+        avatarText: 'B',
+        title: '파인트 교환권',
+        status: CouponDetailStatus.urgent,
+        dDay: 2,
+        expiryDate: '2026-04-02',
+        couponType: 'QR',
+        createdAt: '2026-03-18',
+        couponNumber: 'BR-2203-9921',
+        memo: '포장 주문 가능',
+      ),
     ),
     _NotificationItem(
-      title: '이번 달 리포트',
-      message: '이번 달에 쿠폰으로 18,400원을 아꼈어요.',
+      title: 'ABC마트 1만원 할인 쿠폰',
+      message: '오늘 안에 사용하지 않으면 혜택이 사라져요.',
       timeLabel: '3월 20일',
-      typeLabel: '리포트',
+      typeLabel: '오늘 만료',
+      coupon: CouponDetailModel(
+        brand: 'ABC마트',
+        avatarText: 'A',
+        title: '1만원 할인 쿠폰',
+        status: CouponDetailStatus.urgent,
+        dDay: 0,
+        expiryDate: '2026-03-31',
+        couponType: '바코드',
+        createdAt: '2026-03-10',
+        couponNumber: 'ABC-1000-2026',
+        memo: '일부 브랜드 제외',
+      ),
     ),
   ];
-
-  void _showPlaceholderMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +134,10 @@ class NotificationListScreen extends StatelessWidget {
             _NotificationCard(
               item: item,
               onTap: () {
-                _showPlaceholderMessage(context, '${item.title} 상세 이동은 다음 단계에서 연결합니다.');
+                Navigator.of(context).pushNamed(
+                  AppRouter.couponDetail,
+                  arguments: item.coupon,
+                );
               },
             ),
             const SizedBox(height: AppSpacing.md),
@@ -120,12 +154,14 @@ class _NotificationItem {
     required this.message,
     required this.timeLabel,
     required this.typeLabel,
+    required this.coupon,
   });
 
   final String title;
   final String message;
   final String timeLabel;
   final String typeLabel;
+  final CouponDetailModel coupon;
 }
 
 class _NotificationCard extends StatelessWidget {

@@ -81,6 +81,9 @@ flutter run
 - [2026-03-19 회의록](./docs/meetings/2026-03-19_meeting.md)
 - [2026-03-20 회의록](./docs/meetings/2026-03-20_meeting.md)
 - [2026-03-23 회의록](./docs/meetings/2026-03-23_meeting.md)
+- [2026-03-24 회의록](./docs/meetings/2026-03-24_meeting.md)
+- [2026-03-25 회의록](./docs/meetings/2026-03-25_meeting.md)
+- [2026-03-26 회의록](./docs/meetings/2026-03-26_meeting.md)
 
 ## 저장소
 - GitHub: https://github.com/hdyeon67/CouWang.git
