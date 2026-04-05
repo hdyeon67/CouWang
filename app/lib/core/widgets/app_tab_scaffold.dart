@@ -1,8 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/router.dart';
-import '../constants/app_spacing.dart';
+import '../resources/app_strings.dart';
 
 enum BottomTabItem { membership, home, settings }
 
@@ -24,37 +23,61 @@ class AppTabScaffold extends StatelessWidget {
   final FloatingActionButtonLocation? floatingActionButtonLocation;
   final bool? resizeToAvoidBottomInset;
 
+  static const double _bottomTabHeight = 76;
+  static const double _bottomTabSpacing = 16;
+  static const double _fabSpacingFromTab = 16;
+  static const double _horizontalMargin = 20;
+
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FA),
+      backgroundColor: const Color(0xFFF5F5F7),
       appBar: appBar,
-      body: body,
-      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      floatingActionButton: floatingActionButton,
-      floatingActionButtonLocation: floatingActionButtonLocation,
-      extendBody: true,
-      bottomNavigationBar: BottomTabBarContainer(
-        selectedTab: currentTab,
-        onMembershipTabClick: () {
-          if (currentTab == BottomTabItem.membership) {
-            return;
-          }
-          AppRouter.replaceWithTabRoute(context, BottomTabItem.membership);
-        },
-        onHomeTabClick: () {
-          if (currentTab == BottomTabItem.home) {
-            return;
-          }
-          AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
-        },
-        onSettingsTabClick: () {
-          if (currentTab == BottomTabItem.settings) {
-            return;
-          }
-          AppRouter.replaceWithTabRoute(context, BottomTabItem.settings);
-        },
+      body: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(child: body),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: BottomTabBarContainer(
+              selectedTab: currentTab,
+              onMembershipTabClick: () {
+                if (currentTab == BottomTabItem.membership) {
+                  return;
+                }
+                AppRouter.replaceWithTabRoute(context, BottomTabItem.membership);
+              },
+              onHomeTabClick: () {
+                if (currentTab == BottomTabItem.home) {
+                  return;
+                }
+                AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
+              },
+              onSettingsTabClick: () {
+                if (currentTab == BottomTabItem.settings) {
+                  return;
+                }
+                AppRouter.replaceWithTabRoute(context, BottomTabItem.settings);
+              },
+            ),
+          ),
+          if (floatingActionButton != null)
+            Positioned(
+              right: _horizontalMargin,
+              bottom: bottomInset +
+                  _bottomTabSpacing +
+                  _bottomTabHeight +
+                  _fabSpacingFromTab,
+              child: floatingActionButton!,
+            ),
+        ],
       ),
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+      extendBody: true,
     );
   }
 }
@@ -75,21 +98,20 @@ class BottomTabBarContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          0,
-          AppSpacing.md,
-          AppSpacing.sm,
-        ),
-        child: FloatingTabCard(
-          selectedTab: selectedTab,
-          onMembershipTabClick: onMembershipTabClick,
-          onHomeTabClick: onHomeTabClick,
-          onSettingsTabClick: onSettingsTabClick,
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
+    return ColoredBox(
+      color: Colors.transparent,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, bottomInset + 16),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: FloatingTabCard(
+            selectedTab: selectedTab,
+            onMembershipTabClick: onMembershipTabClick,
+            onHomeTabClick: onHomeTabClick,
+            onSettingsTabClick: onSettingsTabClick,
+          ),
         ),
       ),
     );
@@ -112,50 +134,49 @@ class FloatingTabCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 92,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 10,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14162033),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: BottomTabNavItem(
-              label: '멤버십',
-              icon: CupertinoIcons.creditcard,
-              isActive: selectedTab == BottomTabItem.membership,
-              onTap: onMembershipTabClick,
+    return SizedBox(
+      height: 76,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
-          ),
-          Expanded(
-            child: BottomTabNavItem(
-              label: '홈',
-              icon: CupertinoIcons.house_fill,
-              isActive: selectedTab == BottomTabItem.home,
-              onTap: onHomeTabClick,
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: BottomTabNavItem(
+                label: AppStrings.tabMembership,
+                icon: Icons.credit_card_outlined,
+                isActive: selectedTab == BottomTabItem.membership,
+                onTap: onMembershipTabClick,
+              ),
             ),
-          ),
-          Expanded(
-            child: BottomTabNavItem(
-              label: '설정',
-              icon: CupertinoIcons.gear_alt_fill,
-              isActive: selectedTab == BottomTabItem.settings,
-              onTap: onSettingsTabClick,
+            Expanded(
+              child: BottomTabNavItem(
+                label: AppStrings.tabHome,
+                icon: Icons.home_rounded,
+                isActive: selectedTab == BottomTabItem.home,
+                onTap: onHomeTabClick,
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: BottomTabNavItem(
+                label: AppStrings.tabSettings,
+                icon: Icons.settings_outlined,
+                isActive: selectedTab == BottomTabItem.settings,
+                onTap: onSettingsTabClick,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -177,39 +198,43 @@ class BottomTabNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = isActive ? const Color(0xFF64CAFA) : const Color(0xFF8B929E);
+    final foreground =
+        isActive ? const Color(0xFF64CAFA) : const Color(0xFFBDBDBD);
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isActive ? const Color(0xFFE6F7FF) : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                icon,
-                color: foreground,
-                size: 22,
-              ),
+      child: SizedBox(
+        height: double.infinity,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFFE8F7FF) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: isActive ? const Color(0xFF64CAFA) : const Color(0xFF8B929E),
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: foreground,
+                  size: 24,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    color: foreground,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -232,9 +257,9 @@ class FloatingAddButton extends StatelessWidget {
         onPressed: onPressed,
         backgroundColor: const Color(0xFF64CAFA),
         foregroundColor: Colors.white,
-        elevation: 6,
+        elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(CupertinoIcons.add, size: 28),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }

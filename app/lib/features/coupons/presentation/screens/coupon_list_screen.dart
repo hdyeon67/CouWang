@@ -1,11 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../app/router.dart';
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../notifications/presentation/screens/notification_list_screen.dart';
+import 'coupon_create_screen.dart';
+import 'coupon_detail_screen.dart';
 
-enum HomeCouponSortType { expiry, brand }
+enum HomeCouponSortType { expiry, name }
+
+enum HomeCouponFilterType { available, used, expired }
 
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
@@ -26,60 +29,137 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     HomeCouponItem(
       id: 'coupon_001',
       brand: '스타벅스',
-      thumbnailLabel: 'S',
-      title: '스타벅스 카페 아메리카노 Tall',
-      expiryText: '유효기간: 오늘까지',
+      title: '스타벅스 카페라떼',
+      expiryDate: '2026.03.10',
       dDay: 0,
-      amountLabel: '4,500원',
-      thumbnailColor: Color(0xFFF4EEE7),
+      imagePath: 'assets/icon/1.png',
+      filterType: HomeCouponFilterType.available,
+      detail: CouponDetailModel(
+        brand: '스타벅스',
+        avatarText: 'S',
+        title: '스타벅스 카페라떼',
+        status: CouponDetailStatus.urgent,
+        dDay: 0,
+        expiryDate: '2026.03.10',
+        couponType: '바코드',
+        createdAt: '2026.03.01',
+        couponNumber: '8801 2026 0310',
+        memo: '오늘 매장 방문 시 사용 가능',
+      ),
     ),
     HomeCouponItem(
       id: 'coupon_002',
       brand: '배스킨라빈스',
-      thumbnailLabel: 'BR',
-      title: '배스킨라빈스 파인트 교환권',
-      expiryText: '유효기간: 2026.03.25',
+      title: '베스킨라빈스 파인트 교환권',
+      expiryDate: '2026.03.12',
       dDay: 2,
-      amountLabel: '9,800원',
-      thumbnailColor: Color(0xFFFFF1E8),
+      imagePath: 'assets/icon/2.jpg',
+      filterType: HomeCouponFilterType.available,
+      detail: CouponDetailModel(
+        brand: '배스킨라빈스',
+        avatarText: 'BR',
+        title: '파인트 교환권',
+        status: CouponDetailStatus.urgent,
+        dDay: 2,
+        expiryDate: '2026.03.12',
+        couponType: 'QR',
+        createdAt: '2026.03.02',
+        couponNumber: 'https://gifticon.example/br-pint',
+        memo: '배스킨라빈스 전 매장 사용 가능',
+      ),
     ),
     HomeCouponItem(
       id: 'coupon_003',
       brand: '도미노피자',
-      thumbnailLabel: 'D',
-      title: '도미노피자 포테이토(L) 교환권',
-      expiryText: '유효기간: 2026.03.26',
+      title: '도미노피자 포테이토(L) + 콜라',
+      expiryDate: '2026.03.13',
       dDay: 3,
-      amountLabel: '28,900원',
-      thumbnailColor: Color(0xFFFFF3E8),
+      imagePath: 'assets/icon/3.jpg',
+      filterType: HomeCouponFilterType.available,
+      detail: CouponDetailModel(
+        brand: '도미노피자',
+        avatarText: 'D',
+        title: '포테이토(L) + 콜라',
+        status: CouponDetailStatus.urgent,
+        dDay: 3,
+        expiryDate: '2026.03.13',
+        couponType: '바코드',
+        createdAt: '2026.03.02',
+        couponNumber: '3355 8822 1940',
+        memo: '온라인 주문 제외, 매장 사용',
+      ),
     ),
     HomeCouponItem(
       id: 'coupon_004',
       brand: 'ABC마트',
-      thumbnailLabel: 'A',
       title: 'ABC마트 1만원 디지털 상품권',
-      expiryText: '유효기간: 2026.03.30',
-      dDay: 7,
-      amountLabel: '10,000원',
-      thumbnailColor: Color(0xFFF1F3F6),
+      expiryDate: '2026.03.20',
+      dDay: 10,
+      imagePath: 'assets/icon/4.png',
+      filterType: HomeCouponFilterType.available,
+      detail: CouponDetailModel(
+        brand: 'ABC마트',
+        avatarText: 'A',
+        title: '1만원 디지털 상품권',
+        status: CouponDetailStatus.available,
+        dDay: 10,
+        expiryDate: '2026.03.20',
+        couponType: '바코드',
+        createdAt: '2026.03.05',
+        couponNumber: '1020 5566 8877',
+        memo: '오프라인 매장에서 사용 가능',
+      ),
     ),
     HomeCouponItem(
       id: 'coupon_005',
       brand: '올리브영',
-      thumbnailLabel: 'O',
-      title: '올리브영 10,000원 할인권',
-      expiryText: '유효기간: 2026.04.02',
-      dDay: 10,
-      amountLabel: '10,000원',
-      thumbnailColor: Color(0xFFF4F7EB),
+      title: '올리브영 5천원 할인권',
+      expiryDate: '2026.03.03',
+      dDay: 20,
+      imagePath: '',
+      filterType: HomeCouponFilterType.used,
+      detail: CouponDetailModel(
+        brand: '올리브영',
+        avatarText: 'O',
+        title: '5천원 할인권',
+        status: CouponDetailStatus.redeemed,
+        dDay: null,
+        expiryDate: '2026.03.03',
+        couponType: '바코드',
+        createdAt: '2026.02.11',
+        couponNumber: '5577 2200 9922',
+        memo: '사용 완료된 쿠폰',
+      ),
+    ),
+    HomeCouponItem(
+      id: 'coupon_006',
+      brand: '파리바게뜨',
+      title: '파리바게뜨 3천원 할인권',
+      expiryDate: '2026.02.28',
+      dDay: 12,
+      imagePath: '',
+      filterType: HomeCouponFilterType.expired,
+      detail: CouponDetailModel(
+        brand: '파리바게뜨',
+        avatarText: 'P',
+        title: '3천원 할인권',
+        status: CouponDetailStatus.expired,
+        dDay: null,
+        expiryDate: '2026.02.28',
+        couponType: '바코드',
+        createdAt: '2026.02.01',
+        couponNumber: '1100 2200 3300',
+        memo: '기한 만료',
+      ),
     ),
   ];
 
-  static const double _fabDownOffset = 8;
-
+  static const double _horizontalPadding = 20;
   final TextEditingController _searchController = TextEditingController();
+
   String _searchQuery = '';
   HomeCouponSortType _sortType = HomeCouponSortType.expiry;
+  HomeCouponFilterType _filterType = HomeCouponFilterType.available;
 
   @override
   void initState() {
@@ -97,30 +177,26 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     super.dispose();
   }
 
-  List<HomeCouponItem> get _sortedCouponList {
-    final items = [..._couponList];
+  List<HomeCouponItem> get _filteredCouponList {
+    final query = _searchQuery.trim().toLowerCase();
+
+    final items = _couponList.where((coupon) {
+      final matchesFilter = coupon.filterType == _filterType;
+      final matchesSearch =
+          query.isEmpty || coupon.title.toLowerCase().contains(query);
+      return matchesFilter && matchesSearch;
+    }).toList();
 
     switch (_sortType) {
       case HomeCouponSortType.expiry:
         items.sort((a, b) => a.dDay.compareTo(b.dDay));
         break;
-      case HomeCouponSortType.brand:
-        items.sort((a, b) => a.brand.compareTo(b.brand));
+      case HomeCouponSortType.name:
+        items.sort((a, b) => a.title.compareTo(b.title));
         break;
     }
 
     return items;
-  }
-
-  List<HomeCouponItem> get _filteredCouponList {
-    final query = _searchQuery.trim().toLowerCase();
-    if (query.isEmpty) {
-      return _sortedCouponList;
-    }
-
-    return _sortedCouponList.where((coupon) {
-      return coupon.title.toLowerCase().contains(query);
-    }).toList();
   }
 
   void _handleCouponClick(HomeCouponItem coupon) {
@@ -129,7 +205,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       return;
     }
 
-    Navigator.of(context).pushNamed(AppRouter.couponDetail);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CouponDetailScreen(coupon: coupon.detail),
+      ),
+    );
   }
 
   void _handleFabClick() {
@@ -138,7 +218,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       return;
     }
 
-    Navigator.of(context).pushNamed(AppRouter.createCoupon);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const CouponCreateScreen(),
+      ),
+    );
   }
 
   @override
@@ -146,49 +230,63 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     return AppTabScaffold(
       currentTab: BottomTabItem.home,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, _fabDownOffset),
-        child: FloatingAddButton(onPressed: _handleFabClick),
-      ),
+      floatingActionButton: FloatingAddButton(onPressed: _handleFabClick),
       body: SafeArea(
         bottom: false,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            220,
+            _horizontalPadding,
+            8,
+            _horizontalPadding,
+            210,
           ),
-          children: [
-            TopMascotHeader(
-              onNotificationClick: () {
-                Navigator.of(context).pushNamed(AppRouter.notificationList);
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const SavingSpeechBubbleCard(
-              highlightedAmount: '42,500원',
-              prefix: '이번 달 쿠폰으로 ',
-              suffix: ' 아꼈다 멍!',
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            CouponSectionHeader(
-              title: '내 쿠폰함',
-              sortType: _sortType,
-              onSortChanged: (value) {
-                setState(() {
-                  _sortType = value;
-                });
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            CouponSearchField(controller: _searchController),
-            const SizedBox(height: AppSpacing.md),
-            CouponListSection(
-              coupons: _filteredCouponList,
-              onCouponClick: _handleCouponClick,
-            ),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TopMascotHeader(
+                onNotificationClick: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationListScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              const SavingSpeechBubbleCard(),
+              const SizedBox(height: 28),
+              const Text(
+                AppStrings.homeSectionTitle,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 14),
+              FilterAndSortRow(
+                selectedFilter: _filterType,
+                sortType: _sortType,
+                onFilterChanged: (value) {
+                  setState(() {
+                    _filterType = value;
+                  });
+                },
+                onSortChanged: (value) {
+                  setState(() {
+                    _sortType = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              CouponSearchField(controller: _searchController),
+              const SizedBox(height: 16),
+              CouponListSection(
+                coupons: _filteredCouponList,
+                onCouponClick: _handleCouponClick,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -208,22 +306,22 @@ class HomeCouponItem {
   const HomeCouponItem({
     required this.id,
     required this.brand,
-    required this.thumbnailLabel,
     required this.title,
-    required this.expiryText,
+    required this.expiryDate,
     required this.dDay,
-    required this.amountLabel,
-    required this.thumbnailColor,
+    required this.imagePath,
+    required this.filterType,
+    required this.detail,
   });
 
   final String id;
   final String brand;
-  final String thumbnailLabel;
   final String title;
-  final String expiryText;
+  final String expiryDate;
   final int dDay;
-  final String amountLabel;
-  final Color thumbnailColor;
+  final String imagePath;
+  final HomeCouponFilterType filterType;
+  final CouponDetailModel detail;
 }
 
 class TopMascotHeader extends StatelessWidget {
@@ -239,31 +337,36 @@ class TopMascotHeader extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 58,
-          height: 58,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: Colors.white,
             shape: BoxShape.circle,
-            boxShadow: const [
+            color: Colors.white,
+            boxShadow: [
               BoxShadow(
-                color: Color(0x08162033),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(4),
           child: ClipOval(
             child: Image.asset(
-              'assets/icon/app_icon.png',
+              'assets/icon/2-1.png',
               fit: BoxFit.cover,
             ),
           ),
         ),
         const Spacer(),
-        _HeaderIconButton(
-          icon: CupertinoIcons.bell,
+        IconButton(
           onPressed: onNotificationClick,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          icon: const Icon(
+            Icons.notifications_outlined,
+            size: 26,
+            color: Color(0xFF222222),
+          ),
         ),
       ],
     );
@@ -271,53 +374,43 @@ class TopMascotHeader extends StatelessWidget {
 }
 
 class SavingSpeechBubbleCard extends StatelessWidget {
-  const SavingSpeechBubbleCard({
-    super.key,
-    required this.highlightedAmount,
-    required this.prefix,
-    required this.suffix,
-  });
-
-  final String highlightedAmount;
-  final String prefix;
-  final String suffix;
+  const SavingSpeechBubbleCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xl,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x08162033),
-            blurRadius: 14,
-            offset: Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: RichText(
-        text: TextSpan(
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontSize: 24,
-            height: 1.45,
-            color: const Color(0xFF1B1F28),
+        textAlign: TextAlign.center,
+        text: const TextSpan(
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1A1A1A),
+            height: 1.5,
           ),
           children: [
-            TextSpan(text: prefix),
+            TextSpan(text: AppStrings.homeSavingPrefix),
             TextSpan(
-              text: highlightedAmount,
-              style: const TextStyle(
+              text: AppStrings.homeSavingAmount,
+              style: TextStyle(
                 color: Color(0xFF64CAFA),
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            TextSpan(text: suffix),
+            TextSpan(text: AppStrings.homeSavingSuffix),
           ],
         ),
       ),
@@ -325,36 +418,134 @@ class SavingSpeechBubbleCard extends StatelessWidget {
   }
 }
 
-class CouponSectionHeader extends StatelessWidget {
-  const CouponSectionHeader({
+class FilterAndSortRow extends StatelessWidget {
+  const FilterAndSortRow({
     super.key,
-    required this.title,
+    required this.selectedFilter,
     required this.sortType,
+    required this.onFilterChanged,
     required this.onSortChanged,
   });
 
-  final String title;
+  final HomeCouponFilterType selectedFilter;
   final HomeCouponSortType sortType;
+  final ValueChanged<HomeCouponFilterType> onFilterChanged;
   final ValueChanged<HomeCouponSortType> onSortChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 380;
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChipButton(
+                    label: AppStrings.homeFilterAvailable,
+                    isSelected:
+                        selectedFilter == HomeCouponFilterType.available,
+                    onTap: () =>
+                        onFilterChanged(HomeCouponFilterType.available),
+                  ),
+                  FilterChipButton(
+                    label: AppStrings.homeFilterUsed,
+                    isSelected: selectedFilter == HomeCouponFilterType.used,
+                    onTap: () => onFilterChanged(HomeCouponFilterType.used),
+                  ),
+                  FilterChipButton(
+                    label: AppStrings.homeFilterExpired,
+                    isSelected:
+                        selectedFilter == HomeCouponFilterType.expired,
+                    onTap: () => onFilterChanged(HomeCouponFilterType.expired),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: CouponSortDropdown(
+                  currentSortType: sortType,
+                  onChanged: onSortChanged,
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Wrap(
+              spacing: 8,
+              children: [
+                FilterChipButton(
+                  label: AppStrings.homeFilterAvailable,
+                  isSelected: selectedFilter == HomeCouponFilterType.available,
+                  onTap: () => onFilterChanged(HomeCouponFilterType.available),
+                ),
+                FilterChipButton(
+                  label: AppStrings.homeFilterUsed,
+                  isSelected: selectedFilter == HomeCouponFilterType.used,
+                  onTap: () => onFilterChanged(HomeCouponFilterType.used),
+                ),
+                FilterChipButton(
+                  label: AppStrings.homeFilterExpired,
+                  isSelected: selectedFilter == HomeCouponFilterType.expired,
+                  onTap: () => onFilterChanged(HomeCouponFilterType.expired),
+                ),
+              ],
             ),
+            const Spacer(),
+            CouponSortDropdown(
+              currentSortType: sortType,
+              onChanged: onSortChanged,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class FilterChipButton extends StatelessWidget {
+  const FilterChipButton({
+    super.key,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF64CAFA) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? null
+              : Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? Colors.white : const Color(0xFF9E9E9E),
           ),
         ),
-        CouponSortDropdown(
-          currentSortType: sortType,
-          onChanged: onSortChanged,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -370,26 +561,34 @@ class CouponSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: 48,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x06162033),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: TextField(
         controller: controller,
         decoration: const InputDecoration(
-          hintText: '쿠폰명을 입력해 주세요.',
-          suffixIcon: Icon(CupertinoIcons.search),
+          hintText: AppStrings.homeSearchHint,
+          hintStyle: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFBDBDBD),
+          ),
           border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          filled: false,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16),
+          suffixIcon: Icon(
+            Icons.search,
+            color: Color(0xFF9E9E9E),
+            size: 22,
+          ),
         ),
       ),
     );
@@ -408,44 +607,38 @@ class CouponSortDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<HomeCouponSortType>(
-      onSelected: onChanged,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: HomeCouponSortType.expiry,
-          child: Text('만료순'),
-        ),
-        PopupMenuItem(
-          value: HomeCouponSortType.brand,
-          child: Text('브랜드순'),
-        ),
-      ],
+    return GestureDetector(
+      onTap: () {
+        onChanged(
+          currentSortType == HomeCouponSortType.expiry
+              ? HomeCouponSortType.name
+              : HomeCouponSortType.expiry,
+        );
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 8,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F3F6),
-          borderRadius: BorderRadius.circular(999),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              currentSortType == HomeCouponSortType.expiry ? '만료순' : '브랜드순',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF667085),
-                fontWeight: FontWeight.w700,
+              currentSortType == HomeCouponSortType.expiry
+                  ? AppStrings.homeSortExpiry
+                  : AppStrings.homeSortName,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF555555),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             const Icon(
-              CupertinoIcons.chevron_down,
-              size: 14,
-              color: Color(0xFF667085),
+              Icons.swap_horiz_rounded,
+              size: 16,
+              color: Color(0xFF9E9E9E),
             ),
           ],
         ),
@@ -466,17 +659,39 @@ class CouponListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var index = 0; index < coupons.length; index++) ...[
-          CouponCard(
-            coupon: coupons[index],
-            isHighlighted: index == 0,
-            onTap: () => onCouponClick(coupons[index]),
+    if (coupons.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 36),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Center(
+          child: Text(
+            AppStrings.homeNoCoupons,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF9E9E9E),
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-        ],
-      ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: coupons.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final coupon = coupons[index];
+        return CouponCard(
+          coupon: coupon,
+          isHighlighted: index == 0 && coupon.dDay == 0,
+          onTap: () => onCouponClick(coupon),
+        );
+      },
     );
   }
 }
@@ -498,46 +713,29 @@ class CouponCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Ink(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(
-              color: isHighlighted
-                  ? const Color(0xFFB7E9FF)
-                  : const Color(0xFFE7ECF3),
-              width: isHighlighted ? 1.4 : 1,
-            ),
-            boxShadow: const [
+            borderRadius: BorderRadius.circular(18),
+            border: isHighlighted
+                ? Border.all(color: const Color(0xFF64CAFA), width: 1.8)
+                : null,
+            boxShadow: [
               BoxShadow(
-                color: Color(0x08162033),
-                blurRadius: 14,
-                offset: Offset(0, 6),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             children: [
-              Container(
-                width: 66,
-                height: 66,
-                decoration: BoxDecoration(
-                  color: coupon.thumbnailColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text(
-                    coupon.thumbnailLabel,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
+              CouponThumbnail(imagePath: coupon.imagePath),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,26 +744,80 @@ class CouponCard extends StatelessWidget {
                       coupon.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      coupon.expiryText,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: 15,
-                        color: const Color(0xFF4B5565),
+                      '${AppStrings.homeCouponExpiryPrefix}${coupon.expiryDate}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF9E9E9E),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              DdayBadge(dDay: coupon.dDay),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  DdayBadge(dDay: coupon.dDay),
+                  if (coupon.dDay == 0) ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                      AppStrings.homeTodayExpires,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64CAFA),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class CouponThumbnail extends StatelessWidget {
+  const CouponThumbnail({
+    super.key,
+    required this.imagePath,
+  });
+
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imagePath.isNotEmpty;
+
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF0F0F0),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: hasImage
+            ? Image.asset(
+                imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
@@ -584,20 +836,18 @@ class DdayBadge extends StatelessWidget {
     final style = _badgeStyleForDday(dDay);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: style.backgroundColor,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(8),
+        border: style.border,
       ),
       child: Text(
         style.label,
         style: TextStyle(
-          color: style.textColor,
-          fontWeight: FontWeight.w800,
           fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: style.textColor,
         ),
       ),
     );
@@ -611,55 +861,33 @@ class DdayBadge extends StatelessWidget {
         textColor: Colors.white,
       );
     }
-    if (value <= 3) {
+    if (value <= 9) {
       return _BadgeStyle(
         label: 'D-$value',
-        backgroundColor: const Color(0xFFBFEFFF),
-        textColor: const Color(0xFF1D7EAA),
+        backgroundColor: Colors.white,
+        textColor: const Color(0xFF64CAFA),
+        border: Border.all(color: const Color(0xFF64CAFA), width: 1.5),
       );
     }
     return _BadgeStyle(
       label: 'D-$value',
-      backgroundColor: const Color(0xFFF1F3F6),
-      textColor: const Color(0xFF667085),
+      backgroundColor: Colors.white,
+      textColor: const Color(0xFFBDBDBD),
+      border: Border.all(color: const Color(0xFFBDBDBD), width: 1.2),
     );
   }
 }
-
-class _HeaderIconButton extends StatelessWidget {
-  const _HeaderIconButton({
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        color: const Color(0xFF1B1F28),
-      ),
-    );
-  }
-}
-
 
 class _BadgeStyle {
   const _BadgeStyle({
     required this.label,
     required this.backgroundColor,
     required this.textColor,
+    this.border,
   });
 
   final String label;
   final Color backgroundColor;
   final Color textColor;
+  final BoxBorder? border;
 }

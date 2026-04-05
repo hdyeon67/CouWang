@@ -1,322 +1,824 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:typed_data';
+
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../app/router.dart';
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/resources/app_strings.dart';
+import 'coupon_create_screen.dart';
 
-class CouponDetailScreen extends StatelessWidget {
+class CouponDetailScreen extends StatefulWidget {
   const CouponDetailScreen({
     super.key,
     this.coupon = const CouponDetailModel(
-      brand: '스타벅스',
-      avatarText: 'S',
-      title: '아메리카노 Tall',
-      status: CouponDetailStatus.available,
-      dDay: 12,
-      expiryDate: '2026-03-25',
-      couponType: '바코드',
-      createdAt: '2026-03-04',
-      couponNumber: '1234-5678-9012',
-      memo: '매장 내 사용 가능',
+      name: '카페라떼',
+      category: AppStrings.categoryCafe,
+      brand: AppStrings.brandStarbucks,
+      expiry: '2025.12.10',
+      dday: 0,
+      barcodeNumber: '7742990122284',
+      isUsed: false,
+      imagePath: null,
     ),
   });
 
   final CouponDetailModel coupon;
 
   @override
-  Widget build(BuildContext context) {
-    final badge = _statusStyle(coupon.status);
+  State<CouponDetailScreen> createState() => _CouponDetailScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('쿠폰 상세'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              _showMessage(context, '추가 관리 메뉴는 다음 단계에서 연결합니다.');
-            },
-            icon: const Icon(CupertinoIcons.ellipsis),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-        ],
+class _CouponDetailScreenState extends State<CouponDetailScreen> {
+  final GlobalKey _menuButtonKey = GlobalKey();
+  late bool _isUsed = widget.coupon.isUsed ||
+      widget.coupon.status == CouponDetailStatus.redeemed;
+
+  static const List<_MembershipSheetItem> _sampleMemberships = [
+    _MembershipSheetItem(
+      name: AppStrings.membershipCjOne,
+      barColor: Color(0xFFE53935),
+      iconColor: Color(0xFFE53935),
+      iconBgColor: Color(0xFFFFEBEE),
+      icon: Icons.star,
+    ),
+    _MembershipSheetItem(
+      name: AppStrings.brandStarbucks,
+      barColor: Color(0xFF1B5E20),
+      iconColor: Color(0xFF2E7D32),
+      iconBgColor: Color(0xFFE8F5E9),
+      icon: Icons.local_cafe_outlined,
+    ),
+    _MembershipSheetItem(
+      name: AppStrings.membershipHappyPoint,
+      barColor: Color(0xFFE91E8C),
+      iconColor: Color(0xFFE91E8C),
+      iconBgColor: Color(0xFFFCE4EC),
+      icon: Icons.favorite,
+    ),
+    _MembershipSheetItem(
+      name: AppStrings.membershipSkt,
+      barColor: Color(0xFF212121),
+      iconColor: Color(0xFF424242),
+      iconBgColor: Color(0xFFF5F5F5),
+      icon: Icons.business,
+    ),
+  ];
+
+  void _showContextMenu() {
+    final buttonContext = _menuButtonKey.currentContext;
+    if (buttonContext == null) {
+      return;
+    }
+
+    final button = buttonContext.findRenderObject() as RenderBox;
+    final overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      items: const [
+        PopupMenuItem<String>(
+          value: 'edit',
           child: Row(
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    _showMessage(context, '편집 화면은 다음 단계에서 연결합니다.');
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(54),
-                    side: const BorderSide(color: Color(0xFFCFE0FF)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-                    ),
-                    foregroundColor: const Color(0xFF2F6BFF),
-                  ),
-                  child: const Text('편집'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(AppRouter.membershipDetail);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(54),
-                    side: const BorderSide(color: Color(0xFFE1E7F0)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-                    ),
-                    foregroundColor: const Color(0xFF516173),
-                  ),
-                  child: const Text('멤버십'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: () => _showRedeemConfirmDialog(context),
-                  child: const Text('사용 완료 처리'),
-                ),
+              Icon(Icons.edit_outlined, size: 18, color: Color(0xFF555555)),
+              SizedBox(width: 10),
+              Text(
+                AppStrings.couponEdit,
+                style: TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
               ),
             ],
           ),
         ),
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xl,
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Color(0xFFE53935)),
+              SizedBox(width: 10),
+              Text(
+                AppStrings.couponDelete,
+                style: TextStyle(fontSize: 14, color: Color(0xFFE53935)),
+              ),
+            ],
           ),
-          children: [
-            _HeroCouponCard(
-              coupon: coupon,
-              badge: badge,
+        ),
+      ],
+    ).then((value) {
+      if (value == 'edit') {
+        _navigateToEdit();
+      } else if (value == 'delete') {
+        _showDeleteDialog();
+      }
+    });
+  }
+
+  void _navigateToEdit() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CouponCreateScreen(coupon: widget.coupon),
+      ),
+    );
+  }
+
+  void _showDeleteDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            AppStrings.couponDeleteTitle,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            _BarcodeCard(couponNumber: coupon.couponNumber),
-            const SizedBox(height: AppSpacing.lg),
-            _InfoSection(
-              coupon: coupon,
-              badgeLabel: badge.label,
+          ),
+          content: const Text(
+            AppStrings.couponDeleteDescription,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+              height: 1.5,
             ),
-            const SizedBox(height: AppSpacing.lg),
-            _ManagementSection(
-              onEditTap: () {
-                _showMessage(context, '쿠폰 수정 화면은 다음 단계에서 연결합니다.');
-              },
-              onMembershipTap: () {
-                Navigator.of(context).pushNamed(AppRouter.membershipDetail);
-              },
-              onDeleteTap: () {
-                _showDeleteConfirmDialog(context);
-              },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                AppStrings.couponCancel,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9E9E9E),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              '만료 7일/1일 전 알림이 자동 설정됩니다.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 13,
-                color: const Color(0xFF8A94A6),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: const Text(AppStrings.couponDeleteDone),
+                      backgroundColor: const Color(0xFF1A1A1A),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+              },
+              child: const Text(
+                AppStrings.couponDelete,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFFE53935),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Color _getDdayColor(int dday) {
+    if (dday == 0) return const Color(0xFF55C8FF);
+    if (dday <= 1) return const Color(0xFF55C8FF);
+    if (dday <= 3) return const Color(0xFF7DD4FF);
+    if (dday <= 7) return const Color(0xFFA3E0FF);
+    if (dday <= 15) return const Color(0xFFC2EAFF);
+    return const Color(0xFFDDF3FF);
+  }
+
+  bool get _isExpired => widget.coupon.status == CouponDetailStatus.expired;
+
+  bool get _showsQrCode {
+    final normalized = widget.coupon.barcodeNumber.trim().toLowerCase();
+    return normalized.startsWith('http://') ||
+        normalized.startsWith('https://');
+  }
+
+  Widget _buildDdayBadge(int dday) {
+    late final Color color;
+    late final String label;
+
+    if (_isUsed) {
+      color = const Color(0xFF8E9AAF);
+      label = AppStrings.couponUsed;
+    } else if (_isExpired) {
+      color = const Color(0xFFE58C73);
+      label = AppStrings.couponExpired;
+    } else {
+      color = _getDdayColor(dday);
+      label = dday == 0 ? 'D-DAY' : 'D-$dday';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
         ),
       ),
     );
   }
 
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
-
-  Future<void> _showRedeemConfirmDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return Dialog(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14162033),
-                  blurRadius: 28,
-                  offset: Offset(0, 14),
+  void _showImageFullScreen() {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    color: Colors.transparent,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+                Center(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _CouponImage(
+                        coupon: widget.coupon,
+                        fit: BoxFit.contain,
+                        fallbackWidth: 300,
+                        fallbackHeight: 200,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 48,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatBarcodeNumber(String raw) {
+    if (_showsQrCode) {
+      return raw;
+    }
+    final digits = raw.replaceAll(' ', '');
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+
+  void _showBarcodeFullScreen() {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
               children: [
-                Container(
-                  height: 64,
-                  width: 64,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAF1FF),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.check_mark_circled,
-                    color: Color(0xFF2F6BFF),
-                    size: 30,
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    color: Colors.transparent,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  '사용 완료로 처리할까요?',
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '${coupon.brand} ${coupon.title}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF4B5563),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  '처리하면 상태가 사용완료로 변경됩니다.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF7B8798),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(false);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
-                          side: const BorderSide(color: Color(0xFFE1E7F0)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.buttonRadius,
-                            ),
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InteractiveViewer(
+                          panEnabled: false,
+                          minScale: 1.0,
+                          maxScale: 3.0,
+                          child: BarcodeWidget(
+                            barcode: _showsQrCode
+                                ? Barcode.qrCode()
+                                : Barcode.code128(),
+                            data: widget.coupon.barcodeNumber,
+                            width: _showsQrCode ? 220 : 280,
+                            height: _showsQrCode ? 220 : 120,
+                            drawText: false,
+                            color: const Color(0xFF1A1A1A),
                           ),
-                          foregroundColor: const Color(0xFF6B7280),
                         ),
-                        child: const Text('취소'),
+                        const SizedBox(height: 16),
+                        Text(
+                          _formatBarcodeNumber(widget.coupon.barcodeNumber),
+                          style: TextStyle(
+                            fontSize: _showsQrCode ? 13 : 20,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: _showsQrCode ? 0 : 3.0,
+                            color: const Color(0xFF1A1A1A),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 48,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(true);
-                        },
-                        child: const Text('확인'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _markAsUsed() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            AppStrings.couponMarkUsedTitle,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          content: const Text(
+            AppStrings.couponMarkUsedDescription,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                AppStrings.couponCancel,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9E9E9E),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                setState(() {
+                  _isUsed = true;
+                });
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: const Text(AppStrings.couponMarkUsedDone),
+                      backgroundColor: const Color(0xFF1A1A1A),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+              },
+              child: const Text(
+                AppStrings.couponMarkUsedConfirm,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF55C8FF),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMembershipListBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (ctx) {
+        return _MembershipListSheet(
+          memberships: _sampleMemberships,
+          onClose: () => Navigator.pop(ctx),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final coupon = widget.coupon;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      size: 24,
+                      color: Color(0xFF222222),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    key: _menuButtonKey,
+                    icon: const Icon(
+                      Icons.more_vert,
+                      size: 24,
+                      color: Color(0xFF222222),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    onPressed: _showContextMenu,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${coupon.category} > ${coupon.brand}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                coupon.name,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Text(
+                    coupon.expiry,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF444444),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildDdayBadge(coupon.dday),
+                ],
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: _showImageFullScreen,
+                child: Container(
+                  width: double.infinity,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: _CouponImage(
+                      coupon: coupon,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              GestureDetector(
+                onTap: _showBarcodeFullScreen,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFFFF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  _showsQrCode
+                                      ? AppStrings.couponTypeQr
+                                      : AppStrings.couponTypeBarcode,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF55C8FF),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          BarcodeWidget(
+                            barcode: _showsQrCode
+                                ? Barcode.qrCode()
+                                : Barcode.code128(),
+                            data: coupon.barcodeNumber,
+                            width: _showsQrCode ? 140 : double.infinity,
+                            height: _showsQrCode ? 140 : 80,
+                            drawText: false,
+                            color: const Color(0xFF1A1A1A),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _formatBarcodeNumber(coupon.barcodeNumber),
+                            style: TextStyle(
+                              fontSize: _showsQrCode ? 13 : 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: _showsQrCode ? 0 : 3.0,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                      const Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Icon(
+                          Icons.fullscreen,
+                          size: 22,
+                          color: Color(0xFFE53935),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8EE),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/icon/2-1.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppStrings.tipTitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFE8900A),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            AppStrings.tipBody,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF888888),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (confirmed == true && context.mounted) {
-      // Later, real redeem save logic can be connected here.
-      _showMessage(context, '사용 완료 placeholder: 실제 저장은 다음 단계에서 연결합니다.');
-    }
-  }
-
-  Future<void> _showDeleteConfirmDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('쿠폰을 삭제할까요?'),
-          content: Text('${coupon.brand} ${coupon.title} 쿠폰이 목록에서 제거됩니다.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text(
-                '삭제',
-                style: TextStyle(color: Color(0xFFB5475A)),
               ),
-            ),
-          ],
-        );
-      },
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: _isUsed ? null : _markAsUsed,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isUsed
+                        ? const Color(0xFFBDBDBD)
+                        : const Color(0xFF55C8FF),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    disabledBackgroundColor: const Color(0xFFBDBDBD),
+                  ),
+                  child: Text(
+                    _isUsed ? AppStrings.couponUsedDone : AppStrings.couponMarkUsed,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: OutlinedButton.icon(
+                  onPressed: _showMembershipListBottomSheet,
+                  icon: const Icon(
+                    Icons.qr_code_2_outlined,
+                    size: 20,
+                    color: Color(0xFF9E9E9E),
+                  ),
+                  label: const Text(
+                    AppStrings.couponMembershipButton,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
     );
-
-    if (confirmed == true && context.mounted) {
-      _showMessage(context, '쿠폰 삭제 placeholder: 실제 삭제는 다음 단계에서 연결합니다.');
-    }
   }
 }
 
 class CouponDetailModel {
   const CouponDetailModel({
     required this.brand,
-    required this.avatarText,
-    required this.title,
-    required this.status,
-    required this.dDay,
-    required this.expiryDate,
-    required this.couponType,
-    required this.createdAt,
-    required this.couponNumber,
+    String? name,
+    String? title,
+    this.category = AppStrings.categoryEtc,
+    int? dday,
+    int? dDay,
+    String? expiry,
+    String? expiryDate,
+    String? barcodeNumber,
+    String? couponNumber,
+    this.imagePath,
+    this.imageBytes,
     this.memo,
-  });
+    this.isUsed = false,
+    this.avatarText,
+    this.status,
+    this.couponType,
+    this.createdAt,
+  })  : name = name ?? title ?? '',
+        dday = dday ?? dDay ?? 0,
+        expiry = expiry ?? expiryDate ?? '',
+        barcodeNumber = barcodeNumber ?? couponNumber ?? '';
 
   final String brand;
-  final String avatarText;
-  final String title;
-  final CouponDetailStatus status;
-  final int? dDay;
-  final String expiryDate;
-  final String couponType;
-  final String createdAt;
-  final String couponNumber;
+  final String category;
+  final String name;
+  final int dday;
+  final String expiry;
+  final String barcodeNumber;
+  final String? imagePath;
+  final Uint8List? imageBytes;
   final String? memo;
+  final bool isUsed;
+  final String? avatarText;
+  final CouponDetailStatus? status;
+  final String? couponType;
+  final String? createdAt;
 }
 
 enum CouponDetailStatus {
@@ -326,482 +828,167 @@ enum CouponDetailStatus {
   redeemed,
 }
 
-class _HeroCouponCard extends StatelessWidget {
-  const _HeroCouponCard({
+class _CouponImage extends StatelessWidget {
+  const _CouponImage({
     required this.coupon,
-    required this.badge,
+    required this.fit,
+    this.fallbackWidth,
+    this.fallbackHeight,
   });
 
   final CouponDetailModel coupon;
-  final _StatusBadgeStyle badge;
+  final BoxFit fit;
+  final double? fallbackWidth;
+  final double? fallbackHeight;
 
   @override
   Widget build(BuildContext context) {
+    if (coupon.imageBytes != null) {
+      return Image.memory(
+        coupon.imageBytes!,
+        fit: fit,
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A162033),
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 60,
-                width: 60,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF1FF),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  coupon.avatarText,
-                  style: const TextStyle(
-                    color: Color(0xFF2F6BFF),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      coupon.brand,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF6F7B8C),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${coupon.brand} ${coupon.title}',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              _StatusBadge(badge: badge),
-              _DdayBadge(
-                text: coupon.status == CouponDetailStatus.redeemed
-                    ? '사용 완료'
-                    : coupon.status == CouponDetailStatus.expired
-                    ? '만료됨'
-                    : 'D-${coupon.dDay}',
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            coupon.status == CouponDetailStatus.expired
-                ? '만료일 ${coupon.expiryDate}'
-                : '만료일 ${coupon.expiryDate}까지 사용할 수 있어요.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+      width: fallbackWidth,
+      height: fallbackHeight,
+      color: const Color(0xFFF0F0F0),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_outlined,
+        size: 48,
+        color: Color(0xFFBDBDBD),
       ),
     );
   }
 }
 
-class _BarcodeCard extends StatelessWidget {
-  const _BarcodeCard({
-    required this.couponNumber,
+class _MembershipListSheet extends StatelessWidget {
+  const _MembershipListSheet({
+    required this.memberships,
+    required this.onClose,
   });
 
-  final String couponNumber;
+  final List<_MembershipSheetItem> memberships;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    final bars = [18, 34, 26, 42, 20, 38, 24, 40, 30, 18, 44, 26, 36, 22, 40];
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xl,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
-      decoration: BoxDecoration(
+      height: MediaQuery.of(context).size.height * 0.60,
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          SizedBox(
-            height: 62,
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: bars
-                  .map(
-                    (height) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Container(
+              children: [
+                const Text(
+                  AppStrings.membershipTitle,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    size: 22,
+                    color: Color(0xFF555555),
+                  ),
+                  onPressed: onClose,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              itemCount: memberships.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 1),
+              itemBuilder: (_, index) {
+                final m = memberships[index];
+                return SizedBox(
+                  height: 64,
+                  child: Row(
+                    children: [
+                      Container(
                         width: 4,
-                        height: height.toDouble(),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF161B26),
-                          borderRadius: BorderRadius.circular(2),
+                          color: m.barColor,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                    ),
-                  )
-                  .toList(),
+                      const SizedBox(width: 14),
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: m.iconBgColor,
+                        ),
+                        child: Icon(
+                          m.icon,
+                          size: 20,
+                          color: m.iconColor,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          m.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: Color(0xFFBDBDBD),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            '쿠폰번호: $couponNumber',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 13,
-              color: const Color(0xFF758195),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _InfoSection extends StatelessWidget {
-  const _InfoSection({
-    required this.coupon,
-    required this.badgeLabel,
-  });
-
-  final CouponDetailModel coupon;
-  final String badgeLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-      ),
-      child: Column(
-        children: [
-          _InfoRow(label: '브랜드', value: coupon.brand),
-          _InfoRow(label: '만료일', value: coupon.expiryDate),
-          _InfoRow(label: '유형', value: coupon.couponType),
-          _InfoRow(label: '등록일', value: coupon.createdAt),
-          _InfoRow(label: '상태', value: badgeLabel),
-          if (coupon.memo != null && coupon.memo!.trim().isNotEmpty)
-            _InfoRow(label: '메모', value: coupon.memo!),
-        ],
-      ),
-    );
-  }
-}
-
-class _ManagementSection extends StatelessWidget {
-  const _ManagementSection({
-    required this.onEditTap,
-    required this.onMembershipTap,
-    required this.onDeleteTap,
-  });
-
-  final VoidCallback onEditTap;
-  final VoidCallback onMembershipTap;
-  final VoidCallback onDeleteTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '관리',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _ManagementActionTile(
-            icon: CupertinoIcons.pencil,
-            title: '쿠폰 수정',
-            subtitle: '제목, 만료일, 메모를 다시 정리합니다',
-            onTap: onEditTap,
-          ),
-          const _SectionDivider(),
-          _ManagementActionTile(
-            icon: CupertinoIcons.creditcard,
-            title: '멤버십으로 이동',
-            subtitle: '함께 보여줄 멤버십을 바로 확인합니다',
-            onTap: onMembershipTap,
-          ),
-          const _SectionDivider(),
-          _ManagementActionTile(
-            icon: CupertinoIcons.delete,
-            title: '쿠폰 삭제',
-            subtitle: '더 이상 쓰지 않는 쿠폰을 정리합니다',
-            destructive: true,
-            onTap: onDeleteTap,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ManagementActionTile extends StatelessWidget {
-  const _ManagementActionTile({
+class _MembershipSheetItem {
+  const _MembershipSheetItem({
+    required this.name,
+    required this.barColor,
+    required this.iconColor,
+    required this.iconBgColor,
     required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.destructive = false,
   });
 
+  final String name;
+  final Color barColor;
+  final Color iconColor;
+  final Color iconBgColor;
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) {
-    final foreground = destructive
-        ? const Color(0xFFB5475A)
-        : const Color(0xFF1D2433);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Container(
-              height: 42,
-              width: 42,
-              decoration: BoxDecoration(
-                color: destructive
-                    ? const Color(0xFFFFF1F3)
-                    : const Color(0xFFF3F7FF),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: foreground, size: 20),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: foreground,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              CupertinoIcons.chevron_right,
-              size: 18,
-              color: destructive
-                  ? const Color(0xFFDB93A0)
-                  : const Color(0xFF90A0B5),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionDivider extends StatelessWidget {
-  const _SectionDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      thickness: 1,
-      color: Color(0xFFEFF2F7),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF8A94A6),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({
-    required this.badge,
-  });
-
-  final _StatusBadgeStyle badge;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 7,
-      ),
-      decoration: BoxDecoration(
-        color: badge.background,
-        borderRadius: BorderRadius.circular(999),
-        border: badge.outlined
-            ? Border.all(color: const Color(0xFFC7D8FF))
-            : null,
-      ),
-      child: Text(
-        badge.label,
-        style: TextStyle(
-          color: badge.foreground,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _DdayBadge extends StatelessWidget {
-  const _DdayBadge({
-    required this.text,
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 7,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F8FC),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE1E7F0)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF64748B),
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadgeStyle {
-  const _StatusBadgeStyle({
-    required this.label,
-    required this.background,
-    required this.foreground,
-    this.outlined = false,
-  });
-
-  final String label;
-  final Color background;
-  final Color foreground;
-  final bool outlined;
-}
-
-_StatusBadgeStyle _statusStyle(CouponDetailStatus status) {
-  switch (status) {
-    case CouponDetailStatus.available:
-      return const _StatusBadgeStyle(
-        label: '사용가능',
-        background: Color(0xFFEAF8F4),
-        foreground: Color(0xFF167C64),
-      );
-    case CouponDetailStatus.urgent:
-      return const _StatusBadgeStyle(
-        label: '임박',
-        background: Color(0xFFFFF1E6),
-        foreground: Color(0xFFD97706),
-      );
-    case CouponDetailStatus.expired:
-      return const _StatusBadgeStyle(
-        label: '만료',
-        background: Color(0xFFF2F4F7),
-        foreground: Color(0xFF7B8594),
-      );
-    case CouponDetailStatus.redeemed:
-      return const _StatusBadgeStyle(
-        label: '사용완료',
-        background: Color(0xFFF3F7FF),
-        foreground: Color(0xFF2F6BFF),
-        outlined: true,
-      );
-  }
 }

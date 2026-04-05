@@ -1,37 +1,49 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import 'membership_detail_screen.dart';
 
 class MembershipListScreen extends StatelessWidget {
   const MembershipListScreen({super.key});
 
   static const List<MembershipCardItem> _memberships = [
     MembershipCardItem(
-      brand: 'CJ ONE',
-      note: '올리브영, CGV, 뚜레쥬르 적립에 사용하는 멤버십',
-      accentColor: Color(0xFFE8564D),
-      icon: CupertinoIcons.star_fill,
+      name: AppStrings.membershipCjOne,
+      brand: AppStrings.membershipPoint,
+      cardNumber: '100012341111',
+      barColor: Color(0xFFE53935),
+      iconColor: Color(0xFFE53935),
+      iconBgColor: Color(0xFFFFEBEE),
+      icon: Icons.star,
     ),
     MembershipCardItem(
-      brand: '스타벅스',
-      note: '사이렌 오더와 별 적립에 사용하는 멤버십',
-      accentColor: Color(0xFF3CA66B),
-      icon: CupertinoIcons.bolt_fill,
+      name: AppStrings.brandStarbucks,
+      brand: AppStrings.categoryCafe,
+      cardNumber: '200045672222',
+      barColor: Color(0xFF1B5E20),
+      iconColor: Color(0xFF2E7D32),
+      iconBgColor: Color(0xFFE8F5E9),
+      icon: Icons.local_cafe_outlined,
     ),
     MembershipCardItem(
-      brand: '해피포인트',
-      note: '파리바게뜨, 배스킨라빈스 적립/할인 멤버십',
-      accentColor: Color(0xFFFF6FAE),
-      icon: CupertinoIcons.heart_fill,
+      name: AppStrings.membershipHappyPoint,
+      brand: AppStrings.categoryBakery,
+      cardNumber: '300078903333',
+      barColor: Color(0xFFE91E8C),
+      iconColor: Color(0xFFE91E8C),
+      iconBgColor: Color(0xFFFCE4EC),
+      icon: Icons.favorite,
     ),
     MembershipCardItem(
-      brand: '신세계 포인트',
-      note: '이마트와 신세계 계열 브랜드에서 사용하는 포인트',
-      accentColor: Color(0xFF30333A),
-      icon: CupertinoIcons.bag_fill,
+      name: AppStrings.membershipSkt,
+      brand: AppStrings.membershipTelecom,
+      cardNumber: '7742990122284',
+      barColor: Color(0xFF212121),
+      iconColor: Color(0xFF424242),
+      iconBgColor: Color(0xFFF5F5F5),
+      icon: Icons.business,
     ),
   ];
 
@@ -43,49 +55,45 @@ class MembershipListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasMemberships = _memberships.isNotEmpty;
+
     return AppTabScaffold(
       currentTab: BottomTabItem.membership,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 8),
-        child: FloatingAddButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed(AppRouter.createMembership);
-          },
-        ),
+      floatingActionButton: FloatingAddButton(
+        onPressed: () {
+          Navigator.of(context).pushNamed(AppRouter.createMembership);
+        },
       ),
       body: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.xl,
-            AppSpacing.md,
-            160,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 190),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MembershipHeaderSection(),
+              if (hasMemberships) ...[
+                const SizedBox(height: 24),
+                MembershipCardList(
+                  memberships: _memberships,
+                  onMembershipTap: (membership) {
+                    Navigator.of(context).pushNamed(
+                      AppRouter.membershipDetail,
+                      arguments: membership.detail,
+                    );
+                  },
+                  onMenuTap: (membership) {
+                    _showPlaceholderMessage(
+                      context,
+                      '${membership.name} 멤버십 액션은 다음 단계에서 구현합니다.',
+                    );
+                  },
+                ),
+              ] else
+                const MembershipEmptyState(),
+            ],
           ),
-          children: [
-            MembershipHeaderSection(
-              onEditClick: () {
-                _showPlaceholderMessage(
-                  context,
-                  '멤버십 편집 흐름은 다음 단계에서 구현합니다.',
-                );
-              },
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            MembershipCardList(
-              memberships: _memberships,
-              onMembershipTap: (_) {
-                Navigator.of(context).pushNamed(AppRouter.membershipDetail);
-              },
-              onMenuTap: (membership) {
-                _showPlaceholderMessage(
-                  context,
-                  '${membership.brand} 멤버십 액션은 다음 단계에서 구현합니다.',
-                );
-              },
-            ),
-          ],
         ),
       ),
     );
@@ -93,30 +101,25 @@ class MembershipListScreen extends StatelessWidget {
 }
 
 class MembershipHeaderSection extends StatelessWidget {
-  const MembershipHeaderSection({
-    super.key,
-    required this.onEditClick,
-  });
-
-  final VoidCallback onEditClick;
+  const MembershipHeaderSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '나의 멤버십',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          AppStrings.membershipTitle,
+          style: TextStyle(
+            fontSize: 26,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF1B1F28),
+            color: Color(0xFF1A1A1A),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        const MembershipInfoText(
-          text: '멤버십 바코드를 등록해놓으면 쿠폰 사용과 함께 적립·할인을 받을 수 있어요',
+        SizedBox(height: 10),
+        MembershipInfoText(
+          text: AppStrings.membershipGuide,
         ),
-        const SizedBox(height: AppSpacing.md),
       ],
     );
   }
@@ -132,29 +135,45 @@ class MembershipInfoText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          margin: const EdgeInsets.only(top: 8),
-          decoration: const BoxDecoration(
-            color: Color(0xFF64CAFA),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF667085),
-              height: 1.5,
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: Color(0xFF9E9E9E),
+        height: 1.5,
+      ),
+    );
+  }
+}
+
+class MembershipEmptyState extends StatelessWidget {
+  const MembershipEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.52,
+      child: const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Color(0xFFE8E8E8),
             ),
-          ),
+            SizedBox(height: 16),
+            Text(
+              AppStrings.membershipEmpty,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFFAAAAAA),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -173,17 +192,30 @@ class MembershipCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final membership in memberships) ...[
-          MembershipCard(
-            membership: membership,
-            onTap: () => onMembershipTap(membership),
-            onMenuTap: () => onMenuTap(membership),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
-          const SizedBox(height: AppSpacing.md),
         ],
-      ],
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < memberships.length; index++)
+            MembershipCard(
+              membership: memberships[index],
+              isFirst: index == 0,
+              isLast: index == memberships.length - 1,
+              onTap: () => onMembershipTap(memberships[index]),
+              onMenuTap: () => onMenuTap(memberships[index]),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -192,11 +224,15 @@ class MembershipCard extends StatelessWidget {
   const MembershipCard({
     super.key,
     required this.membership,
+    required this.isFirst,
+    required this.isLast,
     required this.onTap,
     required this.onMenuTap,
   });
 
   final MembershipCardItem membership;
+  final bool isFirst;
+  final bool isLast;
   final VoidCallback onTap;
   final VoidCallback onMenuTap;
 
@@ -205,95 +241,74 @@ class MembershipCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        borderRadius: BorderRadius.vertical(
+          top: isFirst ? const Radius.circular(16) : Radius.zero,
+          bottom: isLast ? const Radius.circular(16) : Radius.zero,
+        ),
         onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x08162033),
-                blurRadius: 14,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 10,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: membership.accentColor,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(AppSpacing.cardRadius),
-                    right: Radius.circular(8),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: membership.accentColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          membership.icon,
-                          color: membership.accentColor,
-                          size: 22,
-                        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 72,
+              child: Row(
+                children: [
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: membership.barColor,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(4),
+                        bottomRight: Radius.circular(4),
                       ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              membership.brand,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: const Color(0xFF1B1F28),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              membership.note,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: const Color(0xFF667085),
-                                    height: 1.4,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      IconButton(
-                        onPressed: onMenuTap,
-                        icon: const Icon(
-                          CupertinoIcons.line_horizontal_3_decrease,
-                          color: Color(0xFF98A2B3),
-                        ),
-                        splashRadius: 20,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: membership.iconBgColor,
+                    ),
+                    child: Icon(
+                      membership.icon,
+                      size: 22,
+                      color: membership.iconColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      membership.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onMenuTap,
+                    padding: const EdgeInsets.only(right: 20),
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.menu,
+                      size: 22,
+                      color: Color(0xFFBDBDBD),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            if (!isLast)
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: Color(0xFFF0F0F0),
+                indent: 20,
+                endIndent: 20,
+              ),
+          ],
         ),
       ),
     );
@@ -302,14 +317,28 @@ class MembershipCard extends StatelessWidget {
 
 class MembershipCardItem {
   const MembershipCardItem({
+    required this.name,
     required this.brand,
-    required this.note,
-    required this.accentColor,
+    required this.cardNumber,
+    required this.barColor,
+    required this.iconColor,
+    required this.iconBgColor,
     required this.icon,
   });
 
+  final String name;
   final String brand;
-  final String note;
-  final Color accentColor;
+  final String cardNumber;
+  final Color barColor;
+  final Color iconColor;
+  final Color iconBgColor;
   final IconData icon;
+
+  MembershipDetailModel get detail {
+    return MembershipDetailModel(
+      name: name,
+      brand: brand,
+      cardNumber: cardNumber,
+    );
+  }
 }

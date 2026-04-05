@@ -1,10 +1,19 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
-import '../../../../core/constants/app_spacing.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../core/resources/app_strings.dart';
+import '../../../../core/services/app_permission_service.dart';
+import 'membership_detail_screen.dart';
 
 class MembershipCreateScreen extends StatefulWidget {
-  const MembershipCreateScreen({super.key});
+  const MembershipCreateScreen({
+    super.key,
+    this.membership,
+  });
+
+  final MembershipDetailModel? membership;
 
   @override
   State<MembershipCreateScreen> createState() => _MembershipCreateScreenState();
@@ -12,107 +21,69 @@ class MembershipCreateScreen extends StatefulWidget {
 
 class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   final _nameController = TextEditingController();
+  final _cardNumberController = TextEditingController();
   final _memoController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
 
-  String? _selectedBrand;
+  Uint8List? _selectedImageBytes;
+  final String _selectedBrand = '직접 등록';
 
-  static const List<String> _brands = [
-    '스타벅스',
-    '올리브영',
-    'CU',
-    'GS25',
-    '배스킨라빈스',
-    '이마트',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    final membership = widget.membership;
+    if (membership == null) {
+      return;
+    }
+    _nameController.text = membership.name;
+    _cardNumberController.text = membership.cardNumber;
+    _selectedImageBytes = membership.imageBytes;
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _cardNumberController.dispose();
     _memoController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectBrand() async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                AppSpacing.lg,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD7DEEA),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    '멤버십 브랜드 선택',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ..._brands.map(
-                    (brand) => ListTile(
-                      title: Text(brand),
-                      trailing: _selectedBrand == brand
-                          ? const Icon(
-                              CupertinoIcons.check_mark_circled_solid,
-                              color: Color(0xFF2F6BFF),
-                            )
-                          : null,
-                      onTap: () {
-                        Navigator.of(context).pop(brand);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+  Future<void> _pickImage() async {
+    final granted = await AppPermissionService.ensurePhotoPermission(context);
+    if (!granted || !mounted) {
+      return;
+    }
+
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1080,
+      imageQuality: 85,
     );
 
-    if (selected != null) {
-      setState(() {
-        _selectedBrand = selected;
-      });
+    if (image == null || !mounted) {
+      return;
     }
+
+    final imageBytes = await image.readAsBytes();
+
+    setState(() {
+      _selectedImageBytes = imageBytes;
+    });
   }
 
   void _submitForm() {
     final membershipName = _nameController.text.trim();
 
     if (membershipName.isEmpty) {
-      _showMessage('멤버십명을 입력해주세요.');
+      _showMessage(AppStrings.membershipNameRequired);
       return;
     }
-    if (_selectedBrand == null) {
-      _showMessage('브랜드를 선택해주세요.');
+    if (_selectedBrand.isEmpty) {
+      _showMessage(AppStrings.membershipBrandRequired);
       return;
     }
 
-    _showMessage('멤버십이 등록되었어요.');
+    _showMessage(AppStrings.membershipRegistered);
     Future<void>.delayed(const Duration(milliseconds: 250), () {
       if (mounted) {
         Navigator.of(context).pop();
@@ -134,143 +105,228 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('멤버십 등록'),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
-          child: ElevatedButton(
-            onPressed: _submitForm,
-            child: const Text('등록 완료'),
-          ),
-        ),
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xl,
-          ),
-          children: [
-            Text(
-              '계산대에서 바로 보여줄 멤버십을 간단하게 등록할 수 있어요.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _FormSection(
+      backgroundColor: const Color(0xFFF5F5F7),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _SectionLabel(label: '멤버십명'),
-                TextField(
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints.tightFor(width: 40, height: 40),
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    size: 24,
+                    color: Color(0xFF222222),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                MembershipImagePicker(
+                  selectedImageBytes: _selectedImageBytes,
+                  onTap: _pickImage,
+                ),
+                const SizedBox(height: 28),
+                const _FieldLabel(AppStrings.membershipNameLabel),
+                const SizedBox(height: 8),
+                _FilledTextField(
                   controller: _nameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    hintText: '예: 올리브영 멤버십',
+                  hintText: AppStrings.membershipNameHint,
+                ),
+                const SizedBox(height: 18),
+                const _FieldLabel(AppStrings.membershipCardNumberLabel),
+                const SizedBox(height: 8),
+                _FilledTextField(
+                  controller: _cardNumberController,
+                  hintText: AppStrings.membershipCardNumberHint,
+                  keyboardType: TextInputType.number,
+                  prefixIcon: const Icon(
+                    Icons.credit_card_outlined,
+                    size: 20,
+                    color: Color(0xFFBDBDBD),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                _SectionLabel(label: '브랜드'),
-                _PickerField(
-                  icon: CupertinoIcons.creditcard,
-                  text: _selectedBrand ?? '브랜드를 선택해주세요',
-                  isSelected: _selectedBrand != null,
-                  onTap: _selectBrand,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _SectionLabel(label: '메모(선택)'),
-                TextField(
+                const SizedBox(height: 18),
+                const _FieldLabel(AppStrings.couponMemoLabel),
+                const SizedBox(height: 8),
+                _FilledTextField(
                   controller: _memoController,
+                  hintText: AppStrings.membershipMemoHint,
+                  minLines: 4,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: '적립, 할인, 사용처 메모 등',
-                    alignLabelWithHint: true,
-                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _FormSection(
-              children: [
-                _SectionLabel(label: '이미지 추가(선택)'),
-                const SizedBox(height: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9FBFF),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: const Color(0xFFD7E2F2),
-                      style: BorderStyle.solid,
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF64CAFA),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      AppStrings.couponSubmit,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  child: const Column(
-                    children: [
-                      Icon(
-                        CupertinoIcons.photo_on_rectangle,
-                        color: Color(0xFF8EA0B8),
-                        size: 30,
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      Text(
-                        '이미지 추가',
-                        style: TextStyle(
-                          color: Color(0xFF516173),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  '이미지 업로드 기반 등록은 다음 단계에서 확장할 수 있어요.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 13,
-                  ),
-                ),
+                const SizedBox(height: 24),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _FormSection extends StatelessWidget {
-  const _FormSection({required this.children});
+class MembershipImagePicker extends StatelessWidget {
+  const MembershipImagePicker({
+    super.key,
+    required this.selectedImageBytes,
+    required this.onTap,
+  });
 
-  final List<Widget> children;
+  final Uint8List? selectedImageBytes;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+    if (selectedImageBytes != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          height: 180,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.memory(
+                  selectedImageBytes!,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  right: 10,
+                  bottom: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.edit,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          AppStrings.couponChangeImage,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: CustomPaint(
+        painter: DashedBorderPainter(),
+        child: Container(
+          width: double.infinity,
+          height: 180,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F8FF),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFE0F4FF),
+                ),
+                child: const Icon(
+                  Icons.add_photo_alternate_outlined,
+                  size: 26,
+                  color: Color(0xFF64CAFA),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                AppStrings.couponPickImage,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                AppStrings.couponImageHelp,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFFAAAAAA),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label});
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.label);
 
   final String label;
 
@@ -278,56 +334,99 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        fontSize: 15,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF555555),
       ),
     );
   }
 }
 
-class _PickerField extends StatelessWidget {
-  const _PickerField({
-    required this.icon,
-    required this.text,
-    required this.isSelected,
-    required this.onTap,
+class _FilledTextField extends StatelessWidget {
+  const _FilledTextField({
+    required this.controller,
+    required this.hintText,
+    this.keyboardType,
+    this.prefixIcon,
+    this.minLines,
+    this.maxLines = 1,
   });
 
-  final IconData icon;
-  final String text;
-  final bool isSelected;
-  final VoidCallback onTap;
+  final TextEditingController controller;
+  final String hintText;
+  final TextInputType? keyboardType;
+  final Widget? prefixIcon;
+  final int? minLines;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isSelected
-        ? const Color(0xFF1D2433)
-        : const Color(0xFF8EA0B8);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          suffixIcon: Icon(CupertinoIcons.chevron_down),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F0F0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        minLines: minLines,
+        maxLines: maxLines,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF1A1A1A),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFF7B8CA5)),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFFBDBDBD),
+          ),
+          prefixIcon: prefixIcon,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );
   }
+}
+
+class DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF64CAFA)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(20),
+        ),
+      );
+
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+
+    final pathMetrics = path.computeMetrics();
+    for (final metric in pathMetrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final extractPath = metric.extractPath(
+          distance,
+          distance + dashWidth,
+        );
+        canvas.drawPath(extractPath, paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

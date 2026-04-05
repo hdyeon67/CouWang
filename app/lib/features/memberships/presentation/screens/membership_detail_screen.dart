@@ -1,190 +1,167 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:typed_data';
+
+import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/resources/app_strings.dart';
+import 'membership_create_screen.dart';
 
-class MembershipDetailScreen extends StatelessWidget {
+class MembershipDetailScreen extends StatefulWidget {
   const MembershipDetailScreen({
     super.key,
     this.membership = const MembershipDetailModel(
-      brand: '올리브영',
-      avatarText: 'O',
-      membershipName: '올리브영 멤버십',
-      description: '계산 전에 바로 보여주는 적립/할인 멤버십',
-      createdAt: '2026-03-20',
-      memo: '결제 전에 먼저 제시',
-      imageLabel: '멤버십 이미지',
+      name: AppStrings.membershipSkt,
+      brand: AppStrings.membershipTelecom,
+      cardNumber: '7742990122284',
+      imagePath: null,
     ),
   });
 
   final MembershipDetailModel membership;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('멤버십 상세'),
-        actions: [
-          IconButton(
-            onPressed: () => _showEditConfirmDialog(context),
-            icon: const Icon(CupertinoIcons.pencil),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-        ],
+  State<MembershipDetailScreen> createState() => _MembershipDetailScreenState();
+}
+
+class _MembershipDetailScreenState extends State<MembershipDetailScreen> {
+  final GlobalKey _menuButtonKey = GlobalKey();
+
+  static const List<_SampleCoupon> _sampleCoupons = [
+    _SampleCoupon(name: '스타벅스 카페라떼', expiry: '2026.03.10', dday: 0),
+    _SampleCoupon(name: '베스킨라빈스 파인트 교환권', expiry: '2026.03.12', dday: 2),
+    _SampleCoupon(name: '파리바게뜨 3,000원 할인', expiry: '2026.03.13', dday: 3),
+    _SampleCoupon(name: 'ABC마트 1만원 디지털 상품권', expiry: '2026.03.20', dday: 10),
+  ];
+
+  void _showContextMenu() {
+    final buttonContext = _menuButtonKey.currentContext;
+    if (buttonContext == null) {
+      return;
+    }
+
+    final button = buttonContext.findRenderObject() as RenderBox;
+    final overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      items: const [
+        PopupMenuItem<String>(
+          value: 'edit',
           child: Row(
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _showDeleteConfirmDialog(context),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(54),
-                    side: const BorderSide(color: Color(0xFFE5D7DA)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-                    ),
-                    foregroundColor: const Color(0xFF9A4B58),
-                  ),
-                  child: const Text('삭제'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: () => _showPresentConfirmDialog(context),
-                  child: const Text('멤버십 보여주기'),
-                ),
+              Icon(Icons.edit_outlined, size: 18, color: Color(0xFF555555)),
+              SizedBox(width: 10),
+              Text(
+                AppStrings.couponEdit,
+                style: TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
               ),
             ],
           ),
         ),
-      ),
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xl,
-          ),
-          children: [
-            _MembershipHeroCard(membership: membership),
-            const SizedBox(height: AppSpacing.lg),
-            _MembershipImageCard(
-              label: membership.imageLabel,
-              onTap: () {
-                _showPresentConfirmDialog(context);
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _MembershipInfoSection(membership: membership),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              '계산 전에 빠르게 보여줄 수 있도록 멤버십 상세 화면을 단순하게 구성했습니다.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 13,
-                color: const Color(0xFF8A94A6),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, size: 18, color: Color(0xFFE53935)),
+              SizedBox(width: 10),
+              Text(
+                AppStrings.couponDelete,
+                style: TextStyle(fontSize: 14, color: Color(0xFFE53935)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ],
+    ).then((value) {
+      if (value == 'edit') {
+        _navigateToEdit();
+      } else if (value == 'delete') {
+        _showDeleteDialog();
+      }
+    });
+  }
+
+  void _navigateToEdit() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MembershipCreateScreen(membership: widget.membership),
       ),
     );
   }
 
-  void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
-
-  Future<void> _showEditConfirmDialog(BuildContext context) async {
-    final confirmed = await _showConfirmDialog(
+  void _showDeleteDialog() {
+    showDialog<void>(
       context: context,
-      title: '멤버십을 수정할까요?',
-      description: '멤버십 정보와 메모를 다시 정리할 수 있습니다.',
-      confirmLabel: '수정',
-    );
-
-    if (confirmed == true && context.mounted) {
-      _showMessage(context, '멤버십 수정 placeholder: 실제 편집은 다음 단계에서 연결합니다.');
-    }
-  }
-
-  Future<void> _showDeleteConfirmDialog(BuildContext context) async {
-    final confirmed = await _showConfirmDialog(
-      context: context,
-      title: '멤버십을 삭제할까요?',
-      description: '${membership.membershipName}이 목록에서 제거됩니다.',
-      confirmLabel: '삭제',
-      destructive: true,
-    );
-
-    if (confirmed == true && context.mounted) {
-      _showMessage(context, '멤버십 삭제 placeholder: 실제 삭제는 다음 단계에서 연결합니다.');
-    }
-  }
-
-  Future<void> _showPresentConfirmDialog(BuildContext context) async {
-    final confirmed = await _showConfirmDialog(
-      context: context,
-      title: '멤버십을 바로 보여줄까요?',
-      description: '계산 전에 빠르게 제시할 수 있도록 이 화면을 열어둡니다.',
-      confirmLabel: '보여주기',
-    );
-
-    if (confirmed == true && context.mounted) {
-      _showMessage(context, '멤버십 제시 placeholder: 실제 전체 화면 표시 기능은 다음 단계에서 연결합니다.');
-    }
-  }
-
-  Future<bool?> _showConfirmDialog({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required String confirmLabel,
-    bool destructive = false,
-  }) {
-    final confirmColor = destructive
-        ? const Color(0xFFB5475A)
-        : const Color(0xFF2F6BFF);
-
-    return showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
+      builder: (ctx) {
         return AlertDialog(
-          title: Text(title),
-          content: Text(description),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            AppStrings.membershipDeleteTitle,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          content: const Text(
+            AppStrings.membershipDeleteDescription,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF666666),
+              height: 1.5,
+            ),
+          ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('취소'),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                AppStrings.couponCancel,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9E9E9E),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop(true);
+                Navigator.pop(ctx);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: const Text(AppStrings.membershipDeleteDone),
+                      backgroundColor: const Color(0xFF1A1A1A),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
               },
-              child: Text(
-                confirmLabel,
-                style: TextStyle(color: confirmColor),
+              child: const Text(
+                AppStrings.couponDelete,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFFE53935),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -192,243 +169,533 @@ class MembershipDetailScreen extends StatelessWidget {
       },
     );
   }
-}
 
-class MembershipDetailModel {
-  const MembershipDetailModel({
-    required this.brand,
-    required this.avatarText,
-    required this.membershipName,
-    required this.description,
-    required this.createdAt,
-    required this.imageLabel,
-    this.memo,
-  });
-
-  final String brand;
-  final String avatarText;
-  final String membershipName;
-  final String description;
-  final String createdAt;
-  final String imageLabel;
-  final String? memo;
-}
-
-class _MembershipHeroCard extends StatelessWidget {
-  const _MembershipHeroCard({required this.membership});
-
-  final MembershipDetailModel membership;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08162033),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 60,
-            width: 60,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF3F7FF),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              membership.avatarText,
-              style: const TextStyle(
-                color: Color(0xFF2F6BFF),
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  void _showImageFullScreen() {
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
               children: [
-                Text(
-                  membership.membershipName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  membership.brand,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF2F6BFF),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.transparent,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  membership.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Center(
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _MembershipImage(
+                        membership: widget.membership,
+                        fit: BoxFit.contain,
+                        fallbackWidth: 300,
+                        fallbackHeight: 180,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 48,
+                  right: 20,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
-}
 
-class _MembershipImageCard extends StatelessWidget {
-  const _MembershipImageCard({
-    required this.label,
-    required this.onTap,
-  });
+  void _showCouponListBottomSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (ctx) {
+        return _CouponListSheet(
+          coupons: _sampleCoupons,
+          onClose: () => Navigator.pop(ctx),
+        );
+      },
+    );
+  }
 
-  final String label;
-  final VoidCallback onTap;
+  String _formatCardNumber(String raw) {
+    final digits = raw.replaceAll(' ', '');
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFE8ECF4)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFD),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFDDE5F0)),
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+    final membership = widget.membership;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Icon(
-                    CupertinoIcons.photo,
-                    size: 34,
-                    color: Color(0xFF8EA0B8),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      size: 24,
+                      color: Color(0xFF222222),
+                    ),
                   ),
-                  SizedBox(height: AppSpacing.sm),
-                  Text(
-                    '멤버십 이미지 placeholder',
-                    style: TextStyle(
-                      color: Color(0xFF607183),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  const Spacer(),
+                  IconButton(
+                    key: _menuButtonKey,
+                    onPressed: _showContextMenu,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const Icon(
+                      Icons.more_vert,
+                      size: 24,
+                      color: Color(0xFF222222),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                membership.brand,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF9E9E9E),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                membership.name,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: _showImageFullScreen,
+                child: Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: _MembershipImage(
+                      membership: membership,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        BarcodeWidget(
+                          barcode: Barcode.code128(),
+                          data: membership.cardNumber,
+                          width: double.infinity,
+                          height: 80,
+                          drawText: false,
+                          color: const Color(0xFF1A1A1A),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _formatCardNumber(membership.cardNumber),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 3.0,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Icon(
+                        Icons.fullscreen,
+                        size: 22,
+                        color: Color(0xFFE53935),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF8EE),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/icon/2-1.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppStrings.tipTitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFE8900A),
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            AppStrings.tipBody,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF888888),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: OutlinedButton.icon(
+                  onPressed: _showCouponListBottomSheet,
+                  icon: const Icon(
+                    Icons.confirmation_number_outlined,
+                    size: 20,
+                    color: Color(0xFF9E9E9E),
+                  ),
+                  label: const Text(
+                    AppStrings.membershipCouponList,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _MembershipInfoSection extends StatelessWidget {
-  const _MembershipInfoSection({required this.membership});
+class MembershipDetailModel {
+  const MembershipDetailModel({
+    required this.name,
+    required this.brand,
+    required this.cardNumber,
+    this.imagePath,
+    this.imageBytes,
+  });
+
+  final String name;
+  final String brand;
+  final String cardNumber;
+  final String? imagePath;
+  final Uint8List? imageBytes;
+}
+
+class _MembershipImage extends StatelessWidget {
+  const _MembershipImage({
+    required this.membership,
+    required this.fit,
+    this.fallbackWidth,
+    this.fallbackHeight,
+  });
 
   final MembershipDetailModel membership;
+  final BoxFit fit;
+  final double? fallbackWidth;
+  final double? fallbackHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    if (membership.imageBytes != null) {
+      return Image.memory(
+        membership.imageBytes!,
+        fit: fit,
+      );
+    }
+
+    return Container(
+      width: fallbackWidth,
+      height: fallbackHeight,
+      color: const Color(0xFF3D2FEE),
+      alignment: Alignment.center,
+      child: Text(
+        membership.name,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+class _CouponListSheet extends StatelessWidget {
+  const _CouponListSheet({
+    required this.coupons,
+    required this.onClose,
+  });
+
+  final List<_SampleCoupon> coupons;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
+      height: MediaQuery.of(context).size.height * 0.65,
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE8ECF4)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
-          _InfoRow(label: '브랜드', value: membership.brand),
-          const _DividerLine(),
-          _InfoRow(label: '멤버십명', value: membership.membershipName),
-          const _DividerLine(),
-          _InfoRow(label: '등록일', value: membership.createdAt),
-          if ((membership.memo ?? '').isNotEmpty) ...[
-            const _DividerLine(),
-            _InfoRow(label: '메모', value: membership.memo!),
-          ],
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0E0E0),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+            child: Row(
+              children: [
+                const Text(
+                  AppStrings.membershipMyCoupons,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: onClose,
+                  icon: const Icon(
+                    Icons.close,
+                    size: 22,
+                    color: Color(0xFF555555),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              itemCount: coupons.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, index) {
+                final coupon = coupons[index];
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFFE0E0E0),
+                        ),
+                        child: const Icon(
+                          Icons.confirmation_number_outlined,
+                          size: 24,
+                          color: Color(0xFFBDBDBD),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              coupon.name,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1A1A),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '유효기간: ${coupon.expiry}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      _DdayBadge(dday: coupon.dday),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
+class _DdayBadge extends StatelessWidget {
+  const _DdayBadge({required this.dday});
+
+  final int dday;
+
+  @override
+  Widget build(BuildContext context) {
+    late final Color bgColor;
+    late final Color textColor;
+    BoxBorder? border;
+    final label = dday == 0 ? 'D-DAY' : 'D-$dday';
+
+    if (dday == 0) {
+      bgColor = const Color(0xFF64CAFA);
+      textColor = Colors.white;
+    } else if (dday <= 9) {
+      bgColor = Colors.white;
+      textColor = const Color(0xFF64CAFA);
+      border = Border.all(color: const Color(0xFF64CAFA), width: 1.5);
+    } else {
+      bgColor = Colors.white;
+      textColor = const Color(0xFFBDBDBD);
+      border = Border.all(color: const Color(0xFFBDBDBD), width: 1.2);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: border,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: textColor,
+        ),
+      ),
+    );
+  }
+}
+
+class _SampleCoupon {
+  const _SampleCoupon({
+    required this.name,
+    required this.expiry,
+    required this.dday,
   });
 
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 72,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF8A94A6),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontSize: 15,
-                color: const Color(0xFF1D2433),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DividerLine extends StatelessWidget {
-  const _DividerLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      thickness: 1,
-      color: Color(0xFFEFF2F7),
-    );
-  }
+  final String name;
+  final String expiry;
+  final int dday;
 }

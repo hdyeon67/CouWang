@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/resources/app_strings.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -9,7 +10,7 @@ class CouWangApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '쿠왕',
+      title: AppStrings.appTitle,
       debugShowCheckedModeBanner: false,
       theme: CouWangTheme.light(),
       onGenerateRoute: AppRouter.onGenerateRoute,

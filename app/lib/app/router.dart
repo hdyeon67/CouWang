@@ -8,22 +8,24 @@ import '../features/memberships/presentation/screens/membership_create_screen.da
 import '../features/memberships/presentation/screens/membership_detail_screen.dart';
 import '../features/memberships/presentation/screens/membership_list_screen.dart';
 import '../features/notifications/presentation/screens/notification_list_screen.dart';
-import '../features/notifications/presentation/screens/notification_settings_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
+import '../features/splash/presentation/screens/splash_screen.dart';
 
 class AppRouter {
   static const home = '/';
+  static const splash = '/splash';
   static const createCoupon = '/coupons/create';
   static const couponDetail = '/coupons/detail';
   static const membershipList = '/memberships';
   static const createMembership = '/memberships/create';
   static const membershipDetail = '/memberships/detail';
   static const notificationList = '/notifications';
-  static const notificationSettings = '/notifications/settings';
   static const settingsRoute = '/settings';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case splash:
+        return _pageRoute(const SplashScreen());
       case createCoupon:
         return _pageRoute(const CouponCreateScreen());
       case couponDetail:
@@ -38,11 +40,14 @@ class AppRouter {
       case createMembership:
         return _pageRoute(const MembershipCreateScreen());
       case membershipDetail:
-        return _pageRoute(const MembershipDetailScreen());
+        final membership = settings.arguments;
+        return _pageRoute(
+          membership is MembershipDetailModel
+              ? MembershipDetailScreen(membership: membership)
+              : const MembershipDetailScreen(),
+        );
       case notificationList:
         return _pageRoute(const NotificationListScreen());
-      case notificationSettings:
-        return _pageRoute(const NotificationSettingsScreen());
       case settingsRoute:
         return _pageRoute(const SettingsScreen());
       case home:
@@ -52,7 +57,7 @@ class AppRouter {
   }
 
   static String resolveAppStartRoute() {
-    return home;
+    return splash;
   }
 
   static PageRoute<dynamic> _pageRoute(Widget child) {

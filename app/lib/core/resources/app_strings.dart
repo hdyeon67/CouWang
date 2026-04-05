@@ -1,0 +1,157 @@
+class AppStrings {
+  const AppStrings._();
+
+  static const appTitle = '쿠왕';
+  static const splashGreeting = "Hi, I'm Couwang!";
+  static const splashTitle = '쿠왕';
+
+  static const tabMembership = '멤버십';
+  static const tabHome = '홈';
+  static const tabSettings = '설정';
+
+  static const settingsTitle = '알림';
+  static const settingsMasterTitle = '쿠폰 만료 알림';
+  static const settingsMasterDescription = '보유하신 쿠폰의 소멸 전 알림을 받습니다.';
+  static const settingsExpireDay = '만료일';
+  static const settingsDay1 = '1일 전';
+  static const settingsDay3 = '3일 전';
+  static const settingsDay7 = '7일 전';
+  static const settingsDay30 = '30일 전';
+  static const permissionAllow = '허용하기';
+  static const permissionLater = '나중에';
+  static const permissionOpenSettings = '설정으로 이동';
+  static const notificationPermissionTitle = '알림 권한이 필요해요';
+  static const notificationPermissionDescription = '만료 알림을 받으려면 알림 권한을 허용해주세요.';
+  static const notificationPermissionDenied = '알림 권한이 꺼져 있어요. 설정에서 알림 권한을 켜주세요.';
+  static const photoPermissionTitle = '사진 접근 권한이 필요해요';
+  static const photoPermissionDescription = '쿠폰과 멤버십 이미지를 등록하려면 사진 접근 권한을 허용해주세요.';
+  static const photoPermissionDenied = '사진 접근 권한이 꺼져 있어요. 설정에서 사진 접근 권한을 켜주세요.';
+
+  static const homeSectionTitle = '나의 쿠폰함';
+  static const homeSearchHint = '쿠폰명을 입력해 주세요.';
+  static const homeSortExpiry = '만료순';
+  static const homeSortName = '이름순';
+  static const homeFilterAvailable = '사용 가능';
+  static const homeFilterUsed = '사용 완료';
+  static const homeFilterExpired = '만료';
+  static const homeNoCoupons = '해당 조건의 쿠폰이 없습니다.';
+  static const homeTodayExpires = '오늘만료';
+  static const homeSavingPrefix = '"이번 달 쿠폰으로 ';
+  static const homeSavingAmount = '42,500원';
+  static const homeSavingSuffix = ' 아꼈다 멍!"';
+  static const homeCouponExpiryPrefix = '유효기간: ';
+
+  static const notificationTitle = '최근 알림';
+  static const notificationDeleteAll = '전체 삭제';
+  static const notificationEmpty = '알림이 없습니다';
+  static const notificationJustNow = '방금 전';
+  static const notificationDaysAgo6 = '6일 전';
+  static const notificationDaysAgo10 = '10일 전';
+
+  static const couponInputCode = '교환 코드';
+  static const couponInputCodeHint = '예: 1234-5678-9012 또는 https://gifticon.example/abc';
+  static const couponNameLabel = '쿠폰명';
+  static const couponNameHint = '예: 아메리카노';
+  static const couponBrandLabel = '브랜드';
+  static const couponBrandHint = '예: 스타벅스';
+  static const couponExpiryLabel = '유효기간';
+  static const couponCategoryLabel = '카테고리';
+  static const couponMemoLabel = '메모';
+  static const couponMemoHint = '추가 정보를 입력하세요 (선택)';
+  static const couponSubmit = '추가하기';
+  static const couponExtract = '이미지에서 정보 추출하기';
+  static const couponPickImage = '갤러리에서 이미지 선택';
+  static const couponChangeImage = '이미지 변경';
+  static const couponImageHelp = 'PNG, JPG (최대 10MB)';
+  static const couponAutoPreviewPlaceholder = '입력값에 따라 바코드 또는 QR코드가 생성돼요';
+  static const couponBarcodePreview = '바코드 미리보기';
+  static const couponQrPreview = 'QR코드 미리보기';
+  static const couponBarcodeError = '바코드를 생성할 수 없어요';
+  static const couponQrError = 'QR코드를 생성할 수 없어요';
+  static const couponTypeBarcode = '바코드';
+  static const couponTypeQr = 'QR';
+  static const couponTypeNone = '없음';
+  static const couponInputTitleRequired = '제목을 입력해주세요.';
+  static const couponBrandRequired = '브랜드를 입력해주세요.';
+  static const couponDateRequired = '만료일을 선택해주세요.';
+  static const couponEntryAuto = '자동 입력';
+  static const couponEntryManual = '수동 입력';
+  static const couponRegisteredSuffix = ' 방식으로 쿠폰이 등록되었어요.';
+  static const couponOcrWebUnsupported = '웹에서는 OCR과 바코드/QR 이미지 분석을 지원하지 않아요. 모바일 기기에서 테스트해 주세요.';
+  static const couponExtractFailed = '이미지에서 텍스트나 코드를 읽지 못했어요.';
+  static const couponExtractFilled = '이미지 스캔 결과를 입력란에 채웠어요.';
+  static const couponUnknown = '미확인';
+  static const couponNoDetectedCode = '인식된 코드가 없어요';
+  static const couponNoDetectionTitle = '인식 결과를 확인할 수 없어요';
+  static const couponNoDetectionMemo = '이미지 안의 텍스트와 바코드/QR이 선명한지 다시 확인해보세요.';
+  static const couponPartialResultTitle = '쿠폰 정보를 일부 읽어왔어요';
+  static const couponRetryImageMemo = '이미지 안의 텍스트나 코드가 선명한지 다시 확인해보세요.';
+  static const couponReadTextMemo = 'OCR로 읽은 텍스트를 확인한 뒤 저장해보세요.';
+  static const couponInfoKeyword = '쿠폰번호';
+  static const couponExpiryKeyword = '유효기간';
+  static const couponUsePeriodKeyword = '사용기간';
+  static const couponPeriodKeyword = '기간';
+
+  static const couponDeleteTitle = '쿠폰 삭제';
+  static const couponDeleteDescription = '정말 삭제하시겠어요?\n삭제된 쿠폰은 복구할 수 없어요.';
+  static const couponDeleteDone = '쿠폰이 삭제되었어요.';
+  static const couponEdit = '수정하기';
+  static const couponDelete = '삭제하기';
+  static const couponCancel = '취소';
+  static const couponUsed = '사용 완료';
+  static const couponExpired = '기간만료';
+  static const couponUsedDone = '사용 완료됨';
+  static const couponMarkUsed = '사용 완료 처리하기';
+  static const couponMarkUsedTitle = '사용 완료 처리';
+  static const couponMarkUsedDescription = '이 쿠폰을 사용 완료로 처리할까요?';
+  static const couponMarkUsedConfirm = '완료 처리';
+  static const couponMarkUsedDone = '쿠폰이 사용 완료 처리되었어요.';
+  static const couponMembershipButton = '멤버십 화면으로 가기';
+
+  static const tipTitle = '쿠왕의 팁!';
+  static const tipBody = '계산하기 전 화면 밝기를 최대로 높여주시면\n바코드 인식이 훨씬 더 빨라져요.';
+
+  static const membershipTitle = '나의 멤버십';
+  static const membershipGuide = '• 멤버십 바코드를 등록해놓으면 쿠폰 사용과 함께 적립·할인을 받을 수 있어요';
+  static const membershipEmpty = '멤버십 바코드를 등록해보세요!';
+  static const membershipRegistered = '멤버십이 등록되었어요.';
+  static const membershipNameRequired = '멤버십명을 입력해주세요.';
+  static const membershipBrandRequired = '브랜드를 선택해주세요.';
+  static const membershipNameLabel = '멤버십 이름';
+  static const membershipNameHint = '예: 쿠왕 베이커리 멤버십';
+  static const membershipCardNumberLabel = '포인트/카드 번호';
+  static const membershipCardNumberHint = '번호를 입력하세요';
+  static const membershipMemoHint = '추가 정보를 입력하세요 (선택 사항)';
+  static const membershipDeleteTitle = '멤버십 삭제';
+  static const membershipDeleteDescription = '정말 삭제하시겠어요?\n삭제된 멤버십은 복구할 수 없어요.';
+  static const membershipDeleteDone = '멤버십이 삭제되었어요.';
+  static const membershipCouponList = '쿠폰함으로 가기';
+  static const membershipMyCoupons = '내 쿠폰함';
+
+  static const categoryCafe = '카페';
+  static const categoryBakery = '베이커리';
+  static const categoryConvenience = '편의점';
+  static const categoryFastFood = '패스트푸드';
+  static const categoryRestaurant = '레스토랑';
+  static const categoryMart = '마트/쇼핑';
+  static const categoryBeauty = '뷰티/헬스';
+  static const categoryCulture = '영화/문화';
+  static const categoryLife = '생활';
+  static const categoryEtc = '기타';
+
+  static const brandStarbucks = '스타벅스';
+  static const brandBaskin = '배스킨라빈스';
+  static const brandGs25 = 'GS25';
+  static const brandCu = 'CU';
+  static const brandOliveYoung = '올리브영';
+  static const brandBbq = 'BBQ';
+  static const brandParisBaguette = '파리바게뜨';
+  static const brandAbcMart = 'ABC마트';
+  static const brandDomino = '도미노피자';
+
+  static const membershipCjOne = 'CJ ONE';
+  static const membershipHappyPoint = '해피포인트';
+  static const membershipSkt = 'SKT membership';
+  static const membershipTelecom = '통신사';
+  static const membershipPoint = '포인트';
+}
