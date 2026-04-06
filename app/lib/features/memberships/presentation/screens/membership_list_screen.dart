@@ -3,66 +3,46 @@ import 'package:flutter/material.dart';
 import '../../../../app/router.dart';
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../../repositories/membership_repository.dart';
 import 'membership_detail_screen.dart';
 
-class MembershipListScreen extends StatelessWidget {
+class MembershipListScreen extends StatefulWidget {
   const MembershipListScreen({super.key});
 
-  static const List<MembershipCardItem> _memberships = [
-    MembershipCardItem(
-      name: AppStrings.membershipCjOne,
-      brand: AppStrings.membershipPoint,
-      cardNumber: '100012341111',
-      barColor: Color(0xFFE53935),
-      iconColor: Color(0xFFE53935),
-      iconBgColor: Color(0xFFFFEBEE),
-      icon: Icons.star,
-    ),
-    MembershipCardItem(
-      name: AppStrings.brandStarbucks,
-      brand: AppStrings.categoryCafe,
-      cardNumber: '200045672222',
-      barColor: Color(0xFF1B5E20),
-      iconColor: Color(0xFF2E7D32),
-      iconBgColor: Color(0xFFE8F5E9),
-      icon: Icons.local_cafe_outlined,
-    ),
-    MembershipCardItem(
-      name: AppStrings.membershipHappyPoint,
-      brand: AppStrings.categoryBakery,
-      cardNumber: '300078903333',
-      barColor: Color(0xFFE91E8C),
-      iconColor: Color(0xFFE91E8C),
-      iconBgColor: Color(0xFFFCE4EC),
-      icon: Icons.favorite,
-    ),
-    MembershipCardItem(
-      name: AppStrings.membershipSkt,
-      brand: AppStrings.membershipTelecom,
-      cardNumber: '7742990122284',
-      barColor: Color(0xFF212121),
-      iconColor: Color(0xFF424242),
-      iconBgColor: Color(0xFFF5F5F5),
-      icon: Icons.business,
-    ),
-  ];
+  @override
+  State<MembershipListScreen> createState() => _MembershipListScreenState();
+}
 
+class _MembershipListScreenState extends State<MembershipListScreen> {
   void _showPlaceholderMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
+  List<MembershipCardItem> get _memberships {
+    return MembershipRepository.getAll()
+        .map(MembershipCardItem.fromDetail)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hasMemberships = _memberships.isNotEmpty;
+    final memberships = _memberships;
+    final hasMemberships = memberships.isNotEmpty;
 
     return AppTabScaffold(
       currentTab: BottomTabItem.membership,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingAddButton(
         onPressed: () {
-          Navigator.of(context).pushNamed(AppRouter.createMembership);
+          Navigator.of(context)
+              .pushNamed(AppRouter.createMembership)
+              .then((_) {
+            if (mounted) {
+              setState(() {});
+            }
+          });
         },
       ),
       body: SafeArea(
@@ -76,17 +56,23 @@ class MembershipListScreen extends StatelessWidget {
               if (hasMemberships) ...[
                 const SizedBox(height: 24),
                 MembershipCardList(
-                  memberships: _memberships,
+                  memberships: memberships,
                   onMembershipTap: (membership) {
-                    Navigator.of(context).pushNamed(
-                      AppRouter.membershipDetail,
-                      arguments: membership.detail,
-                    );
+                    Navigator.of(context)
+                        .pushNamed(
+                          AppRouter.membershipDetail,
+                          arguments: membership.detail,
+                        )
+                        .then((_) {
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    });
                   },
                   onMenuTap: (membership) {
                     _showPlaceholderMessage(
                       context,
-                      '${membership.name} 멤버십 액션은 다음 단계에서 구현합니다.',
+                      '${membership.name} 메뉴는 수정·삭제 같은 빠른 관리 액션용으로 둘 예정입니다.',
                     );
                   },
                 ),
@@ -317,6 +303,7 @@ class MembershipCard extends StatelessWidget {
 
 class MembershipCardItem {
   const MembershipCardItem({
+    required this.id,
     required this.name,
     required this.brand,
     required this.cardNumber,
@@ -324,8 +311,10 @@ class MembershipCardItem {
     required this.iconColor,
     required this.iconBgColor,
     required this.icon,
+    required this.detail,
   });
 
+  final String id;
   final String name;
   final String brand;
   final String cardNumber;
@@ -333,12 +322,70 @@ class MembershipCardItem {
   final Color iconColor;
   final Color iconBgColor;
   final IconData icon;
+  final MembershipDetailModel detail;
 
-  MembershipDetailModel get detail {
-    return MembershipDetailModel(
-      name: name,
-      brand: brand,
-      cardNumber: cardNumber,
+  factory MembershipCardItem.fromDetail(MembershipDetailModel membership) {
+    final style = _MembershipVisualStyle.fromBrand(membership.brand);
+    return MembershipCardItem(
+      id: membership.id,
+      name: membership.name,
+      brand: membership.brand,
+      cardNumber: membership.cardNumber,
+      barColor: style.barColor,
+      iconColor: style.iconColor,
+      iconBgColor: style.iconBgColor,
+      icon: style.icon,
+      detail: membership,
     );
+  }
+}
+
+class _MembershipVisualStyle {
+  const _MembershipVisualStyle({
+    required this.barColor,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.icon,
+  });
+
+  final Color barColor;
+  final Color iconColor;
+  final Color iconBgColor;
+  final IconData icon;
+
+  factory _MembershipVisualStyle.fromBrand(String brand) {
+    switch (brand) {
+      case AppStrings.membershipPoint:
+      case AppStrings.membershipCjOne:
+        return const _MembershipVisualStyle(
+          barColor: Color(0xFFE53935),
+          iconColor: Color(0xFFE53935),
+          iconBgColor: Color(0xFFFFEBEE),
+          icon: Icons.star,
+        );
+      case AppStrings.categoryCafe:
+      case AppStrings.brandStarbucks:
+        return const _MembershipVisualStyle(
+          barColor: Color(0xFF1B5E20),
+          iconColor: Color(0xFF2E7D32),
+          iconBgColor: Color(0xFFE8F5E9),
+          icon: Icons.local_cafe_outlined,
+        );
+      case AppStrings.categoryBakery:
+      case AppStrings.membershipHappyPoint:
+        return const _MembershipVisualStyle(
+          barColor: Color(0xFFE91E8C),
+          iconColor: Color(0xFFE91E8C),
+          iconBgColor: Color(0xFFFCE4EC),
+          icon: Icons.favorite,
+        );
+      default:
+        return const _MembershipVisualStyle(
+          barColor: Color(0xFF212121),
+          iconColor: Color(0xFF424242),
+          iconBgColor: Color(0xFFF5F5F5),
+          icon: Icons.business,
+        );
+    }
   }
 }

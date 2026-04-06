@@ -20,11 +20,21 @@ class AppPermissionService {
       return;
     }
 
-    await ensureNotificationPermission(context);
-    if (!context.mounted) {
-      return;
+    await requestNotificationPermissionSilently();
+  }
+
+  static Future<bool> requestNotificationPermissionSilently() async {
+    if (kIsWeb) {
+      return true;
     }
-    await ensurePhotoPermission(context);
+
+    final currentStatus = await Permission.notification.status;
+    if (_isGranted(currentStatus)) {
+      return true;
+    }
+
+    final requestedStatus = await Permission.notification.request();
+    return _isGranted(requestedStatus);
   }
 
   static Future<bool> ensureNotificationPermission(BuildContext context) async {

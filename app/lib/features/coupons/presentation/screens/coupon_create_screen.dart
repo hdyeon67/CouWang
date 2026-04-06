@@ -9,6 +9,9 @@ import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
+import '../../../../repositories/coupon_repository.dart';
+import '../../../../repositories/settings_repository.dart';
+import '../../../../services/notification_service.dart';
 import 'coupon_detail_screen.dart';
 
 
@@ -33,6 +36,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
   XFile? _selectedImage;
   Uint8List? _selectedImageBytes;
+  String? _selectedImagePath;
   DateTime? _selectedDate;
   bool _isProcessingImage = false;
   bool _usedAutoFill = false;
@@ -84,6 +88,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     _selectedCategory = coupon.category;
     _selectedDate = _tryParseDate(coupon.expiry);
     _selectedImageBytes = coupon.imageBytes;
+    _selectedImagePath = coupon.imagePath;
   }
 
   @override
@@ -116,7 +121,82 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     setState(() {
       _selectedImage = image;
       _selectedImageBytes = imageBytes;
+      _selectedImagePath = image.path;
     });
+  }
+
+  void _showImageFullScreen() {
+    if (_selectedImageBytes == null && (_selectedImagePath == null || _selectedImagePath!.isEmpty)) {
+      return;
+    }
+
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black87,
+        pageBuilder: (_, __, ___) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(color: Colors.transparent),
+                ),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: Row(
+                          children: [
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.35),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.close, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: InteractiveViewer(
+                            minScale: 0.8,
+                            maxScale: 4,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: _buildSelectedImage(BoxFit.contain),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSelectedImage(BoxFit fit) {
+    if (kIsWeb || (_selectedImage == null && _selectedImageBytes != null)) {
+      return Image.memory(_selectedImageBytes!, fit: fit);
+    }
+    if (_selectedImage != null) {
+      return Image.file(File(_selectedImage!.path), fit: fit);
+    }
+    return Image.file(File(_selectedImagePath!), fit: fit);
   }
 
   Future<void> _extractFromImage() async {
@@ -183,7 +263,71 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         AppStrings.couponTypeQr => CouponType.qr,
         _ => _selectedCouponType,
       };
+      final resolvedCategory = _resolveCategoryFromExtractedData(extracted);
+      if (resolvedCategory != null) {
+        _selectedCategory = resolvedCategory;
+      }
     });
+  }
+
+  String? _resolveCategoryFromExtractedData(_AutoFillExtractionResult extracted) {
+    final source = [
+      extracted.title,
+      extracted.brand,
+      extracted.memo,
+      extracted.couponType,
+    ].join(' ').toLowerCase();
+
+    if (source.contains('스타벅스') ||
+        source.contains('투썸') ||
+        source.contains('커피') ||
+        source.contains('라떼') ||
+        source.contains('아메리카노') ||
+        source.contains('카페')) {
+      return AppStrings.categoryCafe;
+    }
+    if (source.contains('베이커리') ||
+        source.contains('파리바게뜨') ||
+        source.contains('뚜레쥬르') ||
+        source.contains('도넛')) {
+      return AppStrings.categoryBakery;
+    }
+    if (source.contains('cu') ||
+        source.contains('gs25') ||
+        source.contains('세븐일레븐') ||
+        source.contains('편의점')) {
+      return AppStrings.categoryConvenience;
+    }
+    if (source.contains('버거') ||
+        source.contains('맥도날드') ||
+        source.contains('롯데리아') ||
+        source.contains('bbq') ||
+        source.contains('치킨') ||
+        source.contains('패스트푸드')) {
+      return AppStrings.categoryFastFood;
+    }
+    if (source.contains('피자') ||
+        source.contains('레스토랑') ||
+        source.contains('외식')) {
+      return AppStrings.categoryRestaurant;
+    }
+    if (source.contains('마트') ||
+        source.contains('abc마트') ||
+        source.contains('올리브영') ||
+        source.contains('상품권') ||
+        source.contains('쇼핑')) {
+      return AppStrings.categoryMart;
+    }
+    if (source.contains('뷰티') || source.contains('헬스')) {
+      return AppStrings.categoryBeauty;
+    }
+    if (source.contains('영화') || source.contains('문화') || source.contains('티켓')) {
+      return AppStrings.categoryCulture;
+    }
+    if (source.contains('생활') || source.contains('세탁')) {
+      return AppStrings.categoryLife;
+    }
+    return null;
   }
 
   Future<void> _pickDate() async {
@@ -466,11 +610,11 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
-  void _onSubmit() {
-    _submitForm();
+  Future<void> _onSubmit() async {
+    await _submitForm();
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     final title = _couponNameController.text.trim();
     final brand = _brandController.text.trim();
 
@@ -487,14 +631,100 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       return;
     }
 
-    final entryType =
-        _usedAutoFill ? AppStrings.couponEntryAuto : AppStrings.couponEntryManual;
+    final savedCoupon = CouponDetailModel(
+      id:
+          widget.coupon?.id ??
+          'coupon_${DateTime.now().microsecondsSinceEpoch}',
+      brand: brand,
+      name: title,
+      category: _selectedCategory,
+      dday: _calculateDday(_selectedDate!),
+      expiry: _formatSelectedDate(_selectedDate!),
+      barcodeNumber: _barcodeController.text.trim(),
+      imagePath: _selectedImage?.path ?? widget.coupon?.imagePath,
+      imageBytes: _selectedImageBytes,
+      memo: _memoController.text.trim().isEmpty
+          ? null
+          : _memoController.text.trim(),
+      isUsed: widget.coupon?.isUsed ?? false,
+      status: _resolveStatus(
+        selectedDate: _selectedDate!,
+        isUsed: widget.coupon?.isUsed ?? false,
+      ),
+      couponType: _selectedCouponType == CouponType.qr
+          ? AppStrings.couponTypeQr
+          : AppStrings.couponTypeBarcode,
+      createdAt: widget.coupon?.createdAt ?? DateTime.now().toIso8601String(),
+      usedAt: widget.coupon?.usedAt,
+    );
+
+    final repositoryCoupon = await CouponRepository.saveDraft(
+      CouponDraft(
+        id: savedCoupon.id,
+        name: savedCoupon.name,
+        brand: savedCoupon.brand,
+        category: savedCoupon.category,
+        barcodeNumber: savedCoupon.barcodeNumber,
+        expiry: savedCoupon.expiry,
+        memo: savedCoupon.memo,
+        isUsed: savedCoupon.isUsed,
+        couponType: savedCoupon.couponType,
+        status: savedCoupon.status,
+        imageBytes: savedCoupon.imageBytes,
+        sourceImagePath: savedCoupon.imagePath,
+        createdAt: savedCoupon.createdAt,
+        usedAt: savedCoupon.usedAt,
+      ),
+    );
+    final settings = SettingsRepository.load();
+    final notificationService = NotificationService();
+
+    if (widget.coupon != null) {
+      await notificationService.cancelCouponNotifications(widget.coupon!.id);
+    }
+    await notificationService.scheduleCouponNotifications(
+      repositoryCoupon,
+      settings,
+    );
+
+    final entryType = _usedAutoFill
+        ? AppStrings.couponEntryAuto
+        : AppStrings.couponEntryManual;
     _showMessage('$entryType${AppStrings.couponRegisteredSuffix}');
     Future<void>.delayed(const Duration(milliseconds: 250), () {
       if (mounted) {
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(repositoryCoupon);
       }
     });
+  }
+
+  CouponDetailStatus _resolveStatus({
+    required DateTime selectedDate,
+    required bool isUsed,
+  }) {
+    if (isUsed) {
+      return CouponDetailStatus.redeemed;
+    }
+    if (_calculateDday(selectedDate) < 0) {
+      return CouponDetailStatus.expired;
+    }
+    if (_calculateDday(selectedDate) <= 3) {
+      return CouponDetailStatus.urgent;
+    }
+    return CouponDetailStatus.available;
+  }
+
+  int _calculateDday(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    return target.difference(today).inDays;
+  }
+
+  String _formatSelectedDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}.$month.$day';
   }
 
   void _showMessage(String message) {
@@ -562,7 +792,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                 _CouponImagePicker(
                   selectedImage: _selectedImage,
                   selectedImageBytes: _selectedImageBytes,
+                  selectedImagePath: _selectedImagePath,
                   onTap: _pickImage,
+                  onPreview: _showImageFullScreen,
                 ),
                 const SizedBox(height: 16),
                 _ExtractButton(
@@ -726,7 +958,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: _isFormValid ? _onSubmit : null,
+                    onPressed: _isFormValid ? () => _onSubmit() : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isFormValid
                           ? const Color(0xFF64CAFA)
@@ -738,8 +970,10 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                       ),
                       disabledBackgroundColor: const Color(0xFFBDBDBD),
                     ),
-                    child: const Text(
-                      AppStrings.couponSubmit,
+                    child: Text(
+                      widget.coupon == null
+                          ? AppStrings.couponSubmit
+                          : AppStrings.couponUpdate,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -820,16 +1054,20 @@ class _CouponImagePicker extends StatelessWidget {
   const _CouponImagePicker({
     required this.selectedImage,
     required this.selectedImageBytes,
+    required this.selectedImagePath,
     required this.onTap,
+    required this.onPreview,
   });
 
   final XFile? selectedImage;
   final Uint8List? selectedImageBytes;
+  final String? selectedImagePath;
   final VoidCallback onTap;
+  final VoidCallback onPreview;
 
   @override
   Widget build(BuildContext context) {
-    if (selectedImage != null) {
+    if (selectedImage != null || selectedImageBytes != null || (selectedImagePath?.isNotEmpty ?? false)) {
       return GestureDetector(
         onTap: onTap,
         child: Container(
@@ -850,14 +1088,19 @@ class _CouponImagePicker extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (kIsWeb)
+                if (kIsWeb || (selectedImage == null && selectedImageBytes != null))
                   Image.memory(
                     selectedImageBytes!,
                     fit: BoxFit.cover,
                   )
-                else
+                else if (selectedImage != null)
                   Image.file(
                     File(selectedImage!.path),
+                    fit: BoxFit.cover,
+                  )
+                else
+                  Image.file(
+                    File(selectedImagePath!),
                     fit: BoxFit.cover,
                   ),
                 Positioned(
@@ -890,6 +1133,35 @@ class _CouponImagePicker extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: onPreview,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.fullscreen, size: 12, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            AppStrings.couponPreviewImage,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

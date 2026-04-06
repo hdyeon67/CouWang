@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../../repositories/coupon_repository.dart';
 import '../../../notifications/presentation/screens/notification_list_screen.dart';
+import '../../../../services/notification_service.dart';
 import 'coupon_create_screen.dart';
 import 'coupon_detail_screen.dart';
 
@@ -25,137 +30,9 @@ class HomeDashboardScreen extends StatefulWidget {
 }
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
-  static const List<HomeCouponItem> _couponList = [
-    HomeCouponItem(
-      id: 'coupon_001',
-      brand: '스타벅스',
-      title: '스타벅스 카페라떼',
-      expiryDate: '2026.03.10',
-      dDay: 0,
-      imagePath: 'assets/icon/1.png',
-      filterType: HomeCouponFilterType.available,
-      detail: CouponDetailModel(
-        brand: '스타벅스',
-        avatarText: 'S',
-        title: '스타벅스 카페라떼',
-        status: CouponDetailStatus.urgent,
-        dDay: 0,
-        expiryDate: '2026.03.10',
-        couponType: '바코드',
-        createdAt: '2026.03.01',
-        couponNumber: '8801 2026 0310',
-        memo: '오늘 매장 방문 시 사용 가능',
-      ),
-    ),
-    HomeCouponItem(
-      id: 'coupon_002',
-      brand: '배스킨라빈스',
-      title: '베스킨라빈스 파인트 교환권',
-      expiryDate: '2026.03.12',
-      dDay: 2,
-      imagePath: 'assets/icon/2.jpg',
-      filterType: HomeCouponFilterType.available,
-      detail: CouponDetailModel(
-        brand: '배스킨라빈스',
-        avatarText: 'BR',
-        title: '파인트 교환권',
-        status: CouponDetailStatus.urgent,
-        dDay: 2,
-        expiryDate: '2026.03.12',
-        couponType: 'QR',
-        createdAt: '2026.03.02',
-        couponNumber: 'https://gifticon.example/br-pint',
-        memo: '배스킨라빈스 전 매장 사용 가능',
-      ),
-    ),
-    HomeCouponItem(
-      id: 'coupon_003',
-      brand: '도미노피자',
-      title: '도미노피자 포테이토(L) + 콜라',
-      expiryDate: '2026.03.13',
-      dDay: 3,
-      imagePath: 'assets/icon/3.jpg',
-      filterType: HomeCouponFilterType.available,
-      detail: CouponDetailModel(
-        brand: '도미노피자',
-        avatarText: 'D',
-        title: '포테이토(L) + 콜라',
-        status: CouponDetailStatus.urgent,
-        dDay: 3,
-        expiryDate: '2026.03.13',
-        couponType: '바코드',
-        createdAt: '2026.03.02',
-        couponNumber: '3355 8822 1940',
-        memo: '온라인 주문 제외, 매장 사용',
-      ),
-    ),
-    HomeCouponItem(
-      id: 'coupon_004',
-      brand: 'ABC마트',
-      title: 'ABC마트 1만원 디지털 상품권',
-      expiryDate: '2026.03.20',
-      dDay: 10,
-      imagePath: 'assets/icon/4.png',
-      filterType: HomeCouponFilterType.available,
-      detail: CouponDetailModel(
-        brand: 'ABC마트',
-        avatarText: 'A',
-        title: '1만원 디지털 상품권',
-        status: CouponDetailStatus.available,
-        dDay: 10,
-        expiryDate: '2026.03.20',
-        couponType: '바코드',
-        createdAt: '2026.03.05',
-        couponNumber: '1020 5566 8877',
-        memo: '오프라인 매장에서 사용 가능',
-      ),
-    ),
-    HomeCouponItem(
-      id: 'coupon_005',
-      brand: '올리브영',
-      title: '올리브영 5천원 할인권',
-      expiryDate: '2026.03.03',
-      dDay: 20,
-      imagePath: '',
-      filterType: HomeCouponFilterType.used,
-      detail: CouponDetailModel(
-        brand: '올리브영',
-        avatarText: 'O',
-        title: '5천원 할인권',
-        status: CouponDetailStatus.redeemed,
-        dDay: null,
-        expiryDate: '2026.03.03',
-        couponType: '바코드',
-        createdAt: '2026.02.11',
-        couponNumber: '5577 2200 9922',
-        memo: '사용 완료된 쿠폰',
-      ),
-    ),
-    HomeCouponItem(
-      id: 'coupon_006',
-      brand: '파리바게뜨',
-      title: '파리바게뜨 3천원 할인권',
-      expiryDate: '2026.02.28',
-      dDay: 12,
-      imagePath: '',
-      filterType: HomeCouponFilterType.expired,
-      detail: CouponDetailModel(
-        brand: '파리바게뜨',
-        avatarText: 'P',
-        title: '3천원 할인권',
-        status: CouponDetailStatus.expired,
-        dDay: null,
-        expiryDate: '2026.02.28',
-        couponType: '바코드',
-        createdAt: '2026.02.01',
-        couponNumber: '1100 2200 3300',
-        memo: '기한 만료',
-      ),
-    ),
-  ];
-
   static const double _horizontalPadding = 20;
   final TextEditingController _searchController = TextEditingController();
+  int _bubbleMessageIndex = 0;
 
   String _searchQuery = '';
   HomeCouponSortType _sortType = HomeCouponSortType.expiry;
@@ -168,6 +45,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       setState(() {
         _searchQuery = _searchController.text;
       });
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService().rescheduleAllCouponNotifications();
     });
   }
 
@@ -183,7 +63,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     final items = _couponList.where((coupon) {
       final matchesFilter = coupon.filterType == _filterType;
       final matchesSearch =
-          query.isEmpty || coupon.title.toLowerCase().contains(query);
+          query.isEmpty ||
+          coupon.title.toLowerCase().contains(query) ||
+          coupon.brand.toLowerCase().contains(query) ||
+          coupon.detail.category.toLowerCase().contains(query);
       return matchesFilter && matchesSearch;
     }).toList();
 
@@ -199,6 +82,86 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     return items;
   }
 
+  String get _monthlySavingText {
+    final amount = _couponList
+        .where((coupon) {
+          final usedAt = coupon.detail.usedAt;
+          if (usedAt == null) {
+            return false;
+          }
+          final usedDate = DateTime.tryParse(usedAt);
+          if (usedDate == null) {
+            return false;
+          }
+          final now = DateTime.now();
+          return usedDate.year == now.year && usedDate.month == now.month;
+        })
+        .fold<int>(0, (sum, coupon) => sum + _estimateCouponAmount(coupon.detail));
+
+    final formatted = amount > 0 ? _formatAmount(amount) : AppStrings.homeSavingFallback;
+    final messages = [
+      '${AppStrings.homeBubbleOriginalPrefix}$formatted${AppStrings.homeBubbleOriginalSuffix}',
+      '${_couponList.where((coupon) => coupon.filterType == HomeCouponFilterType.available).length}장의 쿠폰이 아직 기다리고 있다 멍!',
+      AppStrings.homeBubbleReminder,
+      AppStrings.homeBubbleCheer,
+    ];
+    return messages[_bubbleMessageIndex % messages.length];
+  }
+
+  int _estimateCouponAmount(CouponDetailModel coupon) {
+    final name = '${coupon.brand} ${coupon.name}'.toLowerCase();
+    if (name.contains('1만원') || name.contains('10000')) return 10000;
+    if (name.contains('5,000') || name.contains('5000')) return 5000;
+    if (name.contains('3,000') || name.contains('3000')) return 3000;
+    if (name.contains('파인트')) return 9800;
+    if (name.contains('카페라떼')) return 6100;
+    if (name.contains('아메리카노')) return 4500;
+    if (name.contains('치킨')) return 23000;
+    if (name.contains('피자')) return 28900;
+    if (name.contains('상품권')) return 10000;
+    if (name.contains('할인')) return 3000;
+    return 5000;
+  }
+
+  String _formatAmount(int amount) {
+    final buffer = StringBuffer();
+    final value = amount.toString();
+    for (var i = 0; i < value.length; i++) {
+      final remaining = value.length - i;
+      buffer.write(value[i]);
+      if (remaining > 1 && remaining % 3 == 1) {
+        buffer.write(',');
+      }
+    }
+    return '${buffer.toString()}원';
+  }
+
+  List<HomeCouponItem> get _couponList {
+    return CouponRepository.getAll().map((coupon) {
+      return HomeCouponItem(
+        id: coupon.id,
+        brand: coupon.brand,
+        title: coupon.name,
+        expiryDate: coupon.expiry,
+        dDay: coupon.dday,
+        imagePath: coupon.imagePath ?? '',
+        imageBytes: coupon.imageBytes,
+        filterType: _resolveFilterType(coupon),
+        detail: coupon,
+      );
+    }).toList();
+  }
+
+  HomeCouponFilterType _resolveFilterType(CouponDetailModel coupon) {
+    if (coupon.isUsed || coupon.status == CouponDetailStatus.redeemed) {
+      return HomeCouponFilterType.used;
+    }
+    if (coupon.isExpired || coupon.status == CouponDetailStatus.expired) {
+      return HomeCouponFilterType.expired;
+    }
+    return HomeCouponFilterType.available;
+  }
+
   void _handleCouponClick(HomeCouponItem coupon) {
     if (widget.onCouponClick != null) {
       widget.onCouponClick!(coupon.id);
@@ -209,7 +172,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       MaterialPageRoute<void>(
         builder: (_) => CouponDetailScreen(coupon: coupon.detail),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   void _handleFabClick() {
@@ -222,7 +189,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       MaterialPageRoute<void>(
         builder: (_) => const CouponCreateScreen(),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -244,6 +215,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TopMascotHeader(
+                onTap: () {
+                  setState(() {
+                    _bubbleMessageIndex++;
+                  });
+                },
                 onNotificationClick: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -253,7 +229,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              const SavingSpeechBubbleCard(),
+              SavingSpeechBubbleCard(message: _monthlySavingText),
               const SizedBox(height: 28),
               const Text(
                 AppStrings.homeSectionTitle,
@@ -310,6 +286,7 @@ class HomeCouponItem {
     required this.expiryDate,
     required this.dDay,
     required this.imagePath,
+    this.imageBytes,
     required this.filterType,
     required this.detail,
   });
@@ -320,6 +297,7 @@ class HomeCouponItem {
   final String expiryDate;
   final int dDay;
   final String imagePath;
+  final Uint8List? imageBytes;
   final HomeCouponFilterType filterType;
   final CouponDetailModel detail;
 }
@@ -327,33 +305,38 @@ class HomeCouponItem {
 class TopMascotHeader extends StatelessWidget {
   const TopMascotHeader({
     super.key,
+    required this.onTap,
     required this.onNotificationClick,
   });
 
+  final VoidCallback onTap;
   final VoidCallback onNotificationClick;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/icon/2-1.png',
+                fit: BoxFit.cover,
               ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/icon/2-1.png',
-              fit: BoxFit.cover,
             ),
           ),
         ),
@@ -374,16 +357,27 @@ class TopMascotHeader extends StatelessWidget {
 }
 
 class SavingSpeechBubbleCard extends StatelessWidget {
-  const SavingSpeechBubbleCard({super.key});
+  const SavingSpeechBubbleCard({
+    super.key,
+    required this.message,
+  });
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(left: 24),
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(4),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -392,26 +386,14 @@ class SavingSpeechBubbleCard extends StatelessWidget {
           ),
         ],
       ),
-      child: RichText(
+      child: Text(
+        '"$message"',
         textAlign: TextAlign.center,
-        text: const TextSpan(
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF1A1A1A),
-            height: 1.5,
-          ),
-          children: [
-            TextSpan(text: AppStrings.homeSavingPrefix),
-            TextSpan(
-              text: AppStrings.homeSavingAmount,
-              style: TextStyle(
-                color: Color(0xFF64CAFA),
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            TextSpan(text: AppStrings.homeSavingSuffix),
-          ],
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF1A1A1A),
+          height: 1.5,
         ),
       ),
     );
@@ -565,17 +547,16 @@ class CouponSearchField extends StatelessWidget {
       height: 48,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD7DEE7), width: 1.5),
       ),
+      clipBehavior: Clip.antiAlias,
       child: TextField(
         controller: controller,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF1A1A1A),
+        ),
         decoration: const InputDecoration(
           hintText: AppStrings.homeSearchHint,
           hintStyle: TextStyle(
@@ -583,11 +564,21 @@ class CouponSearchField extends StatelessWidget {
             color: Color(0xFFBDBDBD),
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16),
-          suffixIcon: Icon(
-            Icons.search,
-            color: Color(0xFF9E9E9E),
-            size: 22,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isCollapsed: true,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          suffixIcon: Padding(
+            padding: EdgeInsets.only(right: 12),
+            child: Icon(
+              Icons.search,
+              color: Color(0xFF9E9E9E),
+              size: 22,
+            ),
+          ),
+          suffixIconConstraints: BoxConstraints(
+            minWidth: 44,
+            minHeight: 44,
           ),
         ),
       ),
@@ -734,7 +725,10 @@ class CouponCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              CouponThumbnail(imagePath: coupon.imagePath),
+              CouponThumbnail(
+                imagePath: coupon.imagePath,
+                imageBytes: coupon.imageBytes,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -792,13 +786,15 @@ class CouponThumbnail extends StatelessWidget {
   const CouponThumbnail({
     super.key,
     required this.imagePath,
+    this.imageBytes,
   });
 
   final String imagePath;
+  final Uint8List? imageBytes;
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = imagePath.isNotEmpty;
+    final hasImage = imageBytes != null || imagePath.isNotEmpty;
 
     return Container(
       width: 68,
@@ -810,13 +806,18 @@ class CouponThumbnail extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: hasImage
-            ? Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox.shrink();
-                },
-              )
+            ? (imageBytes != null
+                ? Image.memory(
+                    imageBytes!,
+                    fit: BoxFit.cover,
+                  )
+                : Image.file(
+                    File(imagePath),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox.shrink();
+                    },
+                  ))
             : const SizedBox.shrink(),
       ),
     );

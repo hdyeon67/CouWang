@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../../repositories/coupon_repository.dart';
+import '../../../../repositories/settings_repository.dart';
+import '../../../../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -28,18 +31,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _syncNotificationPermissionState() async {
     final granted =
         await AppPermissionService.isNotificationPermissionGranted();
+    final saved = SettingsRepository.load();
     if (!mounted) {
       return;
     }
 
     setState(() {
       if (granted) {
-        _masterEnabled = true;
-        _expireDayEnabled = true;
-        _day1Enabled = true;
-        _day3Enabled = true;
-        _day7Enabled = true;
-        _day30Enabled = false;
+        _masterEnabled = saved.masterEnabled;
+        _expireDayEnabled = saved.expireDayEnabled;
+        _day1Enabled = saved.day1Enabled;
+        _day3Enabled = saved.day3Enabled;
+        _day7Enabled = saved.day7Enabled;
+        _day30Enabled = saved.day30Enabled;
       } else {
         _masterEnabled = false;
         _expireDayEnabled = false;
@@ -49,6 +53,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _day30Enabled = false;
       }
     });
+  }
+
+  NotificationSettingsModel _buildSettings() {
+    return NotificationSettingsModel(
+      masterEnabled: _masterEnabled,
+      expireDayEnabled: _expireDayEnabled,
+      day1Enabled: _day1Enabled,
+      day3Enabled: _day3Enabled,
+      day7Enabled: _day7Enabled,
+      day30Enabled: _day30Enabled,
+    );
+  }
+
+  Future<void> _saveAndReschedule() async {
+    SettingsRepository.save(_buildSettings());
+    await NotificationService().rescheduleAllCouponNotifications();
   }
 
   Future<void> _handleMasterToggle(bool val) async {
@@ -76,6 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _day30Enabled = false;
       }
     });
+    await _saveAndReschedule();
   }
 
   Future<void> _handleSubToggle({
@@ -93,6 +114,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       apply(nextValue);
     });
+    await _saveAndReschedule();
+  }
+
+  Future<void> _showTestNotification() async {
+    final couponName =
+        CouponRepository.getAll().isNotEmpty
+            ? CouponRepository.getAll().first.name
+            : AppStrings.brandStarbucks;
+    await NotificationService().showAllTestNotifications(couponName);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.settingsTestNotificationDone),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override
@@ -234,6 +275,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _showTestNotification,
+                  icon: const Icon(
+                    Icons.notifications_active_outlined,
+                    size: 20,
+                    color: Color(0xFF555555),
+                  ),
+          label: const Text(
+                    AppStrings.settingsTestAllNotifications,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
               ),
             ],

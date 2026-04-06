@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
+import '../../../../repositories/notification_log_repository.dart';
 import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
 
 class NotificationListScreen extends StatefulWidget {
@@ -11,94 +12,70 @@ class NotificationListScreen extends StatefulWidget {
 }
 
 class _NotificationListScreenState extends State<NotificationListScreen> {
-  late final List<_NotificationItem> _initialNotifications = [
-    _NotificationItem(
-      badgeLabel: 'D-DAY',
-      badgeType: _NotificationBadgeType.dDayActive,
-      title: '스타벅스 아메리카노',
-      timeText: AppStrings.notificationJustNow,
-      isUnread: true,
-      coupon: const CouponDetailModel(
-        brand: '스타벅스',
-        avatarText: 'S',
-        title: '아메리카노 Tall',
-        status: CouponDetailStatus.urgent,
-        dDay: 0,
-        expiryDate: '2026-04-02',
-        couponType: '바코드',
-        createdAt: '2026-03-27',
-        couponNumber: 'STB-2402-1193',
-        memo: '매장 내 사용 가능',
-      ),
-    ),
-    _NotificationItem(
-      badgeLabel: 'D-3',
-      badgeType: _NotificationBadgeType.activeOutline,
-      title: '베스킨라빈스 파인트 교환권',
-      timeText: AppStrings.notificationJustNow,
-      isUnread: true,
-      coupon: const CouponDetailModel(
-        brand: '배스킨라빈스',
-        avatarText: 'B',
-        title: '파인트 교환권',
-        status: CouponDetailStatus.urgent,
-        dDay: 3,
-        expiryDate: '2026-04-05',
-        couponType: 'QR',
-        createdAt: '2026-03-19',
-        couponNumber: 'BR-3320-9182',
-        memo: '포장 주문 가능',
-      ),
-    ),
-    _NotificationItem(
-      badgeLabel: 'D-7',
-      badgeType: _NotificationBadgeType.inactiveOutline,
-      title: '파리바게뜨 3,000원 할인',
-      timeText: AppStrings.notificationDaysAgo6,
-      isUnread: false,
-      coupon: const CouponDetailModel(
-        brand: '파리바게뜨',
-        avatarText: 'P',
-        title: '3,000원 할인',
-        status: CouponDetailStatus.available,
-        dDay: 7,
-        expiryDate: '2026-04-09',
-        couponType: '바코드',
-        createdAt: '2026-03-12',
-        couponNumber: 'PAR-3000-7612',
-        memo: '일부 제품 제외',
-      ),
-    ),
-    _NotificationItem(
-      badgeLabel: 'D-DAY',
-      badgeType: _NotificationBadgeType.dDayActive,
-      title: 'GS25 5,000원 금액권',
-      timeText: AppStrings.notificationDaysAgo10,
-      isUnread: false,
-      coupon: const CouponDetailModel(
-        brand: 'GS25',
-        avatarText: 'G',
-        title: '5,000원 금액권',
-        status: CouponDetailStatus.urgent,
-        dDay: 0,
-        expiryDate: '2026-04-02',
-        couponType: '바코드',
-        createdAt: '2026-03-09',
-        couponNumber: 'GS-5000-2048',
-        memo: '모바일 교환권',
-      ),
-    ),
-  ];
-
-  late List<_NotificationItem> _notifications;
+  List<_NotificationItem> _notifications = <_NotificationItem>[];
 
   @override
   void initState() {
     super.initState();
-    _notifications = List<_NotificationItem>.from(_initialNotifications);
+    _loadNotifications();
   }
 
-  void _openCouponDetail(_NotificationItem item) {
+  Future<void> _loadNotifications() async {
+    final logs = await NotificationLogRepository.loadVisibleLogs();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _notifications = logs
+          .map(
+            (log) => _NotificationItem(
+              id: log.id,
+              badgeLabel: _badgeLabel(log.coupon),
+              badgeType: _badgeType(log.coupon, log.isRead),
+              title: log.coupon.name,
+              timeText: _formatTimeText(log.scheduledAt),
+              isUnread: !log.isRead,
+              coupon: log.coupon,
+            ),
+          )
+          .toList();
+    });
+  }
+
+  String _badgeLabel(CouponDetailModel coupon) {
+    if (coupon.isUsed) {
+      return AppStrings.couponUsed;
+    }
+    if (coupon.isExpired) {
+      return AppStrings.couponExpired;
+    }
+    return coupon.dday == 0 ? 'D-DAY' : 'D-${coupon.dday}';
+  }
+
+  _NotificationBadgeType _badgeType(CouponDetailModel coupon, bool isRead) {
+    if (isRead || coupon.isUsed || coupon.isExpired) {
+      return _NotificationBadgeType.inactiveOutline;
+    }
+    if (coupon.dday == 0) {
+      return _NotificationBadgeType.dDayActive;
+    }
+    return _NotificationBadgeType.activeOutline;
+  }
+
+  Future<void> _openCouponDetail(_NotificationItem item) async {
+    await NotificationLogRepository.markAsRead(item.id);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      final index = _notifications.indexWhere((element) => element.id == item.id);
+      if (index >= 0) {
+        _notifications[index] = _notifications[index].copyWith(
+          isUnread: false,
+          badgeType: _NotificationBadgeType.inactiveOutline,
+        );
+      }
+    });
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CouponDetailScreen(coupon: item.coupon),
@@ -110,7 +87,11 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
     _showDeleteConfirmDialog(
       title: '알림 삭제',
       description: '이 알림을 삭제할까요?',
-      onConfirm: () {
+      onConfirm: () async {
+        await NotificationLogRepository.deleteLog(item.id);
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _notifications.remove(item);
         });
@@ -122,12 +103,28 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
     _showDeleteConfirmDialog(
       title: '전체 삭제',
       description: '모든 알림을 삭제할까요?',
-      onConfirm: () {
+      onConfirm: () async {
+        await NotificationLogRepository.deleteAllLogs();
+        if (!mounted) {
+          return;
+        }
         setState(() {
           _notifications.clear();
         });
       },
     );
+  }
+
+  String _formatTimeText(DateTime scheduledAt) {
+    final now = DateTime.now();
+    final difference = now.difference(scheduledAt).inDays;
+    if (difference <= 0) {
+      return AppStrings.notificationJustNow;
+    }
+    if (difference <= 6) {
+      return '$difference일 전';
+    }
+    return '$difference일 전';
   }
 
   void _showDeleteConfirmDialog({
@@ -225,15 +222,17 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: _clearAllNotifications,
-                      child: const Padding(
+                      onTap: _notifications.isEmpty ? null : _clearAllNotifications,
+                      child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 6),
                         child: Text(
                           AppStrings.notificationDeleteAll,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF64CAFA),
+                            color: _notifications.isEmpty
+                                ? const Color(0xFFBDBDBD)
+                                : const Color(0xFF64CAFA),
                           ),
                         ),
                       ),
@@ -424,6 +423,7 @@ class _DdayBadge extends StatelessWidget {
 
 class _NotificationItem {
   const _NotificationItem({
+    required this.id,
     required this.badgeLabel,
     required this.badgeType,
     required this.title,
@@ -432,12 +432,28 @@ class _NotificationItem {
     required this.coupon,
   });
 
+  final String id;
   final String badgeLabel;
   final _NotificationBadgeType badgeType;
   final String title;
   final String timeText;
   final bool isUnread;
   final CouponDetailModel coupon;
+
+  _NotificationItem copyWith({
+    bool? isUnread,
+    _NotificationBadgeType? badgeType,
+  }) {
+    return _NotificationItem(
+      id: id,
+      badgeLabel: badgeLabel,
+      badgeType: badgeType ?? this.badgeType,
+      title: title,
+      timeText: timeText,
+      isUnread: isUnread ?? this.isUnread,
+      coupon: coupon,
+    );
+  }
 }
 
 enum _NotificationBadgeType {

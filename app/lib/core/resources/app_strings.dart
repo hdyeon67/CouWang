@@ -28,7 +28,7 @@ class AppStrings {
   static const photoPermissionDenied = '사진 접근 권한이 꺼져 있어요. 설정에서 사진 접근 권한을 켜주세요.';
 
   static const homeSectionTitle = '나의 쿠폰함';
-  static const homeSearchHint = '쿠폰명을 입력해 주세요.';
+  static const homeSearchHint = '쿠폰명, 브랜드, 카테고리를 검색해 주세요.';
   static const homeSortExpiry = '만료순';
   static const homeSortName = '이름순';
   static const homeFilterAvailable = '사용 가능';
@@ -40,6 +40,11 @@ class AppStrings {
   static const homeSavingAmount = '42,500원';
   static const homeSavingSuffix = ' 아꼈다 멍!"';
   static const homeCouponExpiryPrefix = '유효기간: ';
+  static const homeSavingFallback = '0원';
+  static const homeBubbleOriginalPrefix = '이번 달 쿠폰으로 ';
+  static const homeBubbleOriginalSuffix = ' 아꼈다 멍!';
+  static const homeBubbleReminder = '오늘도 만료 전에 하나씩 챙겨보자 멍!';
+  static const homeBubbleCheer = '쓸 수 있는 쿠폰이 아직 남아있다 멍!';
 
   static const notificationTitle = '최근 알림';
   static const notificationDeleteAll = '전체 삭제';
@@ -47,6 +52,29 @@ class AppStrings {
   static const notificationJustNow = '방금 전';
   static const notificationDaysAgo6 = '6일 전';
   static const notificationDaysAgo10 = '10일 전';
+  static const notificationGenericTitle = '쿠왕 알림';
+  static const notificationTitleD30 = '🗓️ 쿠폰 만료 30일 전이에요';
+  static const notificationTitleD7 = '📅 쿠폰이 일주일 후 만료돼요';
+  static const notificationTitleD3 = '⚠️ 쿠폰 만료까지 3일 남았어요!';
+  static const notificationTitleD1 = '🚨 내일이면 쿠폰이 사라져요!';
+  static const notificationTitleDday = '💸 돈이 땅바닥에 버려지고 있어요! 😱';
+  static const notificationTitleExpired = '😢 쿠폰이 만료되었어요';
+  static const notificationBodyD30Suffix = ' 쿠폰 만료까지 30일 남았어요. 잊지 말고 사용하세요!';
+  static const notificationBodyD7Suffix = ' 쿠폰이 7일 후 만료돼요. 슬슬 쓸 준비 해볼까요? 🙂';
+  static const notificationBodyD3Suffix = ' 쿠폰 만료까지 딱 3일! 지금 바로 사용해보세요 🏃';
+  static const notificationBodyD1Suffix = ' 쿠폰이 내일 만료됩니다. 오늘 꼭 사용하세요! 🔥';
+  static const notificationBodyDdaySuffix = ' 쿠폰이 오늘 만료됩니다. 지금 당장 사용하러 가세요! 💨';
+  static const notificationBodyExpiredSuffix = ' 쿠폰이 만료되었어요. 다음엔 꼭 제때 써요 😅';
+  static const notificationBodyGenericSuffix = ' 쿠폰을 확인해보세요.';
+  static const settingsTestNotification = '테스트 알림 보내기';
+  static const settingsTestNotificationDone = '테스트 알림을 보냈어요.';
+  static const settingsTestAllNotifications = '모든 알림 테스트 보내기';
+  static const settingsTestNotificationD30 = '30일 전 테스트';
+  static const settingsTestNotificationD7 = '7일 전 테스트';
+  static const settingsTestNotificationD3 = '3일 전 테스트';
+  static const settingsTestNotificationD1 = '1일 전 테스트';
+  static const settingsTestNotificationDday = '당일 테스트';
+  static const settingsTestNotificationExpired = '만료 테스트';
 
   static const couponInputCode = '교환 코드';
   static const couponInputCodeHint = '예: 1234-5678-9012 또는 https://gifticon.example/abc';
@@ -59,6 +87,7 @@ class AppStrings {
   static const couponMemoLabel = '메모';
   static const couponMemoHint = '추가 정보를 입력하세요 (선택)';
   static const couponSubmit = '추가하기';
+  static const couponUpdate = '수정하기';
   static const couponExtract = '이미지에서 정보 추출하기';
   static const couponPickImage = '갤러리에서 이미지 선택';
   static const couponChangeImage = '이미지 변경';
@@ -106,7 +135,12 @@ class AppStrings {
   static const couponMarkUsedDescription = '이 쿠폰을 사용 완료로 처리할까요?';
   static const couponMarkUsedConfirm = '완료 처리';
   static const couponMarkUsedDone = '쿠폰이 사용 완료 처리되었어요.';
+  static const couponMarkUnusedTitle = '사용 미완료 처리';
+  static const couponMarkUnusedDescription = '이 쿠폰을 다시 사용 가능 상태로 되돌릴까요?';
+  static const couponMarkUnusedConfirm = '되돌리기';
+  static const couponMarkUnusedDone = '쿠폰이 다시 사용 가능 상태가 되었어요.';
   static const couponMembershipButton = '멤버십 화면으로 가기';
+  static const couponPreviewImage = '이미지 보기';
 
   static const tipTitle = '쿠왕의 팁!';
   static const tipBody = '계산하기 전 화면 밝기를 최대로 높여주시면\n바코드 인식이 훨씬 더 빨라져요.';
@@ -127,6 +161,9 @@ class AppStrings {
   static const membershipDeleteDone = '멤버십이 삭제되었어요.';
   static const membershipCouponList = '쿠폰함으로 가기';
   static const membershipMyCoupons = '내 쿠폰함';
+  static const membershipPreviewImage = '이미지 보기';
+  static const membershipExtractDone = '이미지에서 멤버십 정보를 채웠어요.';
+  static const membershipExtractFailed = '이미지에서 멤버십 정보를 읽지 못했어요.';
 
   static const categoryCafe = '카페';
   static const categoryBakery = '베이커리';
