@@ -6,6 +6,8 @@
 - TestFlight 배포를 염두에 두고 iOS archive 기준의 빌드/서명/아이콘 요구사항을 우선 정리한다.
 - App Store 업로드용 아이콘은 alpha channel이 없는 불투명 이미지 기준으로 관리한다.
 - 설정 탭처럼 하단 탭 루트 화면은 `Navigator.pop()`만 가정하지 않고, 뒤로 갈 스택이 없을 때의 fallback을 함께 둔다.
+- 웹 SQLite 대응 때문에 들어오는 패키지 버전은 iOS archive 안정성과 함께 봐야 하므로, 임의 override보다 실제 빌드 통과 조합을 우선 유지한다.
+- iOS 배포 검증은 `flutter build ios --no-codesign` 통과 후 TestFlight 내부 설치까지 확인하는 흐름으로 가져간다.
 
 ## 2026-04-06
 

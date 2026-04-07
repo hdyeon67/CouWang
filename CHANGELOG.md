@@ -9,6 +9,8 @@
 - iOS `Generated.xcconfig`가 누락되어 archive가 막히던 상태를 복구했습니다.
 - iOS AppIcon 세트를 다시 생성해 App Store 업로드에서 요구하는 불투명 아이콘 기준에 맞게 정리했습니다.
 - TestFlight 업로드 전 확인용으로 Bundle ID, App Store Connect 입력값, archive 절차를 문서화했습니다.
+- `sqflite_common_ffi` / `sqlite3` 조합으로 iOS 빌드가 깨지던 문제를 정리하고 `flutter build ios --no-codesign` 기준 실제 빌드가 다시 통과하도록 복구했습니다.
+- App Store Connect 업로드 이후 TestFlight 내부 테스트 설치까지 완료했습니다.
 
 ## 2026-04-06
 

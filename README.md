@@ -12,6 +12,7 @@
 
 최근 업데이트:
 - iOS/TestFlight 업로드를 위한 archive, signing, AppIcon 정리 진행
+- iOS 빌드 오류를 정리하고 TestFlight 내부 테스트 설치까지 완료
 - 쿠폰/멤버십/알림 설정이 실제 로컬 SQLite 데이터로 저장되도록 전환
 - 쿠폰 만료 로컬 알림 및 알림 로그 저장 구조 추가
 - 쿠폰/멤버십 상세 화면 리디자인
