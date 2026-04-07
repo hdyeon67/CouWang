@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-07
+
+### iOS / TestFlight 준비
+- 설정 화면이 하단 탭 루트로 열렸을 때 뒤로가기 버튼이 빈 네비게이터를 `pop()` 하며 빨간 화면이 뜨던 문제를 수정했습니다.
+- iOS Podfile의 `use_frameworks!` 구성을 `static linkage` 기준으로 정리하고 `pod install`을 다시 수행했습니다.
+- `flutter clean`, `flutter pub get`, `pod install`을 다시 진행해 iOS archive 전 빌드 산출물과 Flutter 생성 설정을 재정리했습니다.
+- iOS `Generated.xcconfig`가 누락되어 archive가 막히던 상태를 복구했습니다.
+- iOS AppIcon 세트를 다시 생성해 App Store 업로드에서 요구하는 불투명 아이콘 기준에 맞게 정리했습니다.
+- TestFlight 업로드 전 확인용으로 Bundle ID, App Store Connect 입력값, archive 절차를 문서화했습니다.
+
 ## 2026-04-06
 
 ### 데이터 / 저장 구조

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/router.dart';
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
@@ -136,6 +137,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
   }
 
+  void _handleBackTap() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppTabScaffold(
@@ -148,9 +158,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: _handleBackTap,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints.tightFor(width: 40, height: 40),
                 icon: const Icon(
