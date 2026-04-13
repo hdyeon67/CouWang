@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app/router.dart';
 import '../resources/app_strings.dart';
@@ -32,52 +33,65 @@ class AppTabScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
-      appBar: appBar,
-      body: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(child: body),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: BottomTabBarContainer(
-              selectedTab: currentTab,
-              onMembershipTabClick: () {
-                if (currentTab == BottomTabItem.membership) {
-                  return;
-                }
-                AppRouter.replaceWithTabRoute(context, BottomTabItem.membership);
-              },
-              onHomeTabClick: () {
-                if (currentTab == BottomTabItem.home) {
-                  return;
-                }
-                AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
-              },
-              onSettingsTabClick: () {
-                if (currentTab == BottomTabItem.settings) {
-                  return;
-                }
-                AppRouter.replaceWithTabRoute(context, BottomTabItem.settings);
-              },
-            ),
-          ),
-          if (floatingActionButton != null)
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        if (currentTab == BottomTabItem.home) {
+          SystemNavigator.pop();
+          return;
+        }
+        AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F7),
+        appBar: appBar,
+        body: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(child: body),
             Positioned(
-              right: _horizontalMargin,
-              bottom: bottomInset +
-                  _bottomTabSpacing +
-                  _bottomTabHeight +
-                  _fabSpacingFromTab,
-              child: floatingActionButton!,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: BottomTabBarContainer(
+                selectedTab: currentTab,
+                onMembershipTabClick: () {
+                  if (currentTab == BottomTabItem.membership) {
+                    return;
+                  }
+                  AppRouter.replaceWithTabRoute(context, BottomTabItem.membership);
+                },
+                onHomeTabClick: () {
+                  if (currentTab == BottomTabItem.home) {
+                    return;
+                  }
+                  AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
+                },
+                onSettingsTabClick: () {
+                  if (currentTab == BottomTabItem.settings) {
+                    return;
+                  }
+                  AppRouter.replaceWithTabRoute(context, BottomTabItem.settings);
+                },
+              ),
             ),
-        ],
+            if (floatingActionButton != null)
+              Positioned(
+                right: _horizontalMargin,
+                bottom: bottomInset +
+                    _bottomTabSpacing +
+                    _bottomTabHeight +
+                    _fabSpacingFromTab,
+                child: floatingActionButton!,
+              ),
+          ],
+        ),
+        resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+        extendBody: true,
       ),
-      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      extendBody: true,
     );
   }
 }

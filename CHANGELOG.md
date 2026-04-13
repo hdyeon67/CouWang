@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-04-13
+
+### 알림 / 최근 알림 인박스
+- 최근 알림 화면이 진입 시점뿐 아니라 앱 복귀 및 쿠폰 상세 화면에서 돌아온 뒤에도 알림 로그를 다시 불러오도록 수정했습니다.
+- 알림 재스케줄 과정에서 `notification_logs` 전체가 삭제되어 최근 알림 기록이 사라지던 문제를 수정했습니다.
+- 알림을 하나 눌렀을 때 전체 예약 알림/기록이 함께 사라질 수 있던 흐름을 줄이기 위해 재스케줄과 알림 기록 삭제를 분리했습니다.
+- 알림 payload를 `couponId|type` 형식으로 확장해 어떤 알림 타입을 눌렀는지 구분하고, 선택한 알림만 읽음 처리되도록 개선했습니다.
+- 기존 `couponId` 단독 payload도 계속 처리되도록 하위 호환을 유지했습니다.
+- 앱이 켜져 있는 상태에서도 테스트 알림을 확인할 수 있도록 설정 화면의 테스트 알림 흐름에 foreground 보조 타이머를 추가했습니다.
+- 테스트 알림용 예약 알림을 별도로 취소할 수 있는 흐름을 추가해 foreground 테스트와 OS 예약 테스트가 중복되지 않도록 정리했습니다.
+- 최근 알림 카드에서 D-day 배지와 알림 제목을 가로 배치에서 세로 Column 배치로 변경했습니다.
+
+### 권한 / 스토어 제출 준비
+- iOS에서 실시간 카메라 스캔을 사용하지 않는 현재 기능 범위에 맞춰 `NSCameraUsageDescription`, `NSBonjourServices`, `NSLocalNetworkUsageDescription`를 제거했습니다.
+- 앱 설명에서 `바코드/QR 실시간 스캔` 표현을 `갤러리 이미지 기반 바코드/QR 인식`으로 정리했습니다.
+- Android의 카메라 권한과 라이브 카메라 스캔 화면을 제거하고, 갤러리 이미지 기반 OCR/바코드/QR 인식 흐름으로 정리했습니다.
+- `mobile_scanner` 의존성을 제거하고 갤러리 이미지 분석용 `google_mlkit_barcode_scanning` 기반 흐름을 유지했습니다.
+
+### Android 배포 / 버전
+- Android 내부 테스트용 AAB 생성을 위해 release signing 설정을 추가했습니다.
+- 실제 `key.properties` 대신 `key.properties.example` 문서를 추가해 keystore 설정 방법을 안내했습니다.
+- release 빌드에서 ProGuard/R8 설정과 ML Kit 관련 경고 완화 규칙을 추가했습니다.
+- 설정 화면 하단에 현재 앱 버전명과 빌드 번호를 눈에 띄지 않게 표시하도록 `package_info_plus`를 연결했습니다.
+- 앱 버전을 `0.1.2+4` 기준으로 갱신했습니다.
+
+### 공통 품질
+- Flutter 최신 API 기준에 맞춰 일부 `withOpacity` 사용을 `withValues`로 정리하고 `flutter analyze`가 통과하도록 정리했습니다.
+
 ## 2026-04-07
 
 ### iOS / TestFlight 준비

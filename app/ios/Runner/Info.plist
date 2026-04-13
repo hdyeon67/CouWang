@@ -28,14 +28,6 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>쿠폰 이미지를 선택해 바코드와 QR 코드를 인식하기 위해 사진 접근이 필요합니다.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>바코드와 QR 코드를 실시간으로 스캔하기 위해 카메라 접근이 필요합니다.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_dartVmService._tcp</string>
-	</array>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>디버그 실행 중 Flutter 개발 서비스 연결에 사용됩니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

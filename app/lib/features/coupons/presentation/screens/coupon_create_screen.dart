@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:barcode_widget/barcode_widget.dart' as bw;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
@@ -392,72 +392,106 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   Future<_DetectedCouponCode?> _detectCodeFromImage(String imagePath) async {
-    final controller = mobile_scanner.MobileScannerController(
-      autoStart: false,
+    final scanner = BarcodeScanner(
       formats: const [
-        mobile_scanner.BarcodeFormat.qrCode,
-        mobile_scanner.BarcodeFormat.code128,
-        mobile_scanner.BarcodeFormat.code39,
-        mobile_scanner.BarcodeFormat.code93,
-        mobile_scanner.BarcodeFormat.codabar,
-        mobile_scanner.BarcodeFormat.dataMatrix,
-        mobile_scanner.BarcodeFormat.ean13,
-        mobile_scanner.BarcodeFormat.ean8,
-        mobile_scanner.BarcodeFormat.itf14,
-        mobile_scanner.BarcodeFormat.upcA,
-        mobile_scanner.BarcodeFormat.upcE,
-        mobile_scanner.BarcodeFormat.pdf417,
-        mobile_scanner.BarcodeFormat.aztec,
+        BarcodeFormat.qrCode,
+        BarcodeFormat.code128,
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upca,
+        BarcodeFormat.upce,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.itf,
+        BarcodeFormat.codabar,
+        BarcodeFormat.pdf417,
+        BarcodeFormat.aztec,
+        BarcodeFormat.dataMatrix,
       ],
     );
 
     try {
-      final capture = await controller.analyzeImage(imagePath);
-      mobile_scanner.Barcode? barcode;
-
-      for (final item in capture?.barcodes ?? const <mobile_scanner.Barcode>[]) {
-        if (_resolveBarcodeValue(item).isNotEmpty) {
-          barcode = item;
-          break;
-        }
+      final barcodes = await scanner.processImage(
+        InputImage.fromFilePath(imagePath),
+      );
+      if (barcodes.isEmpty) {
+        return null;
       }
 
-      if (barcode == null) {
+      final barcode = _selectBestBarcode(barcodes);
+      final rawValue = barcode.rawValue?.trim();
+      final displayValue = barcode.displayValue?.trim();
+      final resolvedValue = (rawValue?.isNotEmpty ?? false)
+          ? rawValue!
+          : (displayValue?.isNotEmpty ?? false)
+              ? displayValue!
+              : null;
+      if (resolvedValue == null) {
         return null;
       }
 
       return _DetectedCouponCode(
-        rawValue: _resolveBarcodeValue(barcode),
-        couponTypeLabel:
-            barcode.format == mobile_scanner.BarcodeFormat.qrCode
-                ? AppStrings.couponTypeQr
-                : AppStrings.couponTypeBarcode,
-        codeFormatLabel: _formatLabel(barcode.format),
+        rawValue: resolvedValue,
+        couponTypeLabel: _couponTypeLabelForBarcode(barcode),
+        codeFormatLabel: _barcodeFormatLabel(barcode.format),
       );
     } catch (_) {
       return null;
     } finally {
-      controller.dispose();
+      await scanner.close();
     }
   }
 
-  String _resolveBarcodeValue(mobile_scanner.Barcode barcode) {
-    return (barcode.rawValue ?? barcode.displayValue ?? '').trim();
+  Barcode _selectBestBarcode(List<Barcode> barcodes) {
+    final usableBarcodes = barcodes.where((barcode) {
+      final rawValue = barcode.rawValue?.trim();
+      final displayValue = barcode.displayValue?.trim();
+      return (rawValue?.isNotEmpty ?? false) || (displayValue?.isNotEmpty ?? false);
+    }).toList();
+
+    if (usableBarcodes.isEmpty) {
+      return barcodes.first;
+    }
+
+    usableBarcodes.sort((a, b) {
+      final aIsQr = a.format == BarcodeFormat.qrCode;
+      final bIsQr = b.format == BarcodeFormat.qrCode;
+      if (aIsQr != bIsQr) {
+        return aIsQr ? -1 : 1;
+      }
+
+      final aLength = (a.rawValue ?? a.displayValue ?? '').length;
+      final bLength = (b.rawValue ?? b.displayValue ?? '').length;
+      return bLength.compareTo(aLength);
+    });
+
+    return usableBarcodes.first;
   }
 
-  String _formatLabel(mobile_scanner.BarcodeFormat format) {
-    switch (format) {
-      case mobile_scanner.BarcodeFormat.qrCode:
-        return AppStrings.couponTypeQr;
-      case mobile_scanner.BarcodeFormat.dataMatrix:
-        return 'Data Matrix';
-      case mobile_scanner.BarcodeFormat.pdf417:
-        return 'PDF417';
-      case mobile_scanner.BarcodeFormat.aztec:
-        return 'Aztec';
-      default:
-        return AppStrings.couponTypeBarcode;
+  String _couponTypeLabelForBarcode(Barcode barcode) {
+    if (barcode.format == BarcodeFormat.qrCode || barcode.type == BarcodeType.url) {
+      return AppStrings.couponTypeQr;
     }
+    return AppStrings.couponTypeBarcode;
+  }
+
+  String _barcodeFormatLabel(BarcodeFormat format) {
+    return switch (format) {
+      BarcodeFormat.qrCode => AppStrings.couponTypeQr,
+      BarcodeFormat.code128 => 'Code 128',
+      BarcodeFormat.code39 => 'Code 39',
+      BarcodeFormat.code93 => 'Code 93',
+      BarcodeFormat.codabar => 'Codabar',
+      BarcodeFormat.dataMatrix => 'Data Matrix',
+      BarcodeFormat.ean13 => 'EAN-13',
+      BarcodeFormat.ean8 => 'EAN-8',
+      BarcodeFormat.itf => 'ITF',
+      BarcodeFormat.upca => 'UPC-A',
+      BarcodeFormat.upce => 'UPC-E',
+      BarcodeFormat.pdf417 => 'PDF417',
+      BarcodeFormat.aztec => 'Aztec',
+      BarcodeFormat.unknown || BarcodeFormat.all => AppStrings.couponTypeBarcode,
+    };
   }
 
   _AutoFillExtractionResult _buildAutoFillResult({

@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-import '../../../../app/router.dart';
+import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
@@ -22,11 +24,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _day3Enabled = false;
   bool _day7Enabled = false;
   bool _day30Enabled = false;
+  int _testNotificationDelaySeconds = 10;
+  String _appVersionLabel = '';
+  Timer? _foregroundTestNotificationTimer;
+
+  static const List<({int seconds, String label})> _testDelayOptions = [
+    (seconds: 10, label: AppStrings.settingsTestTime10Sec),
+    (seconds: 30, label: AppStrings.settingsTestTime30Sec),
+    (seconds: 60, label: AppStrings.settingsTestTime1Min),
+    (seconds: 180, label: AppStrings.settingsTestTime3Min),
+    (seconds: 300, label: AppStrings.settingsTestTime5Min),
+  ];
 
   @override
   void initState() {
     super.initState();
     _syncNotificationPermissionState();
+    _loadVersionInfo();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _appVersionLabel = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+    });
   }
 
   Future<void> _syncNotificationPermissionState() async {
@@ -119,11 +144,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showTestNotification() async {
+    final granted =
+        await AppPermissionService.ensureNotificationPermission(context);
+    if (!granted || !mounted) {
+      return;
+    }
+
+    await CouponRepository.addInternalNotificationTestCoupons();
+
     final couponName =
         CouponRepository.getAll().isNotEmpty
             ? CouponRepository.getAll().first.name
             : AppStrings.brandStarbucks;
-    await NotificationService().showAllTestNotifications(couponName);
+    await NotificationService().scheduleAllTestNotifications(
+      couponName: couponName,
+      startAfter: Duration(seconds: _testNotificationDelaySeconds),
+    );
+    _foregroundTestNotificationTimer?.cancel();
+    _foregroundTestNotificationTimer = Timer(
+      Duration(seconds: _testNotificationDelaySeconds),
+      () async {
+        if (!mounted) {
+          return;
+        }
+        await NotificationService().cancelScheduledTestNotifications();
+        await NotificationService().showAllTestNotifications(couponName);
+      },
+    );
     if (!mounted) {
       return;
     }
@@ -131,19 +178,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         const SnackBar(
-          content: Text(AppStrings.settingsTestNotificationDone),
+          content: Text(AppStrings.settingsTestNotificationScheduled),
           behavior: SnackBarBehavior.floating,
         ),
       );
   }
 
-  void _handleBackTap() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
+  Future<void> _addInternalTestCoupons() async {
+    await CouponRepository.addInternalNotificationTestCoupons();
+    await NotificationService().rescheduleAllCouponNotifications();
+    if (!mounted) {
       return;
     }
-    AppRouter.replaceWithTabRoute(context, BottomTabItem.home);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.settingsTestCouponsDone),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _foregroundTestNotificationTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -157,17 +218,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                onPressed: _handleBackTap,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-                icon: const Icon(
-                  Icons.arrow_back,
-                  size: 24,
-                  color: Color(0xFF222222),
-                ),
-              ),
-              const SizedBox(height: 20),
               const Text(
                 AppStrings.settingsTitle,
                 style: TextStyle(
@@ -290,6 +340,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: double.infinity,
                 height: 52,
                 child: OutlinedButton.icon(
+                  onPressed: _addInternalTestCoupons,
+                  icon: const Icon(
+                    Icons.playlist_add_outlined,
+                    size: 20,
+                    color: Color(0xFF555555),
+                  ),
+                  label: const Text(
+                    AppStrings.settingsTestCoupons,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        AppStrings.settingsTestTimeTitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                    ),
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _testNotificationDelaySeconds,
+                        borderRadius: BorderRadius.circular(14),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF555555),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        items: _testDelayOptions
+                            .map(
+                              (option) => DropdownMenuItem<int>(
+                                value: option.seconds,
+                                child: Text(option.label),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _testNotificationDelaySeconds = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
                   onPressed: _showTestNotification,
                   icon: const Icon(
                     Icons.notifications_active_outlined,
@@ -313,6 +441,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              if (_appVersionLabel.isNotEmpty) ...[
+                const SizedBox(height: 28),
+                Center(
+                  child: Text(
+                    _appVersionLabel,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFFBDBDBD),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

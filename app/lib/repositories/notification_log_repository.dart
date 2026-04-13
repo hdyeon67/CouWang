@@ -29,6 +29,45 @@ class NotificationLogEntry {
 class NotificationLogRepository {
   NotificationLogRepository._();
 
+  static Future<void> ensureLatestVisibleLogForCoupon({
+    required CouponDetailModel coupon,
+    required String notificationType,
+    required String title,
+    required String body,
+    required DateTime scheduledAt,
+    bool markAsRead = false,
+  }) async {
+    final db = await LocalDatabaseService.instance.database;
+    final rows = await db.query(
+      'notification_logs',
+      where: 'coupon_id = ? AND is_deleted = 0',
+      whereArgs: [coupon.id],
+      orderBy: 'scheduled_at DESC',
+      limit: 1,
+    );
+
+    if (rows.isNotEmpty) {
+      if (markAsRead) {
+        await markAsReadById(rows.first['id'] as String);
+      }
+      return;
+    }
+
+    final id = '${coupon.id}_$notificationType';
+    await upsertLog(
+      id: id,
+      couponId: coupon.id,
+      notificationType: notificationType,
+      title: title,
+      body: body,
+      scheduledAt: scheduledAt,
+    );
+
+    if (markAsRead) {
+      await markAsReadById(id);
+    }
+  }
+
   static Future<void> upsertLog({
     required String id,
     required String couponId,
@@ -108,6 +147,10 @@ class NotificationLogRepository {
   }
 
   static Future<void> markAsRead(String id) async {
+    await markAsReadById(id);
+  }
+
+  static Future<void> markAsReadById(String id) async {
     final db = await LocalDatabaseService.instance.database;
     await db.update(
       'notification_logs',

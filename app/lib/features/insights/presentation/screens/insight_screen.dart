@@ -126,7 +126,7 @@ class _KpiCard extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: kpi.accentColor.withOpacity(0.12),
+              color: kpi.accentColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(

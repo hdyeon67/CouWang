@@ -254,6 +254,82 @@ class CouponRepository {
     );
   }
 
+  static Future<void> addInternalNotificationTestCoupons() async {
+    final now = DateTime.now();
+    final testCoupons = <CouponDraft>[
+      CouponDraft(
+        id: 'internal_test_d30',
+        name: '내부테스트 스타벅스 D-30',
+        brand: '스타벅스',
+        category: '카페',
+        barcodeNumber: 'TEST-D30-0001',
+        expiry: _formatDate(now.add(const Duration(days: 30))),
+        memo: '내부 테스트용 30일 전 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_d7',
+        name: '내부테스트 배스킨 D-7',
+        brand: '배스킨라빈스',
+        category: '카페',
+        barcodeNumber: 'TEST-D07-0001',
+        expiry: _formatDate(now.add(const Duration(days: 7))),
+        memo: '내부 테스트용 7일 전 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_d3',
+        name: '내부테스트 파리바게뜨 D-3',
+        brand: '파리바게뜨',
+        category: '베이커리',
+        barcodeNumber: 'TEST-D03-0001',
+        expiry: _formatDate(now.add(const Duration(days: 3))),
+        memo: '내부 테스트용 3일 전 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_d1',
+        name: '내부테스트 GS25 D-1',
+        brand: 'GS25',
+        category: '편의점',
+        barcodeNumber: 'TEST-D01-0001',
+        expiry: _formatDate(now.add(const Duration(days: 1))),
+        memo: '내부 테스트용 1일 전 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_dday',
+        name: '내부테스트 올리브영 D-DAY',
+        brand: '올리브영',
+        category: '뷰티/헬스',
+        barcodeNumber: 'TEST-DDAY-0001',
+        expiry: _formatDate(now),
+        memo: '내부 테스트용 당일 만료 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_expired',
+        name: '내부테스트 ABC마트 만료',
+        brand: 'ABC마트',
+        category: '마트/쇼핑',
+        barcodeNumber: 'TEST-EXP-0001',
+        expiry: _formatDate(now.subtract(const Duration(days: 1))),
+        memo: '내부 테스트용 만료 쿠폰',
+      ),
+      CouponDraft(
+        id: 'internal_test_used',
+        name: '내부테스트 BBQ 사용완료',
+        brand: 'BBQ',
+        category: '패스트푸드',
+        barcodeNumber: 'TEST-USED-0001',
+        expiry: _formatDate(now.add(const Duration(days: 5))),
+        memo: '내부 테스트용 사용 완료 쿠폰',
+        isUsed: true,
+        status: CouponDetailStatus.redeemed,
+        usedAt: now.toIso8601String(),
+      ),
+    ];
+
+    for (final draft in testCoupons) {
+      await saveDraft(draft);
+    }
+  }
+
   static Future<List<CouponDetailModel>> _mapCoupons({
     required List<Map<String, Object?>> dbRows,
   }) async {
@@ -367,5 +443,13 @@ class CouponRepository {
       default:
         return CouponDetailStatus.available;
     }
+  }
+
+  static String _formatDate(DateTime value) {
+    final normalized = DateTime(value.year, value.month, value.day);
+    final year = normalized.year.toString().padLeft(4, '0');
+    final month = normalized.month.toString().padLeft(2, '0');
+    final day = normalized.day.toString().padLeft(2, '0');
+    return '$year.$month.$day';
   }
 }

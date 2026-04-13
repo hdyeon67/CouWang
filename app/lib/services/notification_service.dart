@@ -22,6 +22,9 @@ class NotificationService {
 
   bool _initialized = false;
   String? _launchPayload;
+  bool _launchedFromNotification = false;
+
+  bool get launchedFromNotification => _launchedFromNotification;
 
   Future<void> init() async {
     if (_initialized) {
@@ -66,6 +69,7 @@ class NotificationService {
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
     if (launchDetails?.didNotificationLaunchApp == true) {
       _launchPayload = launchDetails?.notificationResponse?.payload;
+      _launchedFromNotification = true;
     }
 
     _initialized = true;
@@ -82,14 +86,40 @@ class NotificationService {
   }
 
   Future<void> handleNotificationTap(String? payload) async {
-    if (payload == null) {
+    final notificationPayload = _parsePayload(payload);
+    if (notificationPayload == null) {
       return;
     }
 
-    await NotificationLogRepository.markLatestUnreadAsReadByCouponId(payload);
-    final coupon = CouponRepository.findById(payload);
+    final coupon = CouponRepository.findById(notificationPayload.couponId);
     if (coupon == null) {
       return;
+    }
+
+    final notificationType = notificationPayload.notificationType;
+    if (notificationType == null) {
+      await NotificationLogRepository.ensureLatestVisibleLogForCoupon(
+        coupon: coupon,
+        notificationType: 'tap',
+        title: AppStrings.notificationGenericTitle,
+        body: _getBody('default', coupon.name),
+        scheduledAt: DateTime.now(),
+        markAsRead: true,
+      );
+      await NotificationLogRepository.markLatestUnreadAsReadByCouponId(
+        coupon.id,
+      );
+    } else {
+      final logId = _logId(coupon.id, notificationType);
+      await NotificationLogRepository.upsertLog(
+        id: logId,
+        couponId: coupon.id,
+        notificationType: notificationType,
+        title: _getTitle(notificationType),
+        body: _getBody(notificationType, coupon.name),
+        scheduledAt: DateTime.now(),
+      );
+      await NotificationLogRepository.markAsReadById(logId);
     }
 
     navigatorKey.currentState?.pushNamedAndRemoveUntil(
@@ -105,8 +135,16 @@ class NotificationService {
   Future<void> scheduleCouponNotifications(
     CouponDetailModel coupon,
     NotificationSettingsModel settings,
-  ) async {
-    await cancelCouponNotifications(coupon.id);
+    {
+    bool cancelExistingNotifications = true,
+    bool deleteExistingLogs = true,
+  }) async {
+    if (cancelExistingNotifications) {
+      await cancelCouponNotifications(
+        coupon.id,
+        deleteLogs: deleteExistingLogs,
+      );
+    }
 
     if (!settings.masterEnabled || coupon.isUsed || coupon.isExpired) {
       return;
@@ -137,7 +175,7 @@ class NotificationService {
         targetDate.year,
         targetDate.month,
         targetDate.day,
-        9,
+        12,
       );
 
       if (!scheduledTime.isAfter(tz.TZDateTime.now(tz.local))) {
@@ -171,9 +209,6 @@ class NotificationService {
               contentTitle: _getTitle(schedule.type),
               summaryText: AppStrings.appTitle,
             ),
-            largeIcon: const DrawableResourceAndroidBitmap(
-              '@mipmap/ic_launcher',
-            ),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -184,17 +219,22 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
-        payload: coupon.id,
+        payload: _payloadFor(coupon.id, schedule.type),
       );
     }
   }
 
-  Future<void> cancelCouponNotifications(String couponId) async {
+  Future<void> cancelCouponNotifications(
+    String couponId, {
+    bool deleteLogs = true,
+  }) async {
     const types = ['d30', 'd7', 'd3', 'd1', 'dday', 'expire'];
     for (final type in types) {
       await _plugin.cancel(_notificationId(couponId, type));
     }
-    await NotificationLogRepository.deleteLogsByCouponId(couponId);
+    if (deleteLogs) {
+      await NotificationLogRepository.deleteLogsByCouponId(couponId);
+    }
   }
 
   Future<void> cancelAllNotifications() async {
@@ -203,15 +243,20 @@ class NotificationService {
   }
 
   Future<void> rescheduleAllCouponNotifications() async {
-    await cancelAllNotifications();
     final settings = SettingsRepository.load();
     if (!settings.masterEnabled) {
+      await _plugin.cancelAll();
       return;
     }
 
     for (final coupon in CouponRepository.getAll()) {
       if (!coupon.isUsed && !coupon.isExpired) {
-        await scheduleCouponNotifications(coupon, settings);
+        await scheduleCouponNotifications(
+          coupon,
+          settings,
+          cancelExistingNotifications: false,
+          deleteExistingLogs: false,
+        );
       }
     }
   }
@@ -222,6 +267,25 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    if (payload != null) {
+      final notificationPayload = _parsePayload(payload);
+      final coupon = notificationPayload == null
+          ? null
+          : CouponRepository.findById(notificationPayload.couponId);
+      if (coupon != null) {
+        final notificationType =
+            notificationPayload?.notificationType ?? 'immediate';
+        await NotificationLogRepository.upsertLog(
+          id: _logId(coupon.id, notificationType),
+          couponId: coupon.id,
+          notificationType: notificationType,
+          title: title,
+          body: body,
+          scheduledAt: DateTime.now(),
+        );
+      }
+    }
+
     await _plugin.show(
       id,
       title,
@@ -239,9 +303,6 @@ class NotificationService {
             contentTitle: title,
             summaryText: AppStrings.appTitle,
           ),
-          largeIcon: const DrawableResourceAndroidBitmap(
-            '@mipmap/ic_launcher',
-          ),
         ),
         iOS: const DarwinNotificationDetails(
           presentAlert: true,
@@ -258,7 +319,7 @@ class NotificationService {
       id: 99999,
       title: _getTitle('dday'),
       body: _getBody('dday', couponName),
-      payload: 'test_coupon_id',
+      payload: _payloadFor(_testCouponIdForType('dday'), 'dday'),
     );
   }
 
@@ -270,10 +331,89 @@ class NotificationService {
         id: 99990 + i,
         title: _getTitle(type),
         body: _getBody(type, couponName),
-        payload: 'test_coupon_id',
+        payload: _payloadFor(_testCouponIdForType(type), type),
       );
     }
   }
+
+  Future<void> cancelScheduledTestNotifications() async {
+    for (var i = 0; i < 6; i++) {
+      await _plugin.cancel(99100 + i);
+    }
+  }
+
+  Future<void> scheduleAllTestNotifications({
+    required String couponName,
+    required Duration startAfter,
+  }) async {
+    const orderedTypes = ['d30', 'd7', 'd3', 'd1', 'dday', 'expire'];
+    final now = tz.TZDateTime.now(tz.local);
+
+    for (var i = 0; i < orderedTypes.length; i++) {
+      final type = orderedTypes[i];
+      final scheduledTime = now.add(startAfter + Duration(seconds: i * 10));
+      final couponId = _testCouponIdForType(type);
+      final coupon = CouponRepository.findById(couponId);
+
+      if (coupon != null) {
+        await NotificationLogRepository.upsertLog(
+          id: _logId(coupon.id, type),
+          couponId: coupon.id,
+          notificationType: type,
+          title: _getTitle(type),
+          body: _getBody(type, coupon.name),
+          scheduledAt: scheduledTime,
+        );
+      }
+
+      await _plugin.zonedSchedule(
+        99100 + i,
+        _getTitle(type),
+        _getBody(type, couponName),
+        scheduledTime,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'kuwang_coupon_alerts',
+            '쿠폰 만료 알림',
+            channelDescription: '쿠폰 만료 전 알림을 받습니다.',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+            styleInformation: BigTextStyleInformation(
+              _getBody(type, couponName),
+              contentTitle: _getTitle(type),
+              summaryText: AppStrings.appTitle,
+            ),
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: _payloadFor(couponId, type),
+      );
+    }
+  }
+
+  _NotificationPayload? _parsePayload(String? payload) {
+    if (payload == null || payload.isEmpty) {
+      return null;
+    }
+    final separatorIndex = payload.indexOf('|');
+    if (separatorIndex < 0) {
+      return _NotificationPayload(couponId: payload);
+    }
+    return _NotificationPayload(
+      couponId: payload.substring(0, separatorIndex),
+      notificationType: payload.substring(separatorIndex + 1),
+    );
+  }
+
+  String _payloadFor(String couponId, String type) => '$couponId|$type';
 
   bool _shouldSchedule(String type, NotificationSettingsModel settings) {
     switch (type) {
@@ -306,6 +446,25 @@ class NotificationService {
   }
 
   String _logId(String couponId, String type) => '${couponId}_$type';
+
+  String _testCouponIdForType(String type) {
+    switch (type) {
+      case 'd30':
+        return 'internal_test_d30';
+      case 'd7':
+        return 'internal_test_d7';
+      case 'd3':
+        return 'internal_test_d3';
+      case 'd1':
+        return 'internal_test_d1';
+      case 'dday':
+        return 'internal_test_dday';
+      case 'expire':
+        return 'internal_test_expired';
+      default:
+        return 'internal_test_dday';
+    }
+  }
 
   String _getTitle(String type) {
     switch (type) {
@@ -344,4 +503,14 @@ class NotificationService {
         return '$couponName${AppStrings.notificationBodyGenericSuffix}';
     }
   }
+}
+
+class _NotificationPayload {
+  const _NotificationPayload({
+    required this.couponId,
+    this.notificationType,
+  });
+
+  final String couponId;
+  final String? notificationType;
 }

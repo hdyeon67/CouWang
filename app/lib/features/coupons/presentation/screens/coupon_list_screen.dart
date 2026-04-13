@@ -760,7 +760,7 @@ class CouponCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  DdayBadge(dDay: coupon.dDay),
+                  DdayBadge(coupon: coupon.detail),
                   if (coupon.dDay == 0) ...[
                     const SizedBox(height: 4),
                     const Text(
@@ -827,14 +827,14 @@ class CouponThumbnail extends StatelessWidget {
 class DdayBadge extends StatelessWidget {
   const DdayBadge({
     super.key,
-    required this.dDay,
+    required this.coupon,
   });
 
-  final int dDay;
+  final CouponDetailModel coupon;
 
   @override
   Widget build(BuildContext context) {
-    final style = _badgeStyleForDday(dDay);
+    final style = _badgeStyleForCoupon(coupon);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -854,7 +854,25 @@ class DdayBadge extends StatelessWidget {
     );
   }
 
-  _BadgeStyle _badgeStyleForDday(int value) {
+  _BadgeStyle _badgeStyleForCoupon(CouponDetailModel coupon) {
+    if (coupon.isUsed || coupon.status == CouponDetailStatus.redeemed) {
+      return _BadgeStyle(
+        label: AppStrings.couponUsed,
+        backgroundColor: Colors.white,
+        textColor: const Color(0xFF9E9E9E),
+        border: Border.all(color: const Color(0xFFBDBDBD), width: 1.2),
+      );
+    }
+    if (coupon.isExpired || coupon.status == CouponDetailStatus.expired) {
+      return _BadgeStyle(
+        label: AppStrings.couponExpired,
+        backgroundColor: Colors.white,
+        textColor: const Color(0xFFBDBDBD),
+        border: Border.all(color: const Color(0xFFD0D0D0), width: 1.2),
+      );
+    }
+
+    final value = coupon.dday;
     if (value <= 0) {
       return const _BadgeStyle(
         label: 'D-DAY',

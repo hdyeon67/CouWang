@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile_scanner/mobile_scanner.dart' as mobile_scanner;
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
@@ -113,21 +113,73 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   }
 
   Future<String?> _detectCodeFromImage(String imagePath) async {
-    final controller = mobile_scanner.MobileScannerController(autoStart: false);
+    final scanner = BarcodeScanner(
+      formats: const [
+        BarcodeFormat.qrCode,
+        BarcodeFormat.code128,
+        BarcodeFormat.ean13,
+        BarcodeFormat.ean8,
+        BarcodeFormat.upca,
+        BarcodeFormat.upce,
+        BarcodeFormat.code39,
+        BarcodeFormat.code93,
+        BarcodeFormat.itf,
+        BarcodeFormat.codabar,
+        BarcodeFormat.pdf417,
+        BarcodeFormat.aztec,
+        BarcodeFormat.dataMatrix,
+      ],
+    );
+
     try {
-      final capture = await controller.analyzeImage(imagePath);
-      for (final barcode in capture?.barcodes ?? const <mobile_scanner.Barcode>[]) {
-        final value = (barcode.rawValue ?? barcode.displayValue ?? '').trim();
-        if (value.isNotEmpty) {
-          return value;
-        }
+      final barcodes = await scanner.processImage(
+        InputImage.fromFilePath(imagePath),
+      );
+      if (barcodes.isEmpty) {
+        return null;
       }
+
+      final barcode = _selectBestBarcode(barcodes);
+      final rawValue = barcode.rawValue?.trim();
+      final displayValue = barcode.displayValue?.trim();
+      if (rawValue?.isNotEmpty ?? false) {
+        return rawValue;
+      }
+      if (displayValue?.isNotEmpty ?? false) {
+        return displayValue;
+      }
+      return null;
     } catch (_) {
       return null;
     } finally {
-      controller.dispose();
+      await scanner.close();
     }
-    return null;
+  }
+
+  Barcode _selectBestBarcode(List<Barcode> barcodes) {
+    final usableBarcodes = barcodes.where((barcode) {
+      final rawValue = barcode.rawValue?.trim();
+      final displayValue = barcode.displayValue?.trim();
+      return (rawValue?.isNotEmpty ?? false) || (displayValue?.isNotEmpty ?? false);
+    }).toList();
+
+    if (usableBarcodes.isEmpty) {
+      return barcodes.first;
+    }
+
+    usableBarcodes.sort((a, b) {
+      final aIsQr = a.format == BarcodeFormat.qrCode;
+      final bIsQr = b.format == BarcodeFormat.qrCode;
+      if (aIsQr != bIsQr) {
+        return aIsQr ? -1 : 1;
+      }
+
+      final aLength = (a.rawValue ?? a.displayValue ?? '').length;
+      final bLength = (b.rawValue ?? b.displayValue ?? '').length;
+      return bLength.compareTo(aLength);
+    });
+
+    return usableBarcodes.first;
   }
 
   Future<String?> _extractTitleFromImage(String imagePath) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
+import '../../../../services/notification_service.dart';
 import '../../../coupons/presentation/screens/coupon_list_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -43,6 +44,10 @@ class _SplashScreenState extends State<SplashScreen>
     ]);
 
     if (!mounted) {
+      return;
+    }
+
+    if (NotificationService().launchedFromNotification) {
       return;
     }
 

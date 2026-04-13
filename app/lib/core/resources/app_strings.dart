@@ -68,6 +68,14 @@ class AppStrings {
   static const notificationBodyGenericSuffix = ' 쿠폰을 확인해보세요.';
   static const settingsTestNotification = '테스트 알림 보내기';
   static const settingsTestNotificationDone = '테스트 알림을 보냈어요.';
+  static const settingsTestCoupons = '내부 테스트용 쿠폰 추가';
+  static const settingsTestCouponsDone = '내부 테스트용 쿠폰을 추가했어요.';
+  static const settingsTestTimeTitle = '테스트 알림 시작 시간';
+  static const settingsTestTime10Sec = '10초 뒤';
+  static const settingsTestTime30Sec = '30초 뒤';
+  static const settingsTestTime1Min = '1분 뒤';
+  static const settingsTestTime3Min = '3분 뒤';
+  static const settingsTestTime5Min = '5분 뒤';
   static const settingsTestAllNotifications = '모든 알림 테스트 보내기';
   static const settingsTestNotificationD30 = '30일 전 테스트';
   static const settingsTestNotificationD7 = '7일 전 테스트';
@@ -75,6 +83,7 @@ class AppStrings {
   static const settingsTestNotificationD1 = '1일 전 테스트';
   static const settingsTestNotificationDday = '당일 테스트';
   static const settingsTestNotificationExpired = '만료 테스트';
+  static const settingsTestNotificationScheduled = '테스트 알림을 예약했어요. 앱을 잠시 닫고 확인해보세요.';
 
   static const couponInputCode = '교환 코드';
   static const couponInputCodeHint = '예: 1234-5678-9012 또는 https://gifticon.example/abc';

@@ -11,13 +11,28 @@ class NotificationListScreen extends StatefulWidget {
   State<NotificationListScreen> createState() => _NotificationListScreenState();
 }
 
-class _NotificationListScreenState extends State<NotificationListScreen> {
+class _NotificationListScreenState extends State<NotificationListScreen>
+    with WidgetsBindingObserver {
   List<_NotificationItem> _notifications = <_NotificationItem>[];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadNotifications();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadNotifications();
+    }
   }
 
   Future<void> _loadNotifications() async {
@@ -76,11 +91,12 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         );
       }
     });
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CouponDetailScreen(coupon: item.coupon),
       ),
     );
+    await _loadNotifications();
   }
 
   void _removeNotification(_NotificationItem item) {
@@ -318,19 +334,25 @@ class _NotificationCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _DdayBadge(
-                label: item.badgeLabel,
-                type: item.badgeType,
-              ),
-              const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  item.title,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: titleColor,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _DdayBadge(
+                      label: item.badgeLabel,
+                      type: item.badgeType,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
