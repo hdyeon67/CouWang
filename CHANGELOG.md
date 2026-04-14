@@ -23,6 +23,7 @@
 
 ### iOS / 빌드 설정
 - iOS Pod sandbox 불일치 상태를 `pod install`로 정리하고, archive 버전이 `0.1.2 (4)`를 바라보도록 Flutter 생성 설정을 다시 맞췄습니다.
+- 앱 버전을 `0.1.3+5`로 올리고 iOS archive/IPA와 Android 내부 테스트용 AAB를 생성했습니다.
 
 ### 검증
 - Android 실기기 `SM F946N`에서 디버그 실행을 확인했습니다.
