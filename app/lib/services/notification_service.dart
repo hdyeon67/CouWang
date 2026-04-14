@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -23,6 +24,8 @@ class NotificationService {
   bool _initialized = false;
   String? _launchPayload;
   bool _launchedFromNotification = false;
+  bool _showingNotificationDetail = false;
+  DateTime? _notificationDetailOpenedAt;
 
   bool get launchedFromNotification => _launchedFromNotification;
 
@@ -33,6 +36,11 @@ class NotificationService {
 
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
+
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -85,6 +93,24 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
+  void markLaunchSplashHandled() {
+    _launchedFromNotification = false;
+  }
+
+  bool consumeNotificationDetailResumeReset() {
+    if (!_showingNotificationDetail) {
+      return false;
+    }
+    final openedAt = _notificationDetailOpenedAt;
+    if (openedAt != null &&
+        DateTime.now().difference(openedAt) < const Duration(seconds: 2)) {
+      return false;
+    }
+    _showingNotificationDetail = false;
+    _notificationDetailOpenedAt = null;
+    return true;
+  }
+
   Future<void> handleNotificationTap(String? payload) async {
     final notificationPayload = _parsePayload(payload);
     if (notificationPayload == null) {
@@ -130,6 +156,8 @@ class NotificationService {
       AppRouter.couponDetail,
       arguments: coupon,
     );
+    _showingNotificationDetail = true;
+    _notificationDetailOpenedAt = DateTime.now();
   }
 
   Future<void> scheduleCouponNotifications(
@@ -139,6 +167,9 @@ class NotificationService {
     bool cancelExistingNotifications = true,
     bool deleteExistingLogs = true,
   }) async {
+    if (kIsWeb) {
+      return;
+    }
     if (cancelExistingNotifications) {
       await cancelCouponNotifications(
         coupon.id,
@@ -228,6 +259,12 @@ class NotificationService {
     String couponId, {
     bool deleteLogs = true,
   }) async {
+    if (kIsWeb) {
+      if (deleteLogs) {
+        await NotificationLogRepository.deleteLogsByCouponId(couponId);
+      }
+      return;
+    }
     const types = ['d30', 'd7', 'd3', 'd1', 'dday', 'expire'];
     for (final type in types) {
       await _plugin.cancel(_notificationId(couponId, type));
@@ -238,11 +275,18 @@ class NotificationService {
   }
 
   Future<void> cancelAllNotifications() async {
+    if (kIsWeb) {
+      await NotificationLogRepository.deleteAllLogs();
+      return;
+    }
     await _plugin.cancelAll();
     await NotificationLogRepository.deleteAllLogs();
   }
 
   Future<void> rescheduleAllCouponNotifications() async {
+    if (kIsWeb) {
+      return;
+    }
     final settings = SettingsRepository.load();
     if (!settings.masterEnabled) {
       await _plugin.cancelAll();
@@ -284,6 +328,10 @@ class NotificationService {
           scheduledAt: DateTime.now(),
         );
       }
+    }
+
+    if (kIsWeb) {
+      return;
     }
 
     await _plugin.show(
@@ -337,6 +385,9 @@ class NotificationService {
   }
 
   Future<void> cancelScheduledTestNotifications() async {
+    if (kIsWeb) {
+      return;
+    }
     for (var i = 0; i < 6; i++) {
       await _plugin.cancel(99100 + i);
     }
@@ -346,6 +397,9 @@ class NotificationService {
     required String couponName,
     required Duration startAfter,
   }) async {
+    if (kIsWeb) {
+      return;
+    }
     const orderedTypes = ['d30', 'd7', 'd3', 'd1', 'dday', 'expire'];
     final now = tz.TZDateTime.now(tz.local);
 

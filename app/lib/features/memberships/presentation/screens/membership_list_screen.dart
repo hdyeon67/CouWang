@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/router.dart';
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/membership_repository.dart';
 import 'membership_detail_screen.dart';
 
@@ -141,23 +142,9 @@ class MembershipEmptyState extends StatelessWidget {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.52,
       child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Color(0xFFE8E8E8),
-            ),
-            SizedBox(height: 16),
-            Text(
-              AppStrings.membershipEmpty,
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFFAAAAAA),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
+        child: EmptyStateMascot(
+          message: AppStrings.membershipEmpty,
+          imageSize: 100,
         ),
       ),
     );

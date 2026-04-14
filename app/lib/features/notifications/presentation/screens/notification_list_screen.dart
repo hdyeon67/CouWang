@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
+import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/notification_log_repository.dart';
 import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
 
@@ -133,12 +134,15 @@ class _NotificationListScreenState extends State<NotificationListScreen>
 
   String _formatTimeText(DateTime scheduledAt) {
     final now = DateTime.now();
-    final difference = now.difference(scheduledAt).inDays;
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduledDay = DateTime(
+      scheduledAt.year,
+      scheduledAt.month,
+      scheduledAt.day,
+    );
+    final difference = today.difference(scheduledDay).inDays;
     if (difference <= 0) {
       return AppStrings.notificationJustNow;
-    }
-    if (difference <= 6) {
-      return '$difference일 전';
     }
     return '$difference일 전';
   }
@@ -215,15 +219,18 @@ class _NotificationListScreenState extends State<NotificationListScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                IconButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Color(0xFF222222),
+                Transform.translate(
+                  offset: const Offset(-10, 0),
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF222222),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    splashRadius: 20,
                   ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 20,
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -260,12 +267,8 @@ class _NotificationListScreenState extends State<NotificationListScreen>
                   const SizedBox(
                     height: 220,
                     child: Center(
-                      child: Text(
-                        AppStrings.notificationEmpty,
-                        style: TextStyle(
-                          color: Color(0xFFAAAAAA),
-                          fontSize: 14,
-                        ),
+                      child: EmptyStateMascot(
+                        message: AppStrings.notificationEmpty,
                       ),
                     ),
                   )

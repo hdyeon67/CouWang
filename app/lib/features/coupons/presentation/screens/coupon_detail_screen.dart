@@ -5,6 +5,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
+import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
@@ -572,16 +573,19 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      size: 24,
-                      color: Color(0xFF222222),
+                  Transform.translate(
+                    offset: const Offset(-14, 0),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 24,
+                        color: Color(0xFF222222),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 40, height: 40),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 40, height: 40),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
                   IconButton(
@@ -1064,14 +1068,8 @@ class _MembershipListSheet extends StatelessWidget {
           Expanded(
             child: memberships.isEmpty
                 ? const Center(
-                    child: Text(
-                      AppStrings.membershipEmpty,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFAAAAAA),
-                        fontWeight: FontWeight.w400,
-                      ),
-                      textAlign: TextAlign.center,
+                    child: EmptyStateMascot(
+                      message: AppStrings.membershipEmpty,
                     ),
                   )
                 : ListView.separated(

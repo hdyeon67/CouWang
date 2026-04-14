@@ -10,15 +10,17 @@ class NotificationSettingsModel {
     required this.day3Enabled,
     required this.day7Enabled,
     required this.day30Enabled,
+    required this.notificationConsentAsked,
   });
 
   const NotificationSettingsModel.defaults()
-      : masterEnabled = true,
+      : masterEnabled = false,
         expireDayEnabled = true,
         day1Enabled = true,
         day3Enabled = true,
         day7Enabled = true,
-        day30Enabled = false;
+        day30Enabled = false,
+        notificationConsentAsked = false;
 
   final bool masterEnabled;
   final bool expireDayEnabled;
@@ -26,6 +28,7 @@ class NotificationSettingsModel {
   final bool day3Enabled;
   final bool day7Enabled;
   final bool day30Enabled;
+  final bool notificationConsentAsked;
 
   NotificationSettingsModel copyWith({
     bool? masterEnabled,
@@ -34,6 +37,7 @@ class NotificationSettingsModel {
     bool? day3Enabled,
     bool? day7Enabled,
     bool? day30Enabled,
+    bool? notificationConsentAsked,
   }) {
     return NotificationSettingsModel(
       masterEnabled: masterEnabled ?? this.masterEnabled,
@@ -42,6 +46,8 @@ class NotificationSettingsModel {
       day3Enabled: day3Enabled ?? this.day3Enabled,
       day7Enabled: day7Enabled ?? this.day7Enabled,
       day30Enabled: day30Enabled ?? this.day30Enabled,
+      notificationConsentAsked:
+          notificationConsentAsked ?? this.notificationConsentAsked,
     );
   }
 }
@@ -76,6 +82,8 @@ class SettingsRepository {
         day3Enabled: (row['day3_enabled'] as int? ?? 0) == 1,
         day7Enabled: (row['day7_enabled'] as int? ?? 0) == 1,
         day30Enabled: (row['day30_enabled'] as int? ?? 0) == 1,
+        notificationConsentAsked:
+            (row['notification_consent_asked'] as int? ?? 0) == 1,
       );
     }
 
@@ -98,6 +106,8 @@ class SettingsRepository {
         'day3_enabled': settings.day3Enabled ? 1 : 0,
         'day7_enabled': settings.day7Enabled ? 1 : 0,
         'day30_enabled': settings.day30Enabled ? 1 : 0,
+        'notification_consent_asked':
+            settings.notificationConsentAsked ? 1 : 0,
         'updated_at': now,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,

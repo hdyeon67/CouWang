@@ -82,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   NotificationSettingsModel _buildSettings() {
+    final saved = SettingsRepository.load();
     return NotificationSettingsModel(
       masterEnabled: _masterEnabled,
       expireDayEnabled: _expireDayEnabled,
@@ -89,6 +90,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       day3Enabled: _day3Enabled,
       day7Enabled: _day7Enabled,
       day30Enabled: _day30Enabled,
+      notificationConsentAsked:
+          saved.notificationConsentAsked || _masterEnabled,
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
+import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../notifications/presentation/screens/notification_list_screen.dart';
 import '../../../../services/notification_service.dart';
@@ -544,41 +545,51 @@ class CouponSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 48,
+      height: 58,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFD7DEE7), width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
-      child: TextField(
-        controller: controller,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF1A1A1A),
-        ),
-        decoration: const InputDecoration(
-          hintText: AppStrings.homeSearchHint,
-          hintStyle: TextStyle(
-            fontSize: 14,
-            color: Color(0xFFBDBDBD),
-          ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          isCollapsed: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          suffixIcon: Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              Icons.search,
-              color: Color(0xFF9E9E9E),
-              size: 22,
+      child: Center(
+        // Keep the editable area slightly inset so it does not overlap the rounded border.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 1.5),
+          child: SizedBox(
+            height: 38,
+            child: TextField(
+              controller: controller,
+              textAlignVertical: TextAlignVertical.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF1A1A1A),
+              ),
+              decoration: const InputDecoration(
+                hintText: AppStrings.homeSearchHint,
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFFBDBDBD),
+                ),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isCollapsed: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                suffixIcon: Padding(
+                  padding: EdgeInsets.only(right: 12),
+                  child: Icon(
+                    Icons.search,
+                    color: Color(0xFF9E9E9E),
+                    size: 22,
+                  ),
+                ),
+                suffixIconConstraints: BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 38,
+                ),
+              ),
             ),
-          ),
-          suffixIconConstraints: BoxConstraints(
-            minWidth: 44,
-            minHeight: 44,
           ),
         ),
       ),
@@ -659,12 +670,8 @@ class CouponListSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
         ),
         child: const Center(
-          child: Text(
-            AppStrings.homeNoCoupons,
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF9E9E9E),
-            ),
+          child: EmptyStateMascot(
+            message: AppStrings.homeNoCoupons,
           ),
         ),
       );

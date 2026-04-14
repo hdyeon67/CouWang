@@ -11,6 +11,9 @@
 현재 MVP는 `쿠폰 관리 + 멤버십 관리 + 알림 + 자동 입력(OCR/바코드/QR 일부)` 흐름을 중심으로 정리되어 있으며, 주요 데이터는 로컬 SQLite에 저장됩니다.
 
 최근 업데이트:
+- Android 버전별 알림 권한 흐름 정리: Android 13 이상은 시스템 권한, Android 12 이하는 앱 내부 동의 다이얼로그 사용
+- Chrome 실행을 위한 웹 알림 플러그인 우회와 SQLite wasm 자산 정리
+- 리스트 empty 상태의 공통 마스코트 UI와 검색 필드 라운드 border 보정
 - iOS/TestFlight 업로드를 위한 archive, signing, AppIcon 정리 진행
 - iOS 빌드 오류를 정리하고 TestFlight 내부 테스트 설치까지 완료
 - 쿠폰/멤버십/알림 설정이 실제 로컬 SQLite 데이터로 저장되도록 전환

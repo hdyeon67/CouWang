@@ -809,17 +809,20 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 40, height: 40),
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    size: 24,
-                    color: Color(0xFF222222),
+                Transform.translate(
+                  offset: const Offset(-14, 0),
+                  child: IconButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      size: 24,
+                      color: Color(0xFF222222),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

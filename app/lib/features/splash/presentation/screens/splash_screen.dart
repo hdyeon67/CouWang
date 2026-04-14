@@ -48,6 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     if (NotificationService().launchedFromNotification) {
+      NotificationService().markLaunchSplashHandled();
       return;
     }
 

@@ -31,7 +31,7 @@ class LocalDatabaseService {
 
     return openDatabase(
       dbPath,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE image_assets (
@@ -90,6 +90,7 @@ class LocalDatabaseService {
             day3_enabled INTEGER NOT NULL,
             day7_enabled INTEGER NOT NULL,
             day30_enabled INTEGER NOT NULL,
+            notification_consent_asked INTEGER NOT NULL DEFAULT 0,
             updated_at TEXT NOT NULL
           )
         ''');
@@ -124,6 +125,19 @@ class LocalDatabaseService {
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             )
+          ''');
+        }
+        if (oldVersion < 3) {
+          await db.execute('''
+            ALTER TABLE notification_settings
+            ADD COLUMN notification_consent_asked INTEGER NOT NULL DEFAULT 0
+          ''');
+          await db.execute('''
+            UPDATE notification_settings
+            SET notification_consent_asked = CASE
+              WHEN master_enabled = 1 THEN 1
+              ELSE 0
+            END
           ''');
         }
       },

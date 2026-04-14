@@ -23,6 +23,9 @@ class AppStrings {
   static const notificationPermissionTitle = '알림 권한이 필요해요';
   static const notificationPermissionDescription = '만료 알림을 받으려면 알림 권한을 허용해주세요.';
   static const notificationPermissionDenied = '알림 권한이 꺼져 있어요. 설정에서 알림 권한을 켜주세요.';
+  static const notificationConsentTitle = '쿠폰 만료 알림을 켤까요?';
+  static const notificationConsentDescription =
+      '이 기기에서는 시스템 권한 팝업 없이 알림을 사용할 수 있어요.\n쿠왕이 쿠폰 만료일을 놓치지 않도록 앱 알림을 켜둘게요.';
   static const photoPermissionTitle = '사진 접근 권한이 필요해요';
   static const photoPermissionDescription = '쿠폰과 멤버십 이미지를 등록하려면 사진 접근 권한을 허용해주세요.';
   static const photoPermissionDenied = '사진 접근 권한이 꺼져 있어요. 설정에서 사진 접근 권한을 켜주세요.';

@@ -5,6 +5,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
+import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/membership_repository.dart';
 import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
@@ -358,15 +359,18 @@ class _MembershipDetailScreenState extends State<MembershipDetailScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 40, height: 40),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      size: 24,
-                      color: Color(0xFF222222),
+                  Transform.translate(
+                    offset: const Offset(-14, 0),
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 40, height: 40),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 24,
+                        color: Color(0xFF222222),
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -710,13 +714,8 @@ class _CouponListSheet extends StatelessWidget {
           Expanded(
             child: coupons.isEmpty
                 ? const Center(
-                    child: Text(
-                      AppStrings.homeNoCoupons,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFAAAAAA),
-                        fontWeight: FontWeight.w400,
-                      ),
+                    child: EmptyStateMascot(
+                      message: AppStrings.homeNoCoupons,
                     ),
                   )
                 : ListView.separated(

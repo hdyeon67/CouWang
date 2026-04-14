@@ -1,11 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../resources/app_strings.dart';
+import '../../repositories/settings_repository.dart';
+import '../../services/notification_service.dart';
 
 class AppPermissionService {
   const AppPermissionService._();
+
+  static const MethodChannel _deviceChannel =
+      MethodChannel('com.fineboll.couwangApp/device');
+  static const int _androidNotificationRuntimePermissionSdk = 33;
 
   static Future<bool> isNotificationPermissionGranted() async {
     if (kIsWeb) {
@@ -17,6 +24,14 @@ class AppPermissionService {
 
   static Future<void> requestStartupPermissions(BuildContext context) async {
     if (kIsWeb || !context.mounted) {
+      return;
+    }
+
+    if (await _usesAndroidLegacyNotificationConsent()) {
+      if (!context.mounted) {
+        return;
+      }
+      await _ensureLegacyAndroidNotificationConsent(context, startup: true);
       return;
     }
 
@@ -40,6 +55,13 @@ class AppPermissionService {
   static Future<bool> ensureNotificationPermission(BuildContext context) async {
     if (kIsWeb) {
       return true;
+    }
+
+    if (await _usesAndroidLegacyNotificationConsent()) {
+      if (!context.mounted) {
+        return false;
+      }
+      return _ensureLegacyAndroidNotificationConsent(context);
     }
 
     final currentStatus = await Permission.notification.status;
@@ -139,6 +161,67 @@ class AppPermissionService {
 
   static bool _isGranted(PermissionStatus status) {
     return status.isGranted || status.isLimited || status.isProvisional;
+  }
+
+  static Future<bool> _usesAndroidLegacyNotificationConsent() async {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return false;
+    }
+    final sdkInt = await _androidSdkInt();
+    if (sdkInt == null) {
+      return false;
+    }
+    return sdkInt < _androidNotificationRuntimePermissionSdk;
+  }
+
+  static Future<int?> _androidSdkInt() async {
+    try {
+      return await _deviceChannel.invokeMethod<int>('getAndroidSdkInt');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  static Future<bool> _ensureLegacyAndroidNotificationConsent(
+    BuildContext context, {
+    bool startup = false,
+  }) async {
+    final saved = SettingsRepository.load();
+    if (saved.masterEnabled) {
+      return true;
+    }
+    if (startup && saved.notificationConsentAsked) {
+      return false;
+    }
+    if (!context.mounted) {
+      return false;
+    }
+
+    final shouldEnable = await _showPermissionRequestDialog(
+      context: context,
+      title: AppStrings.notificationConsentTitle,
+      description: AppStrings.notificationConsentDescription,
+    );
+
+    final nextSettings = shouldEnable
+        ? saved.copyWith(
+            masterEnabled: true,
+            expireDayEnabled: true,
+            day1Enabled: true,
+            day3Enabled: true,
+            day7Enabled: true,
+            day30Enabled: false,
+            notificationConsentAsked: true,
+          )
+        : saved.copyWith(notificationConsentAsked: true);
+    await SettingsRepository.save(nextSettings);
+
+    if (shouldEnable) {
+      await NotificationService().rescheduleAllCouponNotifications();
+    }
+    return shouldEnable;
   }
 
   static Future<bool> _showPermissionRequestDialog({

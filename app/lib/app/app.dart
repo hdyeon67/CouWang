@@ -13,13 +13,34 @@ class CouWangApp extends StatefulWidget {
   State<CouWangApp> createState() => _CouWangAppState();
 }
 
-class _CouWangAppState extends State<CouWangApp> {
+class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().handlePendingLaunchPayload();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      return;
+    }
+    if (!NotificationService().consumeNotificationDetailResumeReset()) {
+      return;
+    }
+    navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      AppRouter.home,
+      (route) => false,
+    );
   }
 
   @override
