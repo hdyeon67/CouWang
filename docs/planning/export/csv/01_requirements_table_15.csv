@@ -1,0 +1,7 @@
+﻿ID,항목,우선순위,설명
+EXT-001,로그인,Medium,이메일/소셜/게스트 계정 도입 시 로컬 데이터와 계정 매핑 필요
+EXT-002,클라우드 백업,Medium,"user_id, remote_id, backup_state, remote_url 확장 가능"
+EXT-003,이메일 백업,Low,CSV/JSON/이미지 묶음 내보내기 방식 검토
+EXT-004,알림 로그 고도화,Medium,실제 발송 성공/실패 이력과 OS 알림 상태 추적
+EXT-005,광고,Low,AdMob 도입 시 개인정보/광고 선언 및 SDK 심사 대응 필요
+EXT-006,이미지 용량 강제 검증,Medium,현재 UI는 10MB를 안내하지만 저장 전 hard validation 보강 필요

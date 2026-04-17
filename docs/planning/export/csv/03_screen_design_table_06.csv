@@ -1,0 +1,9 @@
+﻿영역,구성 요소,설명
+상단,TopMascotHeader,마스코트 이미지와 홈 헤더
+상단,SavingSpeechBubbleCard,이번 달 사용 완료 쿠폰 예상 금액과 순환 문구 표시
+중단,CouponSearchField,"쿠폰명, 브랜드, 카테고리 검색"
+중단,FilterChipButton,사용가능/사용완료/만료 필터
+중단,CouponSortDropdown,만료순/이름순 클릭 토글
+중단,CouponListSection,쿠폰 카드 목록 또는 empty 마스코트 UI
+하단,AppTabScaffold,멤버십/홈/설정 하단탭
+플로팅,쿠폰 추가 FAB,쿠폰 등록 화면 진입

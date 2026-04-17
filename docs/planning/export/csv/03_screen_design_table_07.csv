@@ -1,0 +1,7 @@
+﻿액션,시스템 반응
+쿠폰 카드 탭,CouponDetailScreen 이동
+검색어 입력,쿠폰명/브랜드/카테고리 기준 실시간 필터
+상태 필터 탭,사용가능/사용완료/만료 목록 전환
+정렬 버튼 탭,만료순/이름순 전환
+알림 아이콘 탭,NotificationListScreen 이동
+FAB 탭,CouponCreateScreen 등록 모드 이동

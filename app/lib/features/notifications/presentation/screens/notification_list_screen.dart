@@ -411,38 +411,52 @@ class _DdayBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = switch (type) {
       _NotificationBadgeType.dDayActive => (
-          background: const Color(0xFF64CAFA),
-          border: null,
+          background: const Color(0xFF55C8FF),
           textColor: Colors.white,
         ),
       _NotificationBadgeType.activeOutline => (
-          background: Colors.white,
-          border: Border.all(color: const Color(0xFF64CAFA), width: 1.5),
-          textColor: const Color(0xFF64CAFA),
+          background: _getDdayBadgeColor(label),
+          textColor: Colors.white,
         ),
       _NotificationBadgeType.inactiveOutline => (
-          background: Colors.white,
-          border: Border.all(color: const Color(0xFFBDBDBD), width: 1.2),
-          textColor: const Color(0xFFBDBDBD),
+          background: _getInactiveBadgeColor(label),
+          textColor: Colors.white,
         ),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: style.background,
-        borderRadius: BorderRadius.circular(6),
-        border: style.border,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
           color: style.textColor,
         ),
       ),
     );
+  }
+
+  Color _getDdayBadgeColor(String label) {
+    final dday = label == 'D-DAY'
+        ? 0
+        : int.tryParse(label.replaceFirst('D-', '')) ?? 30;
+    if (dday <= 1) return const Color(0xFF55C8FF);
+    if (dday <= 3) return const Color(0xFF7DD4FF);
+    if (dday <= 7) return const Color(0xFFA3E0FF);
+    if (dday <= 15) return const Color(0xFFC2EAFF);
+    return const Color(0xFFDDF3FF);
+  }
+
+  Color _getInactiveBadgeColor(String label) {
+    if (label == AppStrings.couponExpired) {
+      return const Color(0xFFE58C73);
+    }
+    return const Color(0xFF8E9AAF);
   }
 }
 

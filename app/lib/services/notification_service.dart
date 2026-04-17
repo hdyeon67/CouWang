@@ -222,7 +222,7 @@ class NotificationService {
         scheduledAt: scheduledTime,
       );
 
-      await _plugin.zonedSchedule(
+      await _zonedSchedule(
         _notificationId(coupon.id, schedule.type),
         _getTitle(schedule.type),
         _getBody(schedule.type, coupon.name),
@@ -247,9 +247,6 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: _payloadFor(coupon.id, schedule.type),
       );
     }
@@ -420,7 +417,7 @@ class NotificationService {
         );
       }
 
-      await _plugin.zonedSchedule(
+      await _zonedSchedule(
         99100 + i,
         _getTitle(type),
         _getBody(type, couponName),
@@ -445,12 +442,30 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         payload: _payloadFor(couponId, type),
       );
     }
+  }
+
+  Future<void> _zonedSchedule(
+    int id,
+    String title,
+    String body,
+    tz.TZDateTime scheduledTime,
+    NotificationDetails notificationDetails, {
+    String? payload,
+  }) async {
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduledTime,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: payload,
+    );
   }
 
   _NotificationPayload? _parsePayload(String? payload) {

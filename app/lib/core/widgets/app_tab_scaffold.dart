@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../app/router.dart';
 import '../resources/app_strings.dart';
+import 'couwang_banner_ad.dart';
 
 enum BottomTabItem { membership, home, settings }
 
@@ -25,7 +26,7 @@ class AppTabScaffold extends StatelessWidget {
   final bool? resizeToAvoidBottomInset;
 
   static const double _bottomTabHeight = 76;
-  static const double _bottomTabSpacing = 16;
+  static const double _adSpacingFromTab = 5;
   static const double _fabSpacingFromTab = 16;
   static const double _horizontalMargin = 20;
 
@@ -58,6 +59,9 @@ class AppTabScaffold extends StatelessWidget {
               bottom: 0,
               child: BottomTabBarContainer(
                 selectedTab: currentTab,
+                bottomPadding: bottomInset +
+                    CouWangBannerAd.height +
+                    _adSpacingFromTab,
                 onMembershipTabClick: () {
                   if (currentTab == BottomTabItem.membership) {
                     return;
@@ -82,11 +86,20 @@ class AppTabScaffold extends StatelessWidget {
               Positioned(
                 right: _horizontalMargin,
                 bottom: bottomInset +
-                    _bottomTabSpacing +
+                    CouWangBannerAd.height +
+                    _adSpacingFromTab +
                     _bottomTabHeight +
                     _fabSpacingFromTab,
                 child: floatingActionButton!,
               ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: bottomInset,
+              child: const Center(
+                child: CouWangBannerAd(),
+              ),
+            ),
           ],
         ),
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
@@ -100,24 +113,24 @@ class BottomTabBarContainer extends StatelessWidget {
   const BottomTabBarContainer({
     super.key,
     required this.selectedTab,
+    required this.bottomPadding,
     required this.onMembershipTabClick,
     required this.onHomeTabClick,
     required this.onSettingsTabClick,
   });
 
   final BottomTabItem selectedTab;
+  final double bottomPadding;
   final VoidCallback onMembershipTabClick;
   final VoidCallback onHomeTabClick;
   final VoidCallback onSettingsTabClick;
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
     return ColoredBox(
       color: Colors.transparent,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 0, 20, bottomInset + 16),
+        padding: EdgeInsets.fromLTRB(20, 0, 20, bottomPadding),
         child: Align(
           alignment: Alignment.bottomCenter,
           child: FloatingTabCard(

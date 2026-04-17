@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:barcode_widget/barcode_widget.dart' as bw;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
@@ -331,29 +332,85 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final maxDate = DateTime(2030, 12, 31);
+    final initialDate =
+        _selectedDate != null && !_selectedDate!.isBefore(today)
+            ? _selectedDate!
+            : today;
+
+    final picked = await showModalBottomSheet<DateTime>(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF64CAFA),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF1A1A1A),
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        var wheelDate = initialDate;
+
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: Row(
+                    children: [
+                      CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: const Text(
+                          AppStrings.couponCancel,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF9E9E9E),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      CupertinoButton(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        onPressed: () =>
+                            Navigator.pop(sheetContext, wheelDate),
+                        child: const Text(
+                          AppStrings.couponDatePickerDone,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF64CAFA),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 216,
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.date,
+                    dateOrder: DatePickerDateOrder.ymd,
+                    initialDateTime: initialDate,
+                    minimumDate: today,
+                    maximumDate: maxDate,
+                    onDateTimeChanged: (date) {
+                      wheelDate = date;
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          child: child!,
         );
       },
     );
 
     if (picked != null) {
       setState(() {
-        _selectedDate = picked;
+        _selectedDate = DateTime(picked.year, picked.month, picked.day);
       });
     }
   }

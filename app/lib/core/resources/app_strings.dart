@@ -31,7 +31,7 @@ class AppStrings {
   static const photoPermissionDenied = '사진 접근 권한이 꺼져 있어요. 설정에서 사진 접근 권한을 켜주세요.';
 
   static const homeSectionTitle = '나의 쿠폰함';
-  static const homeSearchHint = '쿠폰명, 브랜드, 카테고리를 검색해 주세요.';
+  static const homeSearchHint = '쿠폰 검색 멍!';
   static const homeSortExpiry = '만료순';
   static const homeSortName = '이름순';
   static const homeFilterAvailable = '사용 가능';
@@ -139,6 +139,7 @@ class AppStrings {
   static const couponEdit = '수정하기';
   static const couponDelete = '삭제하기';
   static const couponCancel = '취소';
+  static const couponDatePickerDone = '완료';
   static const couponUsed = '사용 완료';
   static const couponExpired = '기간만료';
   static const couponUsedDone = '사용 완료됨';

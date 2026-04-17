@@ -234,8 +234,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5EDE8),
+                  color: const Color(0xFFEDF6FF),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFD0ECFF),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -268,14 +272,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Switch(
+                        _CouWangSwitch(
                           value: _masterEnabled,
                           onChanged: _handleMasterToggle,
-                          activeThumbColor: const Color(0xFF64CAFA),
-                          activeTrackColor:
-                              const Color(0xFF64CAFA).withValues(alpha: 0.4),
-                          inactiveThumbColor: Colors.white,
-                          inactiveTrackColor: const Color(0xFFBDBDBD),
                         ),
                       ],
                     ),
@@ -283,7 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(
                       height: 1,
                       thickness: 1,
-                      color: Color(0xFFE8DDD8),
+                      color: Color(0xFFCCE8F8),
                     ),
                     const SizedBox(height: 12),
                     _SubToggleRow(
@@ -494,16 +493,63 @@ class _SubToggleRow extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          Switch(
+          _CouWangSwitch(
             value: enabled ? value : false,
             onChanged: enabled ? onChanged : null,
-            activeThumbColor: const Color(0xFF64CAFA),
-            activeTrackColor:
-                const Color(0xFF64CAFA).withValues(alpha: 0.4),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFBDBDBD),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CouWangSwitch extends StatelessWidget {
+  const _CouWangSwitch({
+    required this.value,
+    this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onChanged != null;
+    final trackColor =
+        value && isEnabled ? const Color(0xFF64CAFA) : const Color(0xFFCCCCCC);
+
+    return GestureDetector(
+      onTap: isEnabled ? () => onChanged!(!value) : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        width: 51,
+        height: 31,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(31),
+          color: trackColor,
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.all(2.5),
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

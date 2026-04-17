@@ -84,57 +84,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   String get _monthlySavingText {
-    final amount = _couponList
-        .where((coupon) {
-          final usedAt = coupon.detail.usedAt;
-          if (usedAt == null) {
-            return false;
-          }
-          final usedDate = DateTime.tryParse(usedAt);
-          if (usedDate == null) {
-            return false;
-          }
-          final now = DateTime.now();
-          return usedDate.year == now.year && usedDate.month == now.month;
-        })
-        .fold<int>(0, (sum, coupon) => sum + _estimateCouponAmount(coupon.detail));
-
-    final formatted = amount > 0 ? _formatAmount(amount) : AppStrings.homeSavingFallback;
     final messages = [
-      '${AppStrings.homeBubbleOriginalPrefix}$formatted${AppStrings.homeBubbleOriginalSuffix}',
       '${_couponList.where((coupon) => coupon.filterType == HomeCouponFilterType.available).length}장의 쿠폰이 아직 기다리고 있다 멍!',
       AppStrings.homeBubbleReminder,
       AppStrings.homeBubbleCheer,
     ];
     return messages[_bubbleMessageIndex % messages.length];
-  }
-
-  int _estimateCouponAmount(CouponDetailModel coupon) {
-    final name = '${coupon.brand} ${coupon.name}'.toLowerCase();
-    if (name.contains('1만원') || name.contains('10000')) return 10000;
-    if (name.contains('5,000') || name.contains('5000')) return 5000;
-    if (name.contains('3,000') || name.contains('3000')) return 3000;
-    if (name.contains('파인트')) return 9800;
-    if (name.contains('카페라떼')) return 6100;
-    if (name.contains('아메리카노')) return 4500;
-    if (name.contains('치킨')) return 23000;
-    if (name.contains('피자')) return 28900;
-    if (name.contains('상품권')) return 10000;
-    if (name.contains('할인')) return 3000;
-    return 5000;
-  }
-
-  String _formatAmount(int amount) {
-    final buffer = StringBuffer();
-    final value = amount.toString();
-    for (var i = 0; i < value.length; i++) {
-      final remaining = value.length - i;
-      buffer.write(value[i]);
-      if (remaining > 1 && remaining % 3 == 1) {
-        buffer.write(',');
-      }
-    }
-    return '${buffer.toString()}원';
   }
 
   List<HomeCouponItem> get _couponList {
@@ -419,14 +374,15 @@ class FilterAndSortRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 380;
+        // Move the sort button down only when the row is nearly out of room.
+        final isCompact = constraints.maxWidth < 330;
 
         if (isCompact) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Wrap(
-                spacing: 8,
+                spacing: 3,
                 runSpacing: 8,
                 children: [
                   FilterChipButton(
@@ -464,7 +420,7 @@ class FilterAndSortRow extends StatelessWidget {
         return Row(
           children: [
             Wrap(
-              spacing: 8,
+              spacing: 3,
               children: [
                 FilterChipButton(
                   label: AppStrings.homeFilterAvailable,
@@ -545,11 +501,11 @@ class CouponSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 58,
+      height: 48,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD7DEE7), width: 1.5),
+        border: Border.all(color: const Color(0xFFD7DEE7), width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: Center(
@@ -562,13 +518,13 @@ class CouponSearchField extends StatelessWidget {
               controller: controller,
               textAlignVertical: TextAlignVertical.center,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 color: Color(0xFF1A1A1A),
               ),
               decoration: const InputDecoration(
                 hintText: AppStrings.homeSearchHint,
                 hintStyle: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Color(0xFFBDBDBD),
                 ),
                 border: InputBorder.none,
@@ -844,16 +800,15 @@ class DdayBadge extends StatelessWidget {
     final style = _badgeStyleForCoupon(coupon);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: style.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: style.border,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         style.label,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
           color: style.textColor,
         ),
@@ -865,42 +820,32 @@ class DdayBadge extends StatelessWidget {
     if (coupon.isUsed || coupon.status == CouponDetailStatus.redeemed) {
       return _BadgeStyle(
         label: AppStrings.couponUsed,
-        backgroundColor: Colors.white,
-        textColor: const Color(0xFF9E9E9E),
-        border: Border.all(color: const Color(0xFFBDBDBD), width: 1.2),
+        backgroundColor: const Color(0xFF8E9AAF),
+        textColor: Colors.white,
       );
     }
     if (coupon.isExpired || coupon.status == CouponDetailStatus.expired) {
       return _BadgeStyle(
         label: AppStrings.couponExpired,
-        backgroundColor: Colors.white,
-        textColor: const Color(0xFFBDBDBD),
-        border: Border.all(color: const Color(0xFFD0D0D0), width: 1.2),
+        backgroundColor: const Color(0xFFE58C73),
+        textColor: Colors.white,
       );
     }
 
     final value = coupon.dday;
-    if (value <= 0) {
-      return const _BadgeStyle(
-        label: 'D-DAY',
-        backgroundColor: Color(0xFF64CAFA),
-        textColor: Colors.white,
-      );
-    }
-    if (value <= 9) {
-      return _BadgeStyle(
-        label: 'D-$value',
-        backgroundColor: Colors.white,
-        textColor: const Color(0xFF64CAFA),
-        border: Border.all(color: const Color(0xFF64CAFA), width: 1.5),
-      );
-    }
     return _BadgeStyle(
-      label: 'D-$value',
-      backgroundColor: Colors.white,
-      textColor: const Color(0xFFBDBDBD),
-      border: Border.all(color: const Color(0xFFBDBDBD), width: 1.2),
+      label: value == 0 ? 'D-DAY' : 'D-$value',
+      backgroundColor: _getDdayBadgeColor(value),
+      textColor: Colors.white,
     );
+  }
+
+  Color _getDdayBadgeColor(int dday) {
+    if (dday <= 1) return const Color(0xFF55C8FF);
+    if (dday <= 3) return const Color(0xFF7DD4FF);
+    if (dday <= 7) return const Color(0xFFA3E0FF);
+    if (dday <= 15) return const Color(0xFFC2EAFF);
+    return const Color(0xFFDDF3FF);
   }
 }
 
@@ -909,11 +854,9 @@ class _BadgeStyle {
     required this.label,
     required this.backgroundColor,
     required this.textColor,
-    this.border,
   });
 
   final String label;
   final Color backgroundColor;
   final Color textColor;
-  final BoxBorder? border;
 }

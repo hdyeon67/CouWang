@@ -1,0 +1,4 @@
+﻿영역,구성 요소,설명
+상단,"뒤로가기, 전체 삭제",전체 삭제는 알림이 있을 때만 활성
+중단,NotificationCard,"D-DAY 배지, 제목, 본문, 시간, 읽음/삭제 상태"
+Empty,EmptyStateMascot,알림 없음 안내

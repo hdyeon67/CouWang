@@ -1,0 +1,9 @@
+﻿source,docx,csv_count
+docs/planning/01_requirements.md,docs/planning/export/docx/01_requirements.docx,15
+docs/planning/02_screen_flow.md,docs/planning/export/docx/02_screen_flow.docx,0
+docs/planning/03_screen_design.md,docs/planning/export/docx/03_screen_design.docx,24
+docs/planning/04_functional_spec.md,docs/planning/export/docx/04_functional_spec.docx,12
+docs/planning/05_storyboard.md,docs/planning/export/docx/05_storyboard.docx,10
+docs/planning/06_feature_definition.md,docs/planning/export/docx/06_feature_definition.docx,1
+docs/planning/07_information_architecture.md,docs/planning/export/docx/07_information_architecture.docx,0
+docs/planning/08_policy.md,docs/planning/export/docx/08_policy.docx,7
