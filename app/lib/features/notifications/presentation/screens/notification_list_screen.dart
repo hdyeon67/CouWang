@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/notification_log_repository.dart';
+import '../../../../services/analytics_service.dart';
 import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
 
 class NotificationListScreen extends StatefulWidget {
@@ -80,6 +81,9 @@ class _NotificationListScreenState extends State<NotificationListScreen>
 
   Future<void> _openCouponDetail(_NotificationItem item) async {
     await NotificationLogRepository.markAsRead(item.id);
+    await AnalyticsService().logNotificationOpened(
+      notificationType: 'notification_list',
+    );
     if (!mounted) {
       return;
     }

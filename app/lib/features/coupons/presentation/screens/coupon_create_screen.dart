@@ -12,6 +12,7 @@ import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/settings_repository.dart';
+import '../../../../services/analytics_service.dart';
 import '../../../../services/notification_service.dart';
 import 'coupon_detail_screen.dart';
 
@@ -205,13 +206,24 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   Future<void> _runImageOcr() async {
+    const analyticsSource = 'coupon_create';
+    await AnalyticsService().logImageExtractAttempted(source: analyticsSource);
+
     if (kIsWeb) {
+      await AnalyticsService().logImageExtractFailed(
+        source: analyticsSource,
+        reason: 'web_unsupported',
+      );
       _showMessage(AppStrings.couponOcrWebUnsupported);
       return;
     }
 
     final imagePath = _selectedImage?.path;
     if (imagePath == null) {
+      await AnalyticsService().logImageExtractFailed(
+        source: analyticsSource,
+        reason: 'no_image',
+      );
       return;
     }
 
@@ -235,11 +247,22 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     });
 
     if (!extracted.isRecognized) {
+      await AnalyticsService().logImageExtractFailed(
+        source: analyticsSource,
+        reason: 'not_recognized',
+      );
       _showMessage(AppStrings.couponExtractFailed);
       return;
     }
 
+    final categoryResolved =
+        _resolveCategoryFromExtractedData(extracted) != null;
     _applyAutoFillResult(extracted);
+    await AnalyticsService().logImageExtractSucceeded(
+      source: analyticsSource,
+      couponType: extracted.couponType,
+      categoryResolved: categoryResolved,
+    );
     _showMessage(AppStrings.couponExtractFilled);
   }
 
@@ -781,6 +804,16 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     final entryType = _usedAutoFill
         ? AppStrings.couponEntryAuto
         : AppStrings.couponEntryManual;
+    if (widget.coupon == null) {
+      await AnalyticsService().logCouponCreated(
+        category: repositoryCoupon.category,
+        couponType: repositoryCoupon.couponType ?? AppStrings.couponTypeBarcode,
+        entryType: entryType,
+        hasImage: repositoryCoupon.imagePath != null ||
+            repositoryCoupon.imageBytes != null,
+        dday: repositoryCoupon.dday,
+      );
+    }
     _showMessage('$entryType${AppStrings.couponRegisteredSuffix}');
     Future<void>.delayed(const Duration(milliseconds: 250), () {
       if (mounted) {

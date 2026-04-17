@@ -9,6 +9,7 @@ import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
+import '../../../../services/analytics_service.dart';
 import '../../../../services/notification_service.dart';
 import 'coupon_create_screen.dart';
 import '../../../memberships/presentation/screens/membership_detail_screen.dart';
@@ -418,6 +419,10 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                 Navigator.pop(ctx);
                 await NotificationService().cancelCouponNotifications(_coupon.id);
                 await CouponRepository.markUsed(_coupon.id);
+                await AnalyticsService().logCouponUsed(
+                  category: _coupon.category,
+                  dday: _coupon.dday,
+                );
                 if (!mounted) {
                   return;
                 }

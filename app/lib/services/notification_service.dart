@@ -10,6 +10,7 @@ import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
 import '../repositories/coupon_repository.dart';
 import '../repositories/notification_log_repository.dart';
 import '../repositories/settings_repository.dart';
+import 'analytics_service.dart';
 
 class NotificationService {
   NotificationService._internal();
@@ -123,6 +124,9 @@ class NotificationService {
     }
 
     final notificationType = notificationPayload.notificationType;
+    await AnalyticsService().logNotificationOpened(
+      notificationType: notificationType,
+    );
     if (notificationType == null) {
       await NotificationLogRepository.ensureLatestVisibleLogForCoupon(
         coupon: coupon,

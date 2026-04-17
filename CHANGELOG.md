@@ -35,6 +35,13 @@
 - 앱 버전을 `0.1.3+6`으로 갱신했습니다.
 - `google_mobile_ads` 의존성과 플랫폼별 광고 앱 ID 설정을 추가했습니다.
 
+### Analytics / Crashlytics
+- Firebase Analytics와 Crashlytics 의존성을 추가하고, 설정 파일이 준비되기 전에는 비활성화되는 `AnalyticsService`를 추가했습니다.
+- `coupon_created`, `coupon_used`, `notification_opened`, `image_extract_attempted`, `image_extract_succeeded`, `image_extract_failed` 이벤트를 최소 파라미터 기준으로 연결했습니다.
+- 이벤트 파라미터에는 쿠폰명, 바코드, 메모 같은 사용자 입력값을 넣지 않고 카테고리, 쿠폰 타입, D-Day, 성공 여부 중심으로 제한했습니다.
+- `ENABLE_FIREBASE=true` dart-define와 Firebase 플랫폼 설정 파일이 준비되면 Analytics/Crashlytics 수집을 활성화할 수 있도록 구성했습니다.
+- Firebase SDK 추가 후 Android debug APK와 iOS release no-codesign 빌드가 통과하는지 확인했습니다.
+
 ## 2026-04-14
 
 ### 알림 권한 / 설정

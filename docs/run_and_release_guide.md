@@ -599,3 +599,64 @@ flutter build ipa --release
 cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app/ios
 pod install
 ```
+
+## 11. Firebase Analytics / Crashlytics 활성화
+
+현재 앱에는 Firebase Analytics와 Crashlytics 코드가 연결되어 있지만, Firebase 프로젝트 설정 파일이 없으면 기본적으로 비활성화됩니다. 실제 수집을 켜려면 Firebase 프로젝트를 만든 뒤 플랫폼별 설정 파일을 추가하고 `ENABLE_FIREBASE=true` 값을 함께 전달합니다.
+
+필요 파일:
+
+```text
+app/android/app/google-services.json
+app/ios/Runner/GoogleService-Info.plist
+```
+
+권장 이벤트:
+
+```text
+coupon_created
+coupon_used
+notification_opened
+image_extract_attempted
+image_extract_succeeded
+image_extract_failed
+```
+
+개인정보 보호를 위해 이벤트에는 쿠폰명, 바코드 번호, 메모, 이미지 경로 같은 사용자 입력값을 넣지 않습니다.
+
+Firebase를 켠 상태로 Android 실행:
+
+```bash
+cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
+flutter run -d <device-id> --dart-define=ENABLE_FIREBASE=true
+```
+
+Firebase를 켠 상태로 Android AAB 생성:
+
+```bash
+cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
+flutter pub get
+flutter analyze
+flutter build appbundle --release --dart-define=ENABLE_FIREBASE=true
+open build/app/outputs/bundle/release
+```
+
+Firebase를 켠 상태로 iOS IPA 생성:
+
+```bash
+cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
+flutter pub get
+cd ios
+pod install
+cd ..
+flutter analyze
+flutter build ipa --release --dart-define=ENABLE_FIREBASE=true
+open build/ios/ipa
+```
+
+Firebase를 끈 기본 상태로 실행:
+
+```bash
+cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
+flutter run -d <device-id>
+```
