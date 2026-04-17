@@ -119,6 +119,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   void _handleCouponClick(HomeCouponItem coupon) {
+    FocusScope.of(context).unfocus();
     if (widget.onCouponClick != null) {
       widget.onCouponClick!(coupon.id);
       return;
@@ -136,6 +137,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   void _handleFabClick() {
+    FocusScope.of(context).unfocus();
     if (widget.onFabClick != null) {
       widget.onFabClick!.call();
       return;
@@ -158,66 +160,75 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       currentTab: BottomTabItem.home,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingAddButton(onPressed: _handleFabClick),
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            _horizontalPadding,
-            8,
-            _horizontalPadding,
-            210,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TopMascotHeader(
-                onTap: () {
-                  setState(() {
-                    _bubbleMessageIndex++;
-                  });
-                },
-                onNotificationClick: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const NotificationListScreen(),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              SavingSpeechBubbleCard(message: _monthlySavingText),
-              const SizedBox(height: 28),
-              const Text(
-                AppStrings.homeSectionTitle,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A1A),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(
+              _horizontalPadding,
+              8,
+              _horizontalPadding,
+              210,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TopMascotHeader(
+                  onTap: () {
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _bubbleMessageIndex++;
+                    });
+                  },
+                  onNotificationClick: () {
+                    FocusScope.of(context).unfocus();
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const NotificationListScreen(),
+                      ),
+                    );
+                  },
                 ),
-              ),
-              const SizedBox(height: 14),
-              FilterAndSortRow(
-                selectedFilter: _filterType,
-                sortType: _sortType,
-                onFilterChanged: (value) {
-                  setState(() {
-                    _filterType = value;
-                  });
-                },
-                onSortChanged: (value) {
-                  setState(() {
-                    _sortType = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              CouponSearchField(controller: _searchController),
-              const SizedBox(height: 16),
-              CouponListSection(
-                coupons: _filteredCouponList,
-                onCouponClick: _handleCouponClick,
-              ),
-            ],
+                const SizedBox(height: 16),
+                SavingSpeechBubbleCard(message: _monthlySavingText),
+                const SizedBox(height: 28),
+                const Text(
+                  AppStrings.homeSectionTitle,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                FilterAndSortRow(
+                  selectedFilter: _filterType,
+                  sortType: _sortType,
+                  onFilterChanged: (value) {
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _filterType = value;
+                    });
+                  },
+                  onSortChanged: (value) {
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _sortType = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                CouponSearchField(controller: _searchController),
+                const SizedBox(height: 12),
+                CouponListSection(
+                  coupons: _filteredCouponList,
+                  onCouponClick: _handleCouponClick,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -511,20 +522,20 @@ class CouponSearchField extends StatelessWidget {
       child: Center(
         // Keep the editable area slightly inset so it does not overlap the rounded border.
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 4.5),
           child: SizedBox(
             height: 38,
             child: TextField(
               controller: controller,
               textAlignVertical: TextAlignVertical.center,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 color: Color(0xFF1A1A1A),
               ),
               decoration: const InputDecoration(
                 hintText: AppStrings.homeSearchHint,
                 hintStyle: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   color: Color(0xFFBDBDBD),
                 ),
                 border: InputBorder.none,
@@ -664,80 +675,87 @@ class CouponCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: isHighlighted
-                ? Border.all(color: const Color(0xFF64CAFA), width: 1.8)
-                : null,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    final borderSide = isHighlighted
+        ? const BorderSide(color: Color(0xFF64CAFA), width: 1.8)
+        : const BorderSide(color: Color(0xFFD7DEE7), width: 1);
+
+    final cardRadius = BorderRadius.circular(18);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: cardRadius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Row(
-            children: [
-              CouponThumbnail(
-                imagePath: coupon.imagePath,
-                imageBytes: coupon.imageBytes,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: cardRadius,
+          side: borderSide,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                CouponThumbnail(
+                  imagePath: coupon.imagePath,
+                  imageBytes: coupon.imageBytes,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        coupon.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${AppStrings.homeCouponExpiryPrefix}${coupon.expiryDate}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF9E9E9E),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      coupon.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1A1A1A),
+                    DdayBadge(coupon: coupon.detail),
+                    if (coupon.dDay == 0) ...[
+                      const SizedBox(height: 4),
+                      const Text(
+                        AppStrings.homeTodayExpires,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64CAFA),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${AppStrings.homeCouponExpiryPrefix}${coupon.expiryDate}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF9E9E9E),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  DdayBadge(coupon: coupon.detail),
-                  if (coupon.dDay == 0) ...[
-                    const SizedBox(height: 4),
-                    const Text(
-                      AppStrings.homeTodayExpires,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF64CAFA),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

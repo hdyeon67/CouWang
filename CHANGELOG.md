@@ -4,6 +4,10 @@
 
 ### 홈 / 쿠폰 리스트 UI
 - `CouponSearchField`를 높이 48px, 16px 텍스트 기준으로 조정하고 검색 필드 border를 `0xFFD7DEE7` 1px로 정리했습니다.
+- `CouponSearchField` 외부 영역을 탭하거나 쿠폰 상세/등록/알림 화면으로 이동할 때 키보드 포커스가 내려가도록 수정했습니다.
+- 검색 중 다른 화면을 다녀온 뒤에도 TextField 포커스 때문에 키보드가 다시 표시되지 않도록 화면 이동 전 포커스를 해제했습니다.
+- `CouponSearchField` 내부 TextField 폭과 글자 크기를 조정해 라운드 border 안에서 더 안정적으로 보이도록 보정했습니다.
+- `CouponCard` 테두리가 실제 카드 외곽에 보이도록 `Material.shape` 기반 border로 옮기고 그림자 레이어와 분리했습니다.
 - `CouponCard` 주변 표시 흐름과 쿠폰 리스트 D-Day 배지를 상세 화면의 pill 배지 스타일에 맞춰 통일했습니다.
 - 필터 칩 간격을 8px에서 3px로 줄이고, 정렬 버튼은 실제로 공간이 부족할 때만 다음 줄로 내려가도록 기준을 조정했습니다.
 - 금액 추정 DB 정리 전까지 이번 달 절약 금액 말풍선 문구와 임시 `_estimateCouponAmount` 계산 로직을 숨겼습니다.
