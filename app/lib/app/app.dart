@@ -34,6 +34,7 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
     if (state != AppLifecycleState.resumed) {
       return;
     }
+    NotificationService().handlePendingNotificationTap();
     if (!NotificationService().consumeNotificationDetailResumeReset()) {
       return;
     }

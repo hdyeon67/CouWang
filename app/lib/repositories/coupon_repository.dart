@@ -259,7 +259,7 @@ class CouponRepository {
     final testCoupons = <CouponDraft>[
       CouponDraft(
         id: 'internal_test_d30',
-        name: '내부테스트 스타벅스 D-30',
+        name: '스타벅스 D-30',
         brand: '스타벅스',
         category: '카페',
         barcodeNumber: 'TEST-D30-0001',
@@ -268,7 +268,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_d7',
-        name: '내부테스트 배스킨 D-7',
+        name: '배스킨 D-7',
         brand: '배스킨라빈스',
         category: '카페',
         barcodeNumber: 'TEST-D07-0001',
@@ -277,7 +277,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_d3',
-        name: '내부테스트 파리바게뜨 D-3',
+        name: '파리바게뜨 D-3',
         brand: '파리바게뜨',
         category: '베이커리',
         barcodeNumber: 'TEST-D03-0001',
@@ -286,7 +286,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_d1',
-        name: '내부테스트 GS25 D-1',
+        name: 'GS25 D-1',
         brand: 'GS25',
         category: '편의점',
         barcodeNumber: 'TEST-D01-0001',
@@ -295,7 +295,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_dday',
-        name: '내부테스트 올리브영 D-DAY',
+        name: '올리브영 D-DAY',
         brand: '올리브영',
         category: '뷰티/헬스',
         barcodeNumber: 'TEST-DDAY-0001',
@@ -304,7 +304,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_expired',
-        name: '내부테스트 ABC마트 만료',
+        name: 'ABC마트 만료',
         brand: 'ABC마트',
         category: '마트/쇼핑',
         barcodeNumber: 'TEST-EXP-0001',
@@ -313,7 +313,7 @@ class CouponRepository {
       ),
       CouponDraft(
         id: 'internal_test_used',
-        name: '내부테스트 BBQ 사용완료',
+        name: 'BBQ 사용완료',
         brand: 'BBQ',
         category: '패스트푸드',
         barcodeNumber: 'TEST-USED-0001',

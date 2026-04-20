@@ -355,13 +355,15 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final minDate = DateTime(2000, 1, 1);
     final maxDate = DateTime(2030, 12, 31);
-    final initialDate =
-        _selectedDate != null && !_selectedDate!.isBefore(today)
-            ? _selectedDate!
-            : today;
+    final initialDate = _selectedDate == null
+        ? DateTime.now()
+        : DateTime(
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+          );
 
     final picked = await showModalBottomSheet<DateTime>(
       context: context,
@@ -417,7 +419,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                     mode: CupertinoDatePickerMode.date,
                     dateOrder: DatePickerDateOrder.ymd,
                     initialDateTime: initialDate,
-                    minimumDate: today,
+                    minimumDate: minDate,
                     maximumDate: maxDate,
                     onDateTimeChanged: (date) {
                       wheelDate = date;

@@ -7,6 +7,7 @@ import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
 import '../../../../repositories/coupon_repository.dart';
+import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
 import '../../../../services/notification_service.dart';
 
@@ -204,6 +205,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {});
   }
 
+  Future<void> _addVirtualMemberships() async {
+    await MembershipRepository.addVirtualMemberships();
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.settingsTestMembershipsDone),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    setState(() {});
+  }
+
   @override
   void dispose() {
     _foregroundTestNotificationTimer?.cancel();
@@ -337,7 +354,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 500),
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -350,6 +367,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   label: const Text(
                     AppStrings.settingsTestCoupons,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF555555),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: _addVirtualMemberships,
+                  icon: const Icon(
+                    Icons.card_membership_outlined,
+                    size: 20,
+                    color: Color(0xFF555555),
+                  ),
+                  label: const Text(
+                    AppStrings.settingsTestMemberships,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

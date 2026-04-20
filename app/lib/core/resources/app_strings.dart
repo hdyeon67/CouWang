@@ -73,6 +73,8 @@ class AppStrings {
   static const settingsTestNotificationDone = '테스트 알림을 보냈어요.';
   static const settingsTestCoupons = '내부 테스트용 쿠폰 추가';
   static const settingsTestCouponsDone = '내부 테스트용 쿠폰을 추가했어요.';
+  static const settingsTestMemberships = '가상 멤버십 추가';
+  static const settingsTestMembershipsDone = '가상 멤버십을 추가했어요.';
   static const settingsTestTimeTitle = '테스트 알림 시작 시간';
   static const settingsTestTime10Sec = '10초 뒤';
   static const settingsTestTime30Sec = '30초 뒤';
@@ -201,6 +203,8 @@ class AppStrings {
 
   static const membershipCjOne = 'CJ ONE';
   static const membershipHappyPoint = '해피포인트';
+  static const membershipOkCashbag = 'OK캐시백';
+  static const membershipLPoint = 'L.POINT';
   static const membershipSkt = 'SKT membership';
   static const membershipTelecom = '통신사';
   static const membershipPoint = '포인트';

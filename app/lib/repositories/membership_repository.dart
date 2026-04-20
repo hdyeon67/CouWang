@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../core/resources/app_strings.dart';
 import '../features/memberships/presentation/screens/membership_detail_screen.dart';
 import '../services/local_database_service.dart';
 import '../services/local_image_storage_service.dart';
@@ -169,6 +170,53 @@ class MembershipRepository {
 
     await db.delete('memberships', where: 'id = ?', whereArgs: [id]);
     _cache.removeWhere((membership) => membership.id == id);
+  }
+
+  static Future<void> addVirtualMemberships() async {
+    final now = DateTime.now().toIso8601String();
+    final memberships = <MembershipDraft>[
+      const MembershipDraft(
+        id: 'virtual_membership_ok_cashbag',
+        name: AppStrings.membershipOkCashbag,
+        brand: AppStrings.membershipOkCashbag,
+        cardNumber: '9100123456789',
+        memo: '가상 멤버십 카드',
+      ),
+      const MembershipDraft(
+        id: 'virtual_membership_happy_point',
+        name: AppStrings.membershipHappyPoint,
+        brand: AppStrings.membershipHappyPoint,
+        cardNumber: '9200123456789',
+        memo: '가상 멤버십 카드',
+      ),
+      const MembershipDraft(
+        id: 'virtual_membership_l_point',
+        name: AppStrings.membershipLPoint,
+        brand: AppStrings.membershipLPoint,
+        cardNumber: '9300123456789',
+        memo: '가상 멤버십 카드',
+      ),
+      const MembershipDraft(
+        id: 'virtual_membership_cj_one',
+        name: AppStrings.membershipCjOne,
+        brand: AppStrings.membershipCjOne,
+        cardNumber: '9400123456789',
+        memo: '가상 멤버십 카드',
+      ),
+    ];
+
+    for (final draft in memberships) {
+      await saveDraft(
+        MembershipDraft(
+          id: draft.id,
+          name: draft.name,
+          brand: draft.brand,
+          cardNumber: draft.cardNumber,
+          memo: draft.memo,
+          createdAt: findById(draft.id!)?.createdAt ?? now,
+        ),
+      );
+    }
   }
 
   static Future<List<MembershipDetailModel>> _mapMemberships(

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -27,6 +28,8 @@ class NotificationService {
   bool _launchedFromNotification = false;
   bool _showingNotificationDetail = false;
   DateTime? _notificationDetailOpenedAt;
+  String? _pendingTapPayload;
+  bool _handlingTap = false;
 
   bool get launchedFromNotification => _launchedFromNotification;
 
@@ -94,6 +97,15 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
+  Future<void> handlePendingNotificationTap() async {
+    final payload = _pendingTapPayload;
+    if (payload == null) {
+      return;
+    }
+    _pendingTapPayload = null;
+    await handleNotificationTap(payload);
+  }
+
   void markLaunchSplashHandled() {
     _launchedFromNotification = false;
   }
@@ -113,55 +125,83 @@ class NotificationService {
   }
 
   Future<void> handleNotificationTap(String? payload) async {
-    final notificationPayload = _parsePayload(payload);
-    if (notificationPayload == null) {
+    if (payload == null || payload.isEmpty) {
+      return;
+    }
+    if (!_isNavigatorReady) {
+      _queueNotificationTap(payload);
+      return;
+    }
+    if (_handlingTap) {
+      _pendingTapPayload = payload;
       return;
     }
 
-    final coupon = CouponRepository.findById(notificationPayload.couponId);
-    if (coupon == null) {
-      return;
-    }
+    _handlingTap = true;
+    try {
+      final notificationPayload = _parsePayload(payload);
+      if (notificationPayload == null) {
+        return;
+      }
 
-    final notificationType = notificationPayload.notificationType;
-    await AnalyticsService().logNotificationOpened(
-      notificationType: notificationType,
-    );
-    if (notificationType == null) {
-      await NotificationLogRepository.ensureLatestVisibleLogForCoupon(
-        coupon: coupon,
-        notificationType: 'tap',
-        title: AppStrings.notificationGenericTitle,
-        body: _getBody('default', coupon.name),
-        scheduledAt: DateTime.now(),
-        markAsRead: true,
-      );
-      await NotificationLogRepository.markLatestUnreadAsReadByCouponId(
-        coupon.id,
-      );
-    } else {
-      final logId = _logId(coupon.id, notificationType);
-      await NotificationLogRepository.upsertLog(
-        id: logId,
-        couponId: coupon.id,
+      final coupon = CouponRepository.findById(notificationPayload.couponId);
+      if (coupon == null) {
+        return;
+      }
+
+      final notificationType = notificationPayload.notificationType;
+      await AnalyticsService().logNotificationOpened(
         notificationType: notificationType,
-        title: _getTitle(notificationType),
-        body: _getBody(notificationType, coupon.name),
-        scheduledAt: DateTime.now(),
       );
-      await NotificationLogRepository.markAsReadById(logId);
-    }
+      if (notificationType == null) {
+        await NotificationLogRepository.ensureLatestVisibleLogForCoupon(
+          coupon: coupon,
+          notificationType: 'tap',
+          title: AppStrings.notificationGenericTitle,
+          body: _getBody('default', coupon.name),
+          scheduledAt: DateTime.now(),
+          markAsRead: true,
+        );
+        await NotificationLogRepository.markLatestUnreadAsReadByCouponId(
+          coupon.id,
+        );
+      } else {
+        final logId = _logId(coupon.id, notificationType);
+        await NotificationLogRepository.upsertLog(
+          id: logId,
+          couponId: coupon.id,
+          notificationType: notificationType,
+          title: _getTitle(notificationType),
+          body: _getBody(notificationType, coupon.name),
+          scheduledAt: DateTime.now(),
+        );
+        await NotificationLogRepository.markAsReadById(logId);
+      }
 
-    navigatorKey.currentState?.pushNamedAndRemoveUntil(
-      AppRouter.home,
-      (route) => false,
-    );
-    navigatorKey.currentState?.pushNamed(
-      AppRouter.couponDetail,
-      arguments: coupon,
-    );
-    _showingNotificationDetail = true;
-    _notificationDetailOpenedAt = DateTime.now();
+      navigatorKey.currentState!.pushNamedAndRemoveUntil(
+        AppRouter.home,
+        (route) => false,
+      );
+      navigatorKey.currentState!.pushNamed(
+        AppRouter.couponDetail,
+        arguments: coupon,
+      );
+      _showingNotificationDetail = true;
+      _notificationDetailOpenedAt = DateTime.now();
+    } finally {
+      _handlingTap = false;
+    }
+    await handlePendingNotificationTap();
+  }
+
+  bool get _isNavigatorReady =>
+      navigatorKey.currentState != null && navigatorKey.currentContext != null;
+
+  void _queueNotificationTap(String payload) {
+    _pendingTapPayload = payload;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      handlePendingNotificationTap();
+    });
   }
 
   Future<void> scheduleCouponNotifications(
