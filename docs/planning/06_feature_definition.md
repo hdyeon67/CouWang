@@ -36,10 +36,11 @@
 | 로컬 알림 스케줄링 | 알림 시스템 | 쿠폰 만료 전/당일/만료 후 알림을 예약한다. | NotificationService | 구현완료 | 현재 정오 12시 예약 |
 | 알림 로그 저장 | 알림 시스템 | 예약 알림 정보를 최근 알림 리스트에 쌓는다. | NotificationListScreen | 구현완료 | `notification_logs` |
 | 알림 읽음/삭제 | 알림 시스템 | 알림을 읽음 처리하고 개별/전체 삭제한다. | NotificationListScreen | 구현완료 | 삭제 확인 다이얼로그 |
-| 알림 클릭 라우팅 | 알림 시스템 | 알림 클릭 시 해당 쿠폰 상세로 이동한다. | NotificationService, CouponDetailScreen | 구현완료 | payload `couponId|type` |
+| 알림 클릭 라우팅 | 알림 시스템 | 알림 클릭 시 해당 쿠폰 상세로 이동한다. | NotificationService, CouponDetailScreen | 구현완료 | payload `couponId|type`, iOS pending 처리 |
 | Android 버전별 알림 권한 | 설정 | Android 13 이상/12 이하 권한 흐름을 분리한다. | SettingsScreen, AppPermissionService | 구현완료 | MethodChannel 사용 |
 | 알림 설정 토글 | 설정 | 마스터/세부 주기 토글을 저장하고 재스케줄한다. | SettingsScreen | 구현완료 | 로컬 DB 저장 |
 | 테스트 알림 | 설정 | 내부 테스트용 쿠폰과 알림을 생성한다. | SettingsScreen | 구현완료 | 개발/QA 용도 |
+| 가상 멤버십 생성 | 설정 | 스토어 캡처와 QA를 위해 주요 멤버십 4종을 생성한다. | SettingsScreen, MembershipRepository | 구현완료 | OK캐시백, 해피포인트, L.POINT, CJ ONE |
 | 버전 표시 | 설정 | 앱 버전명과 빌드 번호를 표시한다. | SettingsScreen | 구현완료 | 낮은 강조도 |
 | 로그인 | 계정 | 사용자 계정으로 데이터를 동기화한다. | 없음 | 미구현 | 향후 확장 |
 | 클라우드/이메일 백업 | 데이터 | 로컬 데이터를 외부 백업한다. | 없음 | 미구현 | 향후 확장 |
