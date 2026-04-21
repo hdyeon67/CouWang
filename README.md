@@ -45,7 +45,7 @@ CouWang/
 ├─ data/       # csv, sqlite db
 ├─ scripts/    # 샘플 데이터 생성 / sqlite 적재
 ├─ analysis/   # 분석 노트북
-├─ docs/       # 이벤트, KPI, 회의록
+├─ docs/       # 기획, 아키텍처, 분석, 스토어, 법무, 운영 문서
 └─ queries/    # SQL 쿼리
 ```
 
@@ -93,11 +93,15 @@ flutter run
 
 ## 문서
 - [업데이트 로그](./CHANGELOG.md)
+- [문서 인덱스](./docs/README.md)
+- [실행 및 릴리즈 가이드](./docs/operations/run_and_release_guide.md)
 - [로컬 데이터 ERD](./docs/architecture/local_data_erd.md)
 - [로컬 데이터셋 정의](./docs/architecture/local_dataset_spec.md)
 - [로컬 SQL 스키마](./docs/sql/local_schema.sql)
-- [이벤트 정의](./docs/event_spec.md)
-- [KPI 정의](./docs/kpi_definition.md)
+- [이벤트 정의](./docs/analytics/event_spec.md)
+- [KPI 정의](./docs/analytics/kpi_definition.md)
+- [스토어 제출 문서](./docs/store/README.md)
+- [법적 문서](./docs/legal/README.md)
 - [결정사항 로그](./docs/notes/decision_log.md)
 - [2026-03-19 회의록](./docs/meetings/2026-03-19_meeting.md)
 - [2026-03-20 회의록](./docs/meetings/2026-03-20_meeting.md)

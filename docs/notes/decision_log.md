@@ -23,6 +23,12 @@
 - 내부테스트용 Android App Bundle은 `flutter build appbundle --release`로 생성한다.
 - 2026-04-21 생성본은 `1.1.5+8`, SHA-256 `a9352f688e33c88429b49137c02b78fbc965cd26a66d7d2ee3abb9f5134f8bea` 기준으로 기록한다.
 
+### 문서 구조
+- `docs/`는 기획, 아키텍처, 분석, 스토어, 법무, 운영, 작업 노트, 회의록 폴더로 나누어 관리한다.
+- 이벤트 명세와 KPI 정의는 `docs/analytics/`에 둔다.
+- 실행 및 릴리즈 가이드는 `docs/operations/`에 둔다.
+- GitHub Pages 공개 URL에 쓰는 HTML 문서는 기존 경로를 유지한다.
+
 ## 2026-04-20
 
 ### 스토어 제출 준비

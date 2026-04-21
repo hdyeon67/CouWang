@@ -137,3 +137,21 @@ flutter build appbundle --release --dart-define=ENABLE_FIREBASE=true
 | Android 실기기 실행 확인 | 완료: SM F946N |
 | iOS 실기기에서 화면 회전 고정 확인 | 필요 |
 | Play Console 내부테스트 AAB 업로드 | 생성 완료, 업로드 필요 |
+
+## 10. 문서 구조 정리
+
+문서가 늘어나면서 루트에 섞여 있던 운영/분석 문서를 폴더별 역할에 맞게 재배치했다.
+
+| 폴더 | 역할 |
+|---|---|
+| `docs/planning/` | 제품 기획, 화면 흐름, 기능 명세, 정책 |
+| `docs/architecture/` | 로컬 데이터 구조와 저장 기준 |
+| `docs/analytics/` | 이벤트 명세와 KPI 정의 |
+| `docs/sql/` | SQLite 스키마 |
+| `docs/store/` | Google Play / App Store 제출 문서 |
+| `docs/legal/` | 개인정보처리방침, 심사 메모, 개인정보 라벨 |
+| `docs/operations/` | 실행, 빌드, 릴리즈 운영 가이드 |
+| `docs/notes/` | 날짜별 작업 노트와 결정사항 |
+| `docs/meetings/` | 회의 요약과 원문 참고 자료 |
+
+각 폴더에는 README를 추가해 문서 역할과 관리 기준을 바로 확인할 수 있게 했다.
