@@ -5,12 +5,23 @@
 ### 법적 문서와 공개 URL
 - 스토어 제출에 필요한 개인정보처리방침은 `docs/legal/`에 원문 Markdown과 GitHub Pages용 HTML을 함께 관리한다.
 - GitHub Pages는 저장소의 `docs/` 폴더 기준 배포를 전제로 하며, 대표 개인정보처리방침 URL은 `https://hdyeon67.github.io/CouWang/legal/privacy_policy_ko.html`로 둔다.
-- 쿠왕 v1.0은 로그인, 서버 저장, 광고, 사용자 추적, 외부 데이터 전송이 없으므로 앱 개인정보 라벨은 `데이터를 수집하지 않음`을 기준으로 한다.
+- 쿠왕 v1.0은 로그인과 쿠왕 자체 서버 저장이 없고 쿠폰/멤버십 데이터는 기기 내 로컬 저장을 기준으로 한다.
+- Google AdMob 배너 광고를 적용했으므로 앱 개인정보 라벨은 `데이터 수집함` 기준으로 갱신한다. 광고 식별자, 사용 데이터, 진단 정보 등 Google Mobile Ads SDK가 처리할 수 있는 항목은 스토어 제출 전 최신 Google 공시 문서 기준으로 확인한다.
 - 사진/이미지는 현재 기기 내 로컬 저장만 하므로 App Store 개인정보 라벨에서는 수집 데이터로 보지 않는다. 향후 외부 서버 전송이 생기면 사용자 콘텐츠 항목을 재검토한다.
 
 ### 화면 방향
 - 쿠왕 앱은 모바일 쿠폰/멤버십 관리 경험을 세로 화면 기준으로 고정한다.
 - Flutter, Android, iOS 설정을 모두 세로 고정으로 맞춰 플랫폼별 회전 차이를 줄인다.
+
+### 광고와 Firebase
+- Google AdMob은 실제 Android/iOS App ID와 배너 광고 단위 ID를 코드에 반영한다.
+- 광고 SDK가 포함되므로 스토어 개인정보 문서는 `데이터 수집함` 기준으로 관리한다.
+- Firebase Analytics/Crashlytics SDK는 포함하되, 실제 수집은 Firebase 설정 파일과 `ENABLE_FIREBASE=true` 빌드 옵션이 있을 때만 활성화한다.
+- Firebase 설정 파일이 없는 기본 릴리즈 빌드는 Firebase 수집 비활성 상태로 유지한다.
+
+### 내부테스트 AAB
+- 내부테스트용 Android App Bundle은 `flutter build appbundle --release`로 생성한다.
+- 2026-04-21 생성본은 `1.1.5+8`, SHA-256 `a9352f688e33c88429b49137c02b78fbc965cd26a66d7d2ee3abb9f5134f8bea` 기준으로 기록한다.
 
 ## 2026-04-20
 

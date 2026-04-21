@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -221,6 +222,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {});
   }
 
+  void _throwCrashlyticsTestException() {
+    throw StateError('Crashlytics test exception from settings screen');
+  }
+
   @override
   void dispose() {
     _foregroundTestNotificationTimer?.cancel();
@@ -354,140 +359,171 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 500),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: _addInternalTestCoupons,
-                  icon: const Icon(
-                    Icons.playlist_add_outlined,
-                    size: 20,
-                    color: Color(0xFF555555),
-                  ),
-                  label: const Text(
-                    AppStrings.settingsTestCoupons,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+              if (!kReleaseMode) ...[
+                const SizedBox(height: 500),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _addInternalTestCoupons,
+                    icon: const Icon(
+                      Icons.playlist_add_outlined,
+                      size: 20,
                       color: Color(0xFF555555),
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF0F0F0),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: _addVirtualMemberships,
-                  icon: const Icon(
-                    Icons.card_membership_outlined,
-                    size: 20,
-                    color: Color(0xFF555555),
-                  ),
-                  label: const Text(
-                    AppStrings.settingsTestMemberships,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF555555),
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF0F0F0),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        AppStrings.settingsTestTimeTitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                    label: const Text(
+                      AppStrings.settingsTestCoupons,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
                       ),
                     ),
-                    DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: _testNotificationDelaySeconds,
-                        borderRadius: BorderRadius.circular(14),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF555555),
-                          fontWeight: FontWeight.w500,
-                        ),
-                        items: _testDelayOptions
-                            .map(
-                              (option) => DropdownMenuItem<int>(
-                                value: option.seconds,
-                                child: Text(option.label),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _testNotificationDelaySeconds = value;
-                          });
-                        },
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: _showTestNotification,
-                  icon: const Icon(
-                    Icons.notifications_active_outlined,
-                    size: 20,
-                    color: Color(0xFF555555),
                   ),
-          label: const Text(
-                    AppStrings.settingsTestAllNotifications,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _addVirtualMemberships,
+                    icon: const Icon(
+                      Icons.card_membership_outlined,
+                      size: 20,
                       color: Color(0xFF555555),
                     ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF0F0F0),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    label: const Text(
+                      AppStrings.settingsTestMemberships,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          AppStrings.settingsTestTimeTitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ),
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<int>(
+                          value: _testNotificationDelaySeconds,
+                          borderRadius: BorderRadius.circular(14),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF555555),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          items: _testDelayOptions
+                              .map(
+                                (option) => DropdownMenuItem<int>(
+                                  value: option.seconds,
+                                  child: Text(option.label),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _testNotificationDelaySeconds = value;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _showTestNotification,
+                    icon: const Icon(
+                      Icons.notifications_active_outlined,
+                      size: 20,
+                      color: Color(0xFF555555),
+                    ),
+                    label: const Text(
+                      AppStrings.settingsTestAllNotifications,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _throwCrashlyticsTestException,
+                    icon: const Icon(
+                      Icons.bug_report_outlined,
+                      size: 20,
+                      color: Color(0xFF555555),
+                    ),
+                    label: const Text(
+                      'Crashlytics 테스트 예외 발생',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               if (_appVersionLabel.isNotEmpty) ...[
                 const SizedBox(height: 28),
                 Center(

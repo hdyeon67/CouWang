@@ -70,12 +70,12 @@ Get expiry alerts and manage coupons, gifticons, and savings at a glance.
 
 쿠왕을 사용하다가 불편한 점이나 제안하고 싶은 기능이 있다면 언제든지 알려주세요. 사용자의 피드백을 바탕으로 더 편하고 귀여운 쿠폰 관리 앱으로 다듬어가겠습니다.
 
-- 문의 이메일: (기입 필요)
-- 웹사이트: (기입 필요)
+- 문의 이메일: fineboll67@gmail.com
+- 웹사이트: https://hdyeon67.github.io/CouWang/
 
 #### 서비스 정책 안내
 
-쿠왕은 로그인 없이 바로 사용할 수 있으며, 등록한 쿠폰·기프티콘·멤버십 정보는 사용자의 기기 안에 로컬로 저장됩니다. 별도의 회원가입, 서버 저장, 사용자 추적 없이 간단하고 안전하게 사용할 수 있도록 설계했습니다.
+쿠왕은 로그인 없이 바로 사용할 수 있으며, 등록한 쿠폰·기프티콘·멤버십 정보는 사용자의 기기 안에 로컬로 저장됩니다. 별도의 회원가입이나 쿠왕 서버 저장 없이 간단하게 사용할 수 있도록 설계했습니다. 앱에는 Google AdMob 배너 광고가 포함될 수 있으며, 광고 제공을 위한 데이터 처리는 Google Mobile Ads SDK 정책을 따릅니다.
 
 ### English
 
@@ -108,12 +108,12 @@ Couwang is a little black dog mascot who sniffs out your forgotten coupons. When
 
 If you have feedback, questions, or ideas, please let us know. We will keep improving Couwang to make coupon management easier, warmer, and more useful.
 
-- Contact Email: (기입 필요)
-- Website: (기입 필요)
+- Contact Email: fineboll67@gmail.com
+- Website: https://hdyeon67.github.io/CouWang/
 
 #### Service Policy
 
-Couwang works without login. Coupon, gifticon, and membership information is stored locally on your device. The app is designed for simple use without account registration, server storage, or user tracking.
+Couwang works without login. Coupon, gifticon, and membership information is stored locally on your device. The app is designed for simple use without account registration or Couwang server storage. The app may include Google AdMob banner ads, and ad-related data processing follows the Google Mobile Ads SDK policy.
 
 ## 4. 키워드 태그
 
@@ -148,15 +148,15 @@ Couwang works without login. Coupon, gifticon, and membership information is sto
 | 위치 정보 기반 기능 포함 여부 | 아니오 |
 | 개인정보 또는 민감정보 서버 수집 여부 | 아니오 |
 | 인앱 구매 또는 유료 결제 포함 여부 | 아니오 |
-| 광고 포함 여부 | 앱 내 배너 광고 적용 시 스토어 설정에서 광고 포함으로 체크 필요 |
+| 광고 포함 여부 | 예. Google AdMob 배너 광고 포함 |
 
 **최종 등급:** 전체 이용가 예상
 
 ## 6. 연락처 정보
 
-- 이메일: **(기입 필요)**
-- 웹사이트: **(기입 필요)**
-- 개인정보처리방침 URL: **(기입 필요)**
+- 이메일: **fineboll67@gmail.com**
+- 웹사이트: **https://hdyeon67.github.io/CouWang/**
+- 개인정보처리방침 URL: **https://hdyeon67.github.io/CouWang/legal/privacy_policy_ko.html**
 
 ## 7. 출시 국가
 

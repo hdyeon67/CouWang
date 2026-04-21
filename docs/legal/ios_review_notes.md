@@ -12,5 +12,5 @@ Couwang is a local coupon, gifticon, and membership barcode manager. This app do
 
 Test flow: launch app → home, tap + to add a sample coupon, open the coupon detail to check the barcode, add a membership from the Membership tab, then check notification toggles in Settings.
 
-Photo Library is only for coupon/membership images. Notifications are local expiry reminders. No server, Firebase, ads, tracking, or external data transfer is used.
+Photo Library is only for coupon/membership images. Notifications are local expiry reminders. No login, server, or Firebase backend is used. Coupon and membership data stays on device. Banner ads are served through Google AdMob.
 ```

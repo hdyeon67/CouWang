@@ -604,6 +604,17 @@ pod install
 
 현재 앱에는 Firebase Analytics와 Crashlytics 코드가 연결되어 있지만, Firebase 프로젝트 설정 파일이 없으면 기본적으로 비활성화됩니다. 실제 수집을 켜려면 Firebase 프로젝트를 만든 뒤 플랫폼별 설정 파일을 추가하고 `ENABLE_FIREBASE=true` 값을 함께 전달합니다.
 
+Crashlytics 공식 시작하기 1~3단계 반영 상태:
+
+| 단계 | 반영 내용 | 상태 |
+|---|---|---|
+| 1단계: 플러그인 추가 | `firebase_crashlytics`, `firebase_analytics` 의존성 추가 | 완료 |
+| 1단계: Firebase 구성 | Android Google Services/Crashlytics Gradle 플러그인 선언 및 `google-services.json` 존재 시 적용 | 준비 완료 |
+| 2단계: 비정상 종료 핸들러 | `FlutterError.onError`, `PlatformDispatcher.instance.onError`를 Crashlytics로 연결 | 완료 |
+| 3단계: 테스트 예외 | 설정 화면의 debug 전용 테스트 섹션에 Crashlytics 테스트 예외 버튼 추가 | 완료 |
+
+현재 로컬에는 `flutterfire` CLI와 Firebase 설정 파일이 없으므로 `flutterfire configure`는 아직 실행되지 않았습니다. Firebase Console에서 앱을 등록한 뒤 설정 파일을 내려받거나 `flutterfire configure`를 실행하면 실제 수집을 켤 수 있습니다.
+
 필요 파일:
 
 ```text
@@ -630,6 +641,13 @@ Firebase를 켠 상태로 Android 실행:
 cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
 flutter run -d <device-id> --dart-define=ENABLE_FIREBASE=true
 ```
+
+Crashlytics 테스트:
+
+1. Firebase 설정 파일을 추가합니다.
+2. `--dart-define=ENABLE_FIREBASE=true`로 앱을 실행합니다.
+3. 설정 화면 하단 debug 전용 섹션에서 **Crashlytics 테스트 예외 발생** 버튼을 누릅니다.
+4. 앱을 다시 실행한 뒤 Firebase Console의 Crashlytics 대시보드에서 테스트 보고서를 확인합니다.
 
 Firebase를 켠 상태로 Android AAB 생성:
 
@@ -660,3 +678,103 @@ Firebase를 끈 기본 상태로 실행:
 cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
 flutter run -d <device-id>
 ```
+
+## 12. 프로덕션 AAB 생성 전 체크리스트
+
+프로덕션용 Android App Bundle(AAB)을 만들기 전에 아래 항목을 확인합니다.
+
+### 12.1 릴리즈 모드 UI
+
+설정 화면의 테스트 섹션은 `kReleaseMode`에서 숨겨집니다.
+
+릴리즈 AAB에는 아래 개발/QA 버튼이 표시되지 않아야 합니다.
+
+- 내부 테스트용 쿠폰 추가
+- 가상 멤버십 추가
+- 테스트 알림 시작 시간
+- 모든 알림 테스트 보내기
+
+### 12.2 AdMob 설정
+
+현재 코드에 반영된 배너 광고 단위 ID:
+
+| 플랫폼 | 배너 광고 단위 ID |
+|---|---|
+| Android | `ca-app-pub-9758365972980092/7911163697` |
+| iOS | `ca-app-pub-9758365972980092/4576447551` |
+
+현재 네이티브 설정에 반영된 AdMob App ID:
+
+| 플랫폼 | AdMob App ID |
+|---|---|
+| Android | `ca-app-pub-9758365972980092~2994938423` |
+| iOS | `ca-app-pub-9758365972980092~8594749463` |
+
+광고 단위 ID는 `/`가 들어가는 값이고, AdMob App ID는 `~`가 들어가는 값입니다.
+
+광고가 포함되어 있으므로 Google Play Console의 앱 콘텐츠에서 **광고 포함: 예**로 설정하고, Google Play 데이터 보안 및 App Store 개인정보 라벨에는 Google Mobile Ads SDK가 처리할 수 있는 데이터 항목을 반영합니다.
+
+### 12.3 Android 릴리즈 서명
+
+`app/android/key.properties` 파일이 있어야 릴리즈 키로 서명됩니다.
+
+예시:
+
+```properties
+storePassword=...
+keyPassword=...
+keyAlias=couwang-release
+storeFile=keystore/couwang-release.jks
+```
+
+확인할 파일:
+
+```text
+app/android/key.properties
+app/android/app/keystore/couwang-release.jks
+```
+
+`key.properties`가 없으면 현재 Gradle 설정상 debug signing으로 빌드될 수 있으므로, Play Console 업로드용 AAB를 만들기 전 반드시 릴리즈 서명을 확인합니다.
+
+### 12.4 버전 코드/버전명
+
+Play Console에 새 AAB를 업로드할 때마다 `versionCode`는 이전 업로드보다 커야 합니다.
+
+확인 파일:
+
+```text
+app/pubspec.yaml
+```
+
+예시:
+
+```yaml
+version: 1.0.0+1
+```
+
+다음 업로드가 필요하면 `1.0.0+2`처럼 build number를 올립니다.
+
+### 12.5 개인정보/스토어 URL
+
+GitHub Pages 공개 URL:
+
+| 항목 | URL |
+|---|---|
+| 웹사이트 | `https://hdyeon67.github.io/CouWang/` |
+| 개인정보처리방침 | `https://hdyeon67.github.io/CouWang/legal/privacy_policy_ko.html` |
+| Privacy Policy | `https://hdyeon67.github.io/CouWang/legal/privacy_policy_en.html` |
+
+Google Play Console에는 개인정보처리방침 URL로 한국어 개인정보처리방침 URL을 입력합니다.
+
+### 12.6 권장 빌드 순서
+
+```bash
+cd /Users/hwangdy-mac/EXPLORER/Project4/CouWang/app
+flutter clean
+flutter pub get
+flutter analyze
+flutter build appbundle --release
+open build/app/outputs/bundle/release
+```
+
+Firebase를 켜는 빌드는 실제 Firebase 설정 파일이 있을 때만 사용합니다.

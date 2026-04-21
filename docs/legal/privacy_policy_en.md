@@ -11,13 +11,13 @@ Effective Date: April 21, 2026
 
 Couwang ("the App") respects your privacy. This Privacy Policy explains what information the App processes, where such information is stored, and what choices and rights you have.
 
-Couwang does not provide account registration, login, server-based storage, advertising, or user tracking. Coupon and membership information entered or selected by the user is stored locally on the user's device and is not transmitted to the developer's server or any external server.
+Couwang does not provide account registration, login, or Couwang server-based storage. Coupon and membership information entered or selected by the user is stored locally on the user's device and is not transmitted to the developer's server. However, the App may display Google AdMob banner ads, and the Google Mobile Ads SDK may process certain device and usage information for ad delivery, fraud prevention, and advertising measurement.
 
 ## 1. Overview
 
 Couwang helps users manage coupons, gifticons, and membership barcodes on their device and receive expiry reminders.
 
-The App does not collect information that directly identifies you, such as your name, email address, phone number, account credentials, or location. The App also does not use your data for advertising, marketing, analytics, or tracking purposes.
+The App does not directly collect information that identifies you, such as your name, email address, phone number, account credentials, or precise location. Coupon, gifticon, and membership information remains stored on your device. For advertising, the Google Mobile Ads SDK may process advertising identifiers, device information, app interactions, and diagnostic information in accordance with Google's advertising and privacy policies.
 
 ## 2. Information We Collect
 
@@ -29,11 +29,11 @@ The App does not collect information that directly identifies you, such as your 
 | Email address | Not collected | No login or account registration |
 | Phone number | Not collected | Not required by the App |
 | Location | Not collected | No location-based feature |
-| Advertising identifier | Not collected | No advertising or tracking |
+| Advertising identifier | May be processed by AdMob SDK | Ad delivery, ad measurement, and fraud prevention |
 | Payment information | Not collected | No paid purchase feature |
-| Usage analytics | Not collected | No external analytics transmission |
+| Usage analytics | Not collected by Couwang server | AdMob SDK may process ad interaction and diagnostic information |
 
-Couwang does not collect personally identifiable information.
+Couwang does not collect directly identifying information such as your name, email address, or phone number.
 
 ### 2.2 Data Stored Locally on Your Device
 
@@ -47,7 +47,20 @@ The following information may be entered or selected by you and stored locally o
 | Notification settings | Notification on/off status and reminder intervals | Local storage on your device | No |
 | Notification history | Reminder title, message, read status | Local storage on your device | No |
 
-This information is processed only on your device and is not transmitted to the developer or any third party.
+This coupon and membership information is processed only on your device and is not transmitted to the developer or any third party.
+
+### 2.3 Information Processed by Advertising SDK
+
+The App may display Google AdMob banner ads to support the free service. The Google Mobile Ads SDK may automatically process the following information for ad delivery, advertising measurement, security, and fraud prevention.
+
+| Information That May Be Processed | Examples | Processor |
+|---|---|---|
+| Device and advertising identifiers | Advertising ID, app set ID, device-related identifiers | Google AdMob |
+| Network information | IP address, which may be used to estimate approximate location | Google AdMob |
+| App interactions | App launch, ad impressions, ad taps, and ad-related interactions | Google AdMob |
+| Diagnostic information | App and SDK performance, errors, and crash-related information | Google AdMob |
+
+Couwang does not provide your coupon or membership content to the advertising SDK.
 
 ## 3. Purpose of Processing
 
@@ -60,8 +73,9 @@ Couwang processes locally stored data for the following purposes:
 | Image-based input assistance | Helping users register coupon or membership information from selected images |
 | Expiry reminders | Sending local notifications before coupon expiry |
 | Notification history | Displaying recent reminder history on the device |
+| Ad delivery | Displaying Google AdMob banner ads to support the free service |
 
-The App does not use data for advertising, marketing, tracking, profiling, or external analytics.
+Couwang's own server does not use user data for advertising, marketing, tracking, profiling, or external analytics. Advertising-related processing is governed by the Google AdMob policies.
 
 ## 4. Retention Period
 
@@ -78,13 +92,15 @@ Locally stored data remains on your device until you delete the relevant coupon,
 
 ## 5. Sharing with Third Parties
 
-Couwang does not sell, share, disclose, or provide personal information or locally stored user data to third parties.
+Couwang does not sell, share, disclose, or provide your locally stored coupon, gifticon, membership, or image data to third parties.
+
+For displaying ads, the Google AdMob SDK may process device and ad-related information for ad delivery, measurement, security, and fraud prevention.
 
 ## 6. Service Providers and Processors
 
-Couwang does not use third-party processors to process personal information.
+Couwang does not use third-party processors to process coupon or membership data.
 
-The App does not transmit user data to external databases, analytics services, advertising networks, or cloud servers.
+The App uses Google AdMob to display banner ads. Advertising-related information processed by the AdMob SDK is governed by Google's Privacy Policy and Google Mobile Ads SDK policies.
 
 ## 7. Your Rights and Choices
 
@@ -122,11 +138,11 @@ If you believe personal data is being processed in a way that affects your right
 
 ### CalOPPA
 
-Couwang does not track users across third-party websites or services. The App does not respond to "Do Not Track" signals because it does not perform cross-site or cross-app tracking.
+Couwang does not operate its own cross-site or cross-app tracking system. If personalized advertising or other AdMob features are enabled, Google may process advertising-related identifiers according to its policies. The App does not respond to "Do Not Track" signals because mobile apps do not have a uniform DNT standard.
 
 ### CCPA/CPRA
 
-Couwang does not sell or share personal information as defined under California privacy laws. The App does not collect personal information for advertising or profiling. If you have questions about your privacy rights, please contact us.
+Couwang does not sell personal information as defined under California privacy laws. Advertising-related information may be processed by Google AdMob for ad delivery, measurement, security, and fraud prevention. If you have questions about your privacy rights, please contact us.
 
 ## 10. Privacy Contact
 
@@ -134,9 +150,9 @@ For privacy-related inquiries, please contact:
 
 | Item | Details |
 |---|---|
-| Privacy Contact | [담당자명] |
-| Email | [이메일] |
-| Address | [주소] |
+| Privacy Contact | fineboll |
+| Email | fineboll67@gmail.com |
+| Address | Pungseong-ro 29-gil, Songpa-gu, Seoul, Republic of Korea |
 
 ## 11. Changes to This Privacy Policy
 

@@ -88,12 +88,12 @@
 
 쿠왕을 사용하며 불편한 점이나 제안하고 싶은 기능이 있다면 알려주세요.
 
-- 문의 이메일: (기입 필요)
-- 웹사이트: (기입 필요)
+- 문의 이메일: fineboll67@gmail.com
+- 웹사이트: https://hdyeon67.github.io/CouWang/
 
 #### 개인정보 안내
 
-쿠왕은 로그인 없이 사용할 수 있으며, 등록한 쿠폰·기프티콘·멤버십 정보는 사용자의 기기에 로컬로 저장됩니다. 별도의 사용자 추적이나 서버 저장 없이 간단하고 안전하게 사용할 수 있도록 설계했습니다.
+쿠왕은 로그인 없이 사용할 수 있으며, 등록한 쿠폰·기프티콘·멤버십 정보는 사용자의 기기에 로컬로 저장됩니다. 별도의 쿠왕 서버 저장 없이 간단하게 사용할 수 있도록 설계했습니다. 앱에는 Google AdMob 배너 광고가 포함될 수 있으며, 광고 제공을 위한 데이터 처리는 Google Mobile Ads SDK 정책을 따릅니다.
 
 ### English
 
@@ -137,12 +137,12 @@ Couwang is a little black dog mascot who helps find forgotten coupons. When a co
 
 If you have feedback, questions, or feature suggestions, please let us know.
 
-- Contact Email: (기입 필요)
-- Website: (기입 필요)
+- Contact Email: fineboll67@gmail.com
+- Website: https://hdyeon67.github.io/CouWang/
 
 #### Privacy
 
-Couwang works without login. Coupon, gifticon, and membership information is stored locally on your device. The app is designed without user tracking or server-side storage.
+Couwang works without login. Coupon, gifticon, and membership information is stored locally on your device. The app is designed without Couwang server-side storage. The app may include Google AdMob banner ads, and ad-related data processing follows the Google Mobile Ads SDK policy.
 
 ## 5. 키워드 (Keywords, 100자 이내, 쉼표 구분)
 
@@ -158,16 +158,16 @@ Couwang works without login. Coupon, gifticon, and membership information is sto
 
 | 앱스토어 개인정보 질문 항목 | 답변 |
 |---|---|
-| 데이터 수집 여부 | 아니오. 로컬 저장만 사용 |
+| 데이터 수집 여부 | 예. 쿠왕 자체 서버 수집은 없으나 Google AdMob SDK가 광고 제공을 위해 일부 데이터를 처리할 수 있음 |
 | 연락처 정보 수집 | 아니오 |
-| 식별자 수집 | 아니오 |
-| 사용 데이터 수집 | 아니오 |
-| 진단 데이터 수집 | 아니오 |
+| 식별자 수집 | 예. 광고 식별자 또는 기기 식별자가 광고 제공/측정 목적으로 처리될 수 있음 |
+| 사용 데이터 수집 | 예. 광고 상호작용 및 앱 실행 등 일부 사용 데이터가 처리될 수 있음 |
+| 진단 데이터 수집 | 예. SDK 성능 및 오류 진단 정보가 처리될 수 있음 |
 | 위치 정보 수집 | 아니오 |
 | 사진 또는 동영상 서버 업로드 | 아니오. 사용자가 선택한 이미지는 기기 내 저장 |
-| 사용자 추적 | 아니오 |
+| 사용자 추적 | AdMob 개인 맞춤 광고/ATT 설정에 따라 최종 확인 필요 |
 
-**앱 개인정보 표시:** 데이터를 수집하지 않음 배지 획득 가능
+**앱 개인정보 표시:** AdMob SDK 사용으로 인해 "데이터를 수집하지 않음" 배지는 사용하지 않는 방향으로 제출합니다. App Store Connect 입력 전 Google Mobile Ads SDK의 최신 개인정보 공시 문서를 확인합니다.
 
 ## 8. 앱 심사 정보
 
@@ -188,7 +188,7 @@ Couwang works without login. Coupon, gifticon, and membership information is sto
 
 ### 연락처
 
-- 이메일: **(기입 필요)**
+- 이메일: **fineboll67@gmail.com**
 - 전화번호: **(기입 필요)**
 
 ## 9. 버전 정보 및 출시 노트
