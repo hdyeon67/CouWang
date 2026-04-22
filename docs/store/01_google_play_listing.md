@@ -166,8 +166,8 @@ Couwang works without login. Coupon, gifticon, and membership information is sto
 
 ## 8. 앱 버전 정보
 
-- 버전명: **1.0.0**
-- 버전 코드: **1**
+- 버전명: **1.1.6**
+- 버전 코드: **9**
 
 ### 출시 노트 (한국어)
 

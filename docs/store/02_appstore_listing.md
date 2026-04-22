@@ -189,12 +189,12 @@ Couwang works without login. Coupon, gifticon, and membership information is sto
 ### 연락처
 
 - 이메일: **fineboll67@gmail.com**
-- 전화번호: **(기입 필요)**
+- 전화번호: **+821062978758**
 
 ## 9. 버전 정보 및 출시 노트
 
-- 버전: **1.0.0**
-- 빌드: **1**
+- 버전: **1.1.6**
+- 빌드: **9**
 
 ### 새로운 기능 (한국어)
 
