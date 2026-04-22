@@ -152,6 +152,7 @@ For privacy-related inquiries, please contact:
 |---|---|
 | Privacy Contact | fineboll |
 | Email | fineboll67@gmail.com |
+| Phone | Phone inquiries are not provided separately. Privacy-related inquiries are accepted by email. |
 | Address | Pungseong-ro 29-gil, Songpa-gu, Seoul, Republic of Korea |
 
 ## 11. Changes to This Privacy Policy
