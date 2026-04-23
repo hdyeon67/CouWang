@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "516790915901",
+    "project_id": "couwang",
+    "storage_bucket": "couwang.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:516790915901:android:5da1c784940a18a05cab54",
+        "android_client_info": {
+          "package_name": "com.fineboll.couwangApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "516790915901-sj3nao0j5t19221rkui0li4c918dmr10.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fineboll.couwangApp",
+            "certificate_hash": "cef8b9fa0ef807faadcee508f68a9284e9409d35"
+          }
+        },
+        {
+          "client_id": "516790915901-n1glipt9ljh603efg6uaoqekuc1u0v88.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD59xKSsED-s__63f_wBCEO48LuAitUtXY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "516790915901-n1glipt9ljh603efg6uaoqekuc1u0v88.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "516790915901-1fqtnphg7vl8ihrm49fp0fhif0kbqmc9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fineboll.couwangApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

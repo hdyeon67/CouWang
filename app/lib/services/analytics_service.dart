@@ -16,6 +16,11 @@ class AnalyticsService {
 
   bool _initialized = false;
   bool _available = false;
+  Object? _initError;
+
+  bool get isAvailable => _available;
+
+  Object? get initError => _initError;
 
   Future<void> init() async {
     if (_initialized) {
@@ -30,11 +35,11 @@ class AnalyticsService {
     try {
       await Firebase.initializeApp();
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
-      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-        !kDebugMode,
-      );
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       _available = true;
+      _initError = null;
     } catch (error, stackTrace) {
+      _initError = error;
       debugPrint('Firebase analytics disabled: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
@@ -145,6 +150,19 @@ class AnalyticsService {
       return;
     }
     await FirebaseCrashlytics.instance.recordError(error, stackTrace);
+  }
+
+  void crashForTesting() {
+    if (!_available) {
+      throw StateError(
+        'Crashlytics is not available. Run with ENABLE_FIREBASE=true and check Firebase config files. Last init error: $_initError',
+      );
+    }
+    FirebaseCrashlytics.instance.log(
+      'Crashlytics forced test crash from settings screen',
+    );
+    FirebaseCrashlytics.instance.setCustomKey('test_crash_source', 'settings');
+    FirebaseCrashlytics.instance.crash();
   }
 
   Future<void> _logEvent(String name, Map<String, Object> parameters) async {

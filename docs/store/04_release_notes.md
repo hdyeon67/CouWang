@@ -1,12 +1,47 @@
 ---
 문서명: 출시노트
 프로젝트: 쿠왕 (Couwang)
-버전: v1.1.6
-작성일: 2026-04-22
+버전: v1.1.7
+작성일: 2026-04-23
 담당: 기획/마케팅
 ---
 
 # 출시노트
+
+## App Store 업데이트 노트
+
+### v1.1.7 한국어
+
+```text
+앱 안정성을 개선했어요.
+
+- iPhone 환경에서 앱 오류를 더 안정적으로 확인할 수 있도록 내부 진단 구성을 보강했어요.
+- Firebase 설정을 정리해 업데이트 이후 품질 개선에 필요한 기반을 다듬었어요.
+- 출시 빌드에서는 테스트 도구가 보이지 않도록 유지했어요.
+```
+
+### v1.1.7 English
+
+```text
+Improved app stability.
+
+- Improved internal diagnostics for iPhone app issues.
+- Refined Firebase configuration to support future quality improvements.
+- Kept internal test tools hidden in release builds.
+```
+
+## 내부 빌드 기록
+
+| 항목 | 내용 |
+|---|---|
+| 앱 버전 | `1.1.7+10` |
+| 빌드 목적 | App Store 업데이트용 IPA |
+| IPA 파일 | `app/build/ios/ipa/couwang_app.ipa` |
+| IPA 크기 | 약 52MB |
+| IPA SHA-256 | `aa35db7b3ce4e5d01595d9bc3958a8c593146074182c8511299654cb97e0b930` |
+| Firebase | `--dart-define=ENABLE_FIREBASE=true`로 활성화 |
+| 내부 테스트 도구 | 출시용 IPA에서는 비활성 |
+| 주요 확인 사항 | iOS Firebase 설정 파일 번들 포함, Crashlytics 진단 경로 보강, release 모드 테스트 섹션 숨김 |
 
 ## Google Play 출시노트
 

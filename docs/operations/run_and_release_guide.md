@@ -609,11 +609,11 @@ Crashlytics 공식 시작하기 1~3단계 반영 상태:
 | 단계 | 반영 내용 | 상태 |
 |---|---|---|
 | 1단계: 플러그인 추가 | `firebase_crashlytics`, `firebase_analytics` 의존성 추가 | 완료 |
-| 1단계: Firebase 구성 | Android Google Services/Crashlytics Gradle 플러그인 선언 및 `google-services.json` 존재 시 적용 | 준비 완료 |
+| 1단계: Firebase 구성 | Android `google-services.json`, iOS `GoogleService-Info.plist` 연결 | 완료 |
 | 2단계: 비정상 종료 핸들러 | `FlutterError.onError`, `PlatformDispatcher.instance.onError`를 Crashlytics로 연결 | 완료 |
-| 3단계: 테스트 예외 | 설정 화면의 debug 전용 테스트 섹션에 Crashlytics 테스트 예외 버튼 추가 | 완료 |
+| 3단계: 테스트 크래시 | 설정 화면의 debug 전용 테스트 섹션에 Crashlytics 강제 크래시 버튼 추가 | 완료 |
 
-현재 로컬에는 `flutterfire` CLI와 Firebase 설정 파일이 없으므로 `flutterfire configure`는 아직 실행되지 않았습니다. Firebase Console에서 앱을 등록한 뒤 설정 파일을 내려받거나 `flutterfire configure`를 실행하면 실제 수집을 켤 수 있습니다.
+현재 Firebase 설정 파일은 플랫폼별 기본 위치에 둡니다. iOS는 `GoogleService-Info.plist`가 Runner 타깃의 Resources에 포함되어야 실제 앱 번들에 복사됩니다.
 
 필요 파일:
 
@@ -646,8 +646,16 @@ Crashlytics 테스트:
 
 1. Firebase 설정 파일을 추가합니다.
 2. `--dart-define=ENABLE_FIREBASE=true`로 앱을 실행합니다.
-3. 설정 화면 하단 debug 전용 섹션에서 **Crashlytics 테스트 예외 발생** 버튼을 누릅니다.
-4. 앱을 다시 실행한 뒤 Firebase Console의 Crashlytics 대시보드에서 테스트 보고서를 확인합니다.
+3. 설정 화면 하단 debug 전용 섹션에서 **Crashlytics 테스트 크래시 발생** 버튼을 누릅니다.
+4. 앱이 종료되면 다시 실행합니다.
+5. Firebase Console의 Crashlytics 대시보드에서 테스트 보고서를 확인합니다.
+
+주의:
+
+- `ENABLE_FIREBASE=true`를 주지 않으면 앱에서 Firebase 초기화를 건너뜁니다.
+- Firebase 설정 파일이 없으면 초기화에 실패하고 Crashlytics도 전송되지 않습니다.
+- iOS는 빌드된 `Runner.app` 안에 `GoogleService-Info.plist`가 포함되어 있어야 합니다.
+- Crashlytics 보고서는 앱을 다시 실행한 뒤 전송되며, Firebase Console 반영까지 몇 분 걸릴 수 있습니다.
 
 Firebase를 켠 상태로 Android AAB 생성:
 

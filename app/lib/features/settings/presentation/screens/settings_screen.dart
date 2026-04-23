@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_tab_scaffold.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
+import '../../../../services/analytics_service.dart';
 import '../../../../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -20,6 +21,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const bool _internalTestToolsEnabled = bool.fromEnvironment(
+    'ENABLE_INTERNAL_TEST_TOOLS',
+  );
+
   bool _masterEnabled = false;
   bool _expireDayEnabled = false;
   bool _day1Enabled = false;
@@ -222,8 +227,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {});
   }
 
-  void _throwCrashlyticsTestException() {
-    throw StateError('Crashlytics test exception from settings screen');
+  void _triggerCrashlyticsTestCrash() {
+    final analytics = AnalyticsService();
+    if (!analytics.isAvailable) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              'Crashlytics 초기화 실패: ${analytics.initError ?? 'ENABLE_FIREBASE 설정을 확인해주세요.'}',
+            ),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+    analytics.crashForTesting();
   }
 
   @override
@@ -359,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              if (!kReleaseMode) ...[
+              if (!kReleaseMode || _internalTestToolsEnabled) ...[
                 const SizedBox(height: 500),
                 SizedBox(
                   width: double.infinity,
@@ -500,14 +519,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   width: double.infinity,
                   height: 52,
                   child: OutlinedButton.icon(
-                    onPressed: _throwCrashlyticsTestException,
+                    onPressed: _triggerCrashlyticsTestCrash,
                     icon: const Icon(
                       Icons.bug_report_outlined,
                       size: 20,
                       color: Color(0xFF555555),
                     ),
                     label: const Text(
-                      'Crashlytics 테스트 예외 발생',
+                      'Crashlytics 테스트 크래시 발생',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

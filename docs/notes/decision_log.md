@@ -1,5 +1,20 @@
 # 쿠왕 결정사항 로그
 
+## 2026-04-23
+
+### iOS Crashlytics 점검
+- iOS Firebase 설정 파일 `GoogleService-Info.plist`는 저장소 배치만으로 끝내지 않고, Runner 타깃 Resources에 포함되어 실제 `Runner.app` 번들에 복사되어야 한다.
+- Crashlytics 테스트는 단순 Flutter 예외 throw보다 `FirebaseCrashlytics.instance.crash()` 기반 강제 크래시로 확인한다.
+- Firebase 초기화 실패 시에는 앱을 즉시 종료시키기보다 설정 화면에서 실패 원인을 확인할 수 있게 유지한다.
+
+### release 테스트 도구 정책
+- 운영용 release 빌드에서는 설정 화면의 테스트 섹션을 계속 숨긴다.
+- 단, QA나 Crashlytics 확인이 필요할 때는 `ENABLE_INTERNAL_TEST_TOOLS=true` Dart define으로만 임시 노출한다.
+
+### iOS 업데이트 빌드
+- 2026-04-23 App Store 업데이트용 IPA는 `1.1.7+10` 기준으로 생성한다.
+- 업데이트용 iOS 릴리즈 빌드는 `ENABLE_FIREBASE=true`를 포함해 생성하고, 내부 테스트 도구는 비활성 상태로 유지한다.
+
 ## 2026-04-22
 
 ### iOS 첫 출시 심사
