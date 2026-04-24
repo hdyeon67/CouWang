@@ -1,5 +1,12 @@
 # 쿠왕 결정사항 로그
 
+## 2026-04-24
+
+### Android 업데이트 빌드
+- Android 업데이트용 App Bundle은 `1.1.7+10` 기준으로 생성한다.
+- 업데이트용 Android release 빌드는 `ENABLE_FIREBASE=true`를 포함해 생성한다.
+- Play Console 업로드 대상 파일은 `app/build/app/outputs/bundle/release/app-release.aab`를 기준으로 관리한다.
+
 ## 2026-04-23
 
 ### iOS Crashlytics 점검
