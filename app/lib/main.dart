@@ -8,6 +8,7 @@ import 'repositories/coupon_repository.dart';
 import 'repositories/membership_repository.dart';
 import 'repositories/settings_repository.dart';
 import 'services/analytics_service.dart';
+import 'services/gallery_scan_service.dart';
 import 'services/local_database_service.dart';
 import 'services/notification_service.dart';
 
@@ -23,6 +24,7 @@ Future<void> main() async {
   await CouponRepository.initialize();
   await MembershipRepository.initialize();
   await NotificationService().init();
+  GalleryScanService().warmUp();
   if (!kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS)) {

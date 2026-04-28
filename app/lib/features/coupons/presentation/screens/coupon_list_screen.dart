@@ -2,13 +2,16 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
 import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/coupon_repository.dart';
+import '../../../../services/gallery_scan_service.dart';
 import '../../../notifications/presentation/screens/notification_list_screen.dart';
 import '../../../../services/notification_service.dart';
+import '../../../../utils/scanned_image_store.dart';
 import 'coupon_create_screen.dart';
 import 'coupon_detail_screen.dart';
 
@@ -30,10 +33,14 @@ class HomeDashboardScreen extends StatefulWidget {
   State<HomeDashboardScreen> createState() => _HomeDashboardScreenState();
 }
 
-class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
+class _HomeDashboardScreenState extends State<HomeDashboardScreen>
+    with WidgetsBindingObserver {
   static const double _horizontalPadding = 20;
   final TextEditingController _searchController = TextEditingController();
   int _bubbleMessageIndex = 0;
+  bool _isScanningGallery = false;
+  bool _isShowingDetectedDialog = false;
+  List<DetectedCouponImage> _pendingImages = <DetectedCouponImage>[];
 
   String _searchQuery = '';
   HomeCouponSortType _sortType = HomeCouponSortType.expiry;
@@ -42,6 +49,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
@@ -49,13 +57,119 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().rescheduleAllCouponNotifications();
+      _runGalleryScan();
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _runGalleryScan();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _runGalleryScan() async {
+    if (_isScanningGallery || _isShowingDetectedDialog) {
+      return;
+    }
+    if ((ModalRoute.of(context)?.isCurrent ?? true) == false) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final autoScanEnabled =
+        prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
+    if (!autoScanEnabled) {
+      return;
+    }
+
+    _isScanningGallery = true;
+    try {
+      final service = GalleryScanService();
+      final detected = await service.scanNewImages();
+      if (detected.isEmpty || !mounted) {
+        return;
+      }
+
+      setState(() {
+        _pendingImages = detected;
+      });
+      _showNextDetectedPopup();
+    } finally {
+      _isScanningGallery = false;
+    }
+  }
+
+  void _showNextDetectedPopup() {
+    if (_pendingImages.isEmpty || !mounted || _isShowingDetectedDialog) {
+      return;
+    }
+    if ((ModalRoute.of(context)?.isCurrent ?? true) == false) {
+      return;
+    }
+
+    final current = _pendingImages.first;
+    final remaining = _pendingImages.length - 1;
+    _isShowingDetectedDialog = true;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return _CouponDetectedDialog(
+          detectedImage: current,
+          remainingCount: remaining,
+          onSave: () {
+            Navigator.pop(ctx);
+            setState(() {
+              _pendingImages.removeAt(0);
+            });
+            _isShowingDetectedDialog = false;
+            Navigator.of(context)
+                .push<CouponDetailModel>(
+                  MaterialPageRoute(
+                    builder: (_) => CouponCreateScreen(
+                      preloadedImage: current.file,
+                    ),
+                  ),
+                )
+                .then((savedCoupon) async {
+                  if (savedCoupon != null) {
+                    await ScannedImageStore.addRegisteredHash(
+                      current.imageHash,
+                    );
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }
+                  _showNextDetectedPopup();
+                });
+          },
+          onReject: () async {
+            Navigator.pop(ctx);
+            await ScannedImageStore.addRejectedHash(current.imageHash);
+            if (!mounted) {
+              _isShowingDetectedDialog = false;
+              return;
+            }
+            setState(() {
+              _pendingImages.removeAt(0);
+            });
+            _isShowingDetectedDialog = false;
+            _showNextDetectedPopup();
+          },
+        );
+      },
+    ).then((_) {
+      _isShowingDetectedDialog = false;
+    });
   }
 
   List<HomeCouponItem> get _filteredCouponList {
@@ -242,6 +356,120 @@ class CouponListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const HomeDashboardScreen();
+  }
+}
+
+class _CouponDetectedDialog extends StatelessWidget {
+  const _CouponDetectedDialog({
+    required this.detectedImage,
+    required this.remainingCount,
+    required this.onSave,
+    required this.onReject,
+  });
+
+  final DetectedCouponImage detectedImage;
+  final int remainingCount;
+  final VoidCallback onSave;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(
+                detectedImage.file,
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Image.asset('assets/icon/4.png', width: 36, height: 36),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '쿠폰 이미지를 발견했어요!',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      if (remainingCount > 0)
+                        Text(
+                          '외 $remainingCount개가 더 있어요',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64CAFA),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onReject,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      '아니요',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF9E9E9E),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF64CAFA),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      '저장할게요',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -1,0 +1,35 @@
+<svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1600" fill="#F5FBFF"/>
+  <text x="80" y="110" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="52" font-weight="800" fill="#1A1A1A">외주 서비스와 어떻게 연결되는가</text>
+  <text x="80" y="160" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="22" fill="#555555">쿠왕 프로젝트에서 보여준 역량을 서비스 형태로 나누어 설명하는 이미지</text>
+
+  <rect x="80" y="240" width="500" height="250" rx="28" fill="white"/>
+  <text x="120" y="312" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="34" font-weight="700" fill="#1A1A1A">1. 앱/웹 기획서 작성</text>
+  <text x="120" y="376" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">아이디어를 기능 정의, 화면 흐름,</text>
+  <text x="120" y="420" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">개발 범위와 견적 기준으로 정리</text>
+
+  <rect x="620" y="240" width="500" height="250" rx="28" fill="#EDF6FF" stroke="#D0ECFF"/>
+  <text x="660" y="312" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="34" font-weight="700" fill="#1A1A1A">2. 반응형 소개 페이지 제작</text>
+  <text x="660" y="376" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">지원 URL, 소개 문구, 공개 문서,</text>
+  <text x="660" y="420" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">간단한 반응형 페이지 구성 가능</text>
+
+  <rect x="80" y="560" width="500" height="250" rx="28" fill="#EDF6FF" stroke="#D0ECFF"/>
+  <text x="120" y="632" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="34" font-weight="700" fill="#1A1A1A">3. Flutter MVP 화면 제작</text>
+  <text x="120" y="696" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">Android / iOS 공통 구조를 고려한</text>
+  <text x="120" y="740" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">MVP 화면과 핵심 흐름 구현</text>
+
+  <rect x="620" y="560" width="500" height="250" rx="28" fill="white"/>
+  <text x="660" y="632" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="34" font-weight="700" fill="#1A1A1A">4. 출시 전 구조 검토</text>
+  <text x="660" y="696" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">스토어 문구, 지원 문서,</text>
+  <text x="660" y="740" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="24" fill="#555555">배포 구조와 공개 준비 상태 점검</text>
+
+  <rect x="80" y="900" width="1040" height="430" rx="28" fill="#1A1A1A"/>
+  <text x="120" y="980" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="36" font-weight="700" fill="white">쿠왕 프로젝트가 보여주는 것</text>
+  <text x="120" y="1060" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="26" fill="white">• 아이디어를 실행 가능한 문서로 정리하는 기획력</text>
+  <text x="120" y="1114" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="26" fill="white">• Flutter 기반으로 MVP를 빠르게 구조화하는 개발력</text>
+  <text x="120" y="1168" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="26" fill="white">• 서비스 소개 / 지원용 공개 페이지와 문서를 함께 다루는 운영 감각</text>
+  <text x="120" y="1222" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="26" fill="white">• Android 공개 경험과 iOS 확장 대응을 구분해 설명하는 보수적 커뮤니케이션</text>
+
+  <rect x="80" y="1390" width="1040" height="86" rx="16" fill="white"/>
+  <text x="600" y="1444" text-anchor="middle" font-family="Apple SD Gothic Neo, Pretendard, sans-serif" font-size="28" font-weight="700" fill="#1A1A1A">초기 아이디어부터 실행 가능한 산출물까지 연결해드립니다</text>
+</svg>

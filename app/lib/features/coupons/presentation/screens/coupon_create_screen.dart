@@ -21,15 +21,20 @@ class CouponCreateScreen extends StatefulWidget {
   const CouponCreateScreen({
     super.key,
     this.coupon,
+    this.preloadedImage,
   });
 
   final CouponDetailModel? coupon;
+  final File? preloadedImage;
 
   @override
   State<CouponCreateScreen> createState() => _CouponCreateScreenState();
 }
 
 class _CouponCreateScreenState extends State<CouponCreateScreen> {
+  static const Color _fieldFillColor = Color(0xFFF0F0F0);
+  static const Color _fieldIconColor = Color(0xFFBDBDBD);
+
   final _barcodeController = TextEditingController();
   final _couponNameController = TextEditingController();
   final _brandController = TextEditingController();
@@ -41,18 +46,35 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   String? _selectedImagePath;
   DateTime? _selectedDate;
   bool _isProcessingImage = false;
+  bool _isSubmitting = false;
   bool _usedAutoFill = false;
   String _selectedCategory = '카페';
   CouponType _selectedCouponType = CouponType.barcode;
 
-  static const List<String> _brands = [
-    AppStrings.brandStarbucks,
-    AppStrings.brandCu,
-    AppStrings.brandGs25,
-    AppStrings.brandOliveYoung,
-    AppStrings.brandBbq,
-    AppStrings.brandBaskin,
-  ];
+  static const Map<String, List<String>> _brandAliases = {
+    AppStrings.brandStarbucks: ['스타벅스', 'starbucks'],
+    AppStrings.brandCu: ['cu'],
+    AppStrings.brandGs25: ['gs25', 'gs 25'],
+    AppStrings.brandOliveYoung: ['올리브영', 'olive young'],
+    AppStrings.brandBbq: ['bbq'],
+    AppStrings.brandBaskin: ['배스킨', '배스킨라빈스', 'baskin', 'baskin robbins'],
+    AppStrings.brandParisBaguette: ['파리바게뜨', '파리 바게뜨', 'paris baguette'],
+    AppStrings.brandAbcMart: ['abc마트', 'abc mart'],
+    AppStrings.brandDomino: ['도미노', '도미노피자', 'domino'],
+    '투썸플레이스': ['투썸', '투썸플레이스', 'a twosome place'],
+    '메가MGC커피': ['메가커피', '메가 mgc', 'megacoffee'],
+    '빽다방': ['빽다방'],
+    '컴포즈커피': ['컴포즈', 'compose coffee'],
+    '이디야커피': ['이디야', 'ediya'],
+    '뚜레쥬르': ['뚜레쥬르', 'tous les jours'],
+    '교촌치킨': ['교촌', '교촌치킨'],
+    'BHC': ['bhc'],
+    '버거킹': ['버거킹', 'burger king'],
+    '맥도날드': ['맥도날드', 'mcdonald'],
+    '롯데리아': ['롯데리아', 'lotteria'],
+    '피자헛': ['피자헛', 'pizza hut'],
+    '세븐일레븐': ['세븐일레븐', '7-eleven', 'seven eleven'],
+  };
 
   static const List<String> _categories = [
     AppStrings.categoryCafe,
@@ -79,18 +101,26 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   void initState() {
     super.initState();
     final coupon = widget.coupon;
-    if (coupon == null) {
-      return;
+    if (coupon != null) {
+      _barcodeController.text = coupon.barcodeNumber;
+      _couponNameController.text = coupon.name;
+      _brandController.text = coupon.brand;
+      _memoController.text = coupon.memo ?? '';
+      _selectedCategory = coupon.category;
+      _selectedDate = _tryParseDate(coupon.expiry);
+      _selectedImageBytes = coupon.imageBytes;
+      _selectedImagePath = coupon.imagePath;
     }
 
-    _barcodeController.text = coupon.barcodeNumber;
-    _couponNameController.text = coupon.name;
-    _brandController.text = coupon.brand;
-    _memoController.text = coupon.memo ?? '';
-    _selectedCategory = coupon.category;
-    _selectedDate = _tryParseDate(coupon.expiry);
-    _selectedImageBytes = coupon.imageBytes;
-    _selectedImagePath = coupon.imagePath;
+    if (widget.preloadedImage != null) {
+      _selectedImagePath = widget.preloadedImage!.path;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _extractFromImage();
+      });
+    }
   }
 
   @override
@@ -218,7 +248,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       return;
     }
 
-    final imagePath = _selectedImage?.path;
+    final imagePath = _selectedImage?.path ?? _selectedImagePath;
     if (imagePath == null) {
       await AnalyticsService().logImageExtractFailed(
         source: analyticsSource,
@@ -356,7 +386,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
   Future<void> _pickDate() async {
     final minDate = DateTime(2000, 1, 1);
-    final maxDate = DateTime(2030, 12, 31);
+    final maxDate = DateTime(2099, 12, 31);
     final initialDate = _selectedDate == null
         ? DateTime.now()
         : DateTime(
@@ -415,15 +445,19 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                 ),
                 SizedBox(
                   height: 216,
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.date,
-                    dateOrder: DatePickerDateOrder.ymd,
-                    initialDateTime: initialDate,
-                    minimumDate: minDate,
-                    maximumDate: maxDate,
-                    onDateTimeChanged: (date) {
-                      wheelDate = date;
-                    },
+                  child: Localizations.override(
+                    context: sheetContext,
+                    locale: const Locale('ko', 'KR'),
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      dateOrder: DatePickerDateOrder.ymd,
+                      initialDateTime: initialDate,
+                      minimumDate: minDate,
+                      maximumDate: maxDate,
+                      onDateTimeChanged: (date) {
+                        wheelDate = date;
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -636,9 +670,44 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   String? _extractBrand(List<String> lines) {
     final normalizedText = lines.join('\n').toLowerCase();
 
-    for (final brand in _brands) {
-      if (normalizedText.contains(brand.toLowerCase())) {
-        return brand;
+    for (final entry in _brandAliases.entries) {
+      for (final alias in entry.value) {
+        if (normalizedText.contains(alias.toLowerCase())) {
+          return entry.key;
+        }
+      }
+    }
+
+    const labelKeywords = ['브랜드', '교환처', '사용처', '매장', '상호'];
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      final normalizedLine = line.toLowerCase();
+      for (final keyword in labelKeywords) {
+        if (!normalizedLine.contains(keyword.toLowerCase())) {
+          continue;
+        }
+
+        final inlineValue = line
+            .replaceFirst(RegExp('^.*?$keyword[:：]?', caseSensitive: false), '')
+            .trim();
+        final matchedInline = _matchKnownBrand(inlineValue);
+        if (matchedInline != null) {
+          return matchedInline;
+        }
+
+        if (i + 1 < lines.length) {
+          final matchedNext = _matchKnownBrand(lines[i + 1].trim());
+          if (matchedNext != null) {
+            return matchedNext;
+          }
+        }
+      }
+    }
+
+    for (final line in lines) {
+      final matchedBrand = _matchKnownBrand(line);
+      if (matchedBrand != null) {
+        return matchedBrand;
       }
     }
 
@@ -673,6 +742,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
   List<String> _extractAllDates(String rawText) {
     final patterns = [
+      RegExp(r'(20\d{2})년\s*(\d{1,2})월\s*(\d{1,2})일'),
       RegExp(r'(20\d{2})[./-]\s?(\d{1,2})[./-]\s?(\d{1,2})'),
       RegExp(r'(\d{2})[./-]\s?(\d{1,2})[./-]\s?(\d{1,2})'),
     ];
@@ -716,7 +786,13 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       if (cleanedLine.contains(AppStrings.couponInfoKeyword) ||
           cleanedLine.contains('barcode') ||
           cleanedLine.contains('qr') ||
-          cleanedLine.contains(AppStrings.couponExpiryKeyword)) {
+          cleanedLine.contains(AppStrings.couponExpiryKeyword) ||
+          cleanedLine.contains('브랜드') ||
+          cleanedLine.contains('교환처') ||
+          cleanedLine.contains('사용처')) {
+        continue;
+      }
+      if (_matchKnownBrand(cleanedLine) != null) {
         continue;
       }
 
@@ -731,8 +807,12 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isSubmitting) {
+      return;
+    }
     final title = _couponNameController.text.trim();
     final brand = _brandController.text.trim();
+    final barcodeNumber = _barcodeController.text.trim();
 
     if (title.isEmpty) {
       _showMessage(AppStrings.couponInputTitleRequired);
@@ -746,6 +826,18 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       _showMessage(AppStrings.couponDateRequired);
       return;
     }
+    if (CouponRepository.findByBarcodeNumber(
+          barcodeNumber,
+          excludingId: widget.coupon?.id,
+        ) !=
+        null) {
+      _showMessage(AppStrings.couponDuplicateCode);
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
 
     final savedCoupon = CouponDetailModel(
       id:
@@ -756,8 +848,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       category: _selectedCategory,
       dday: _calculateDday(_selectedDate!),
       expiry: _formatSelectedDate(_selectedDate!),
-      barcodeNumber: _barcodeController.text.trim(),
-      imagePath: _selectedImage?.path ?? widget.coupon?.imagePath,
+      barcodeNumber: barcodeNumber,
+      imagePath:
+          _selectedImage?.path ?? _selectedImagePath ?? widget.coupon?.imagePath,
       imageBytes: _selectedImageBytes,
       memo: _memoController.text.trim().isEmpty
           ? null
@@ -816,12 +909,12 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         dday: repositoryCoupon.dday,
       );
     }
+    if (!mounted) {
+      return;
+    }
+
     _showMessage('$entryType${AppStrings.couponRegisteredSuffix}');
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (mounted) {
-        Navigator.of(context).pop(repositoryCoupon);
-      }
-    });
+    Navigator.of(context).pop(repositoryCoupon);
   }
 
   CouponDetailStatus _resolveStatus({
@@ -851,6 +944,24 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '${date.year}.$month.$day';
+  }
+
+  String? _matchKnownBrand(String text) {
+    final normalizedText = text.toLowerCase().replaceAll(' ', '');
+    if (normalizedText.isEmpty) {
+      return null;
+    }
+
+    for (final entry in _brandAliases.entries) {
+      for (final alias in entry.value) {
+        final normalizedAlias = alias.toLowerCase().replaceAll(' ', '');
+        if (normalizedText.contains(normalizedAlias)) {
+          return entry.key;
+        }
+      }
+    }
+
+    return null;
   }
 
   void _showMessage(String message) {
@@ -958,8 +1069,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                   prefixIcon: const Icon(
                     Icons.confirmation_number_outlined,
                     size: 20,
-                    color: Color(0xFFBDBDBD),
+                    color: _fieldIconColor,
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 18),
                 _RequiredLabel(AppStrings.couponBrandLabel),
@@ -970,8 +1082,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                   prefixIcon: const Icon(
                     Icons.storefront_outlined,
                     size: 20,
-                    color: Color(0xFFBDBDBD),
+                    color: _fieldIconColor,
                   ),
+                  onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -989,7 +1102,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                             child: Container(
                               height: 50,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF0F0F0),
+                                color: _fieldFillColor,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               padding:
@@ -999,13 +1112,13 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                                   const Icon(
                                     Icons.calendar_today_outlined,
                                     size: 18,
-                                    color: Color(0xFFBDBDBD),
+                                    color: _fieldIconColor,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     _selectedDate == null
-                                        ? 'mm / dd / yyyy'
-                                        : '${_selectedDate!.month.toString().padLeft(2, '0')} / ${_selectedDate!.day.toString().padLeft(2, '0')} / ${_selectedDate!.year}',
+                                        ? 'yyyy / mm / dd'
+                                        : '${_selectedDate!.year} / ${_selectedDate!.month.toString().padLeft(2, '0')} / ${_selectedDate!.day.toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: _selectedDate == null
@@ -1031,7 +1144,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                           Container(
                             height: 50,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0F0F0),
+                              color: _fieldFillColor,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             padding:
@@ -1043,7 +1156,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                                 icon: const Icon(
                                   Icons.keyboard_arrow_down,
                                   size: 18,
-                                  color: Color(0xFF9E9E9E),
+                                  color: _fieldIconColor,
                                 ),
                                 style: const TextStyle(
                                   fontSize: 13,
@@ -1087,9 +1200,11 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: _isFormValid ? () => _onSubmit() : null,
+                    onPressed: _isFormValid && !_isSubmitting
+                        ? () => _onSubmit()
+                        : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isFormValid
+                      backgroundColor: _isFormValid && !_isSubmitting
                           ? const Color(0xFF64CAFA)
                           : const Color(0xFFBDBDBD),
                       foregroundColor: Colors.white,
@@ -1099,10 +1214,12 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                       ),
                       disabledBackgroundColor: const Color(0xFFBDBDBD),
                     ),
-                    child: Text(
-                      widget.coupon == null
-                          ? AppStrings.couponSubmit
-                          : AppStrings.couponUpdate,
+                      child: Text(
+                      _isSubmitting
+                          ? '저장 중...'
+                          : widget.coupon == null
+                              ? AppStrings.couponSubmit
+                              : AppStrings.couponUpdate,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

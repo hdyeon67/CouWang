@@ -32,6 +32,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   Uint8List? _selectedImageBytes;
   String? _selectedImagePath;
   bool _isProcessingImage = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -272,12 +273,19 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (_isSubmitting) {
+      return;
+    }
     final membershipName = _nameController.text.trim();
 
     if (membershipName.isEmpty) {
       _showMessage(AppStrings.membershipNameRequired);
       return;
     }
+    setState(() {
+      _isSubmitting = true;
+    });
+
     final saved = await MembershipRepository.saveDraft(
       MembershipDraft(
         id: widget.membership?.id,
@@ -293,12 +301,12 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
       ),
     );
 
+    if (!mounted) {
+      return;
+    }
+
     _showMessage(AppStrings.membershipRegistered);
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (mounted) {
-        Navigator.of(context).pop(saved);
-      }
-    });
+    Navigator.of(context).pop(saved);
   }
 
   void _showMessage(String message) {
@@ -405,19 +413,23 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () => _submitForm(),
+                    onPressed: _isSubmitting ? null : () => _submitForm(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF64CAFA),
+                      backgroundColor: _isSubmitting
+                          ? const Color(0xFFBDBDBD)
+                          : const Color(0xFF64CAFA),
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    child: Text(
-                      widget.membership == null
-                          ? AppStrings.couponSubmit
-                          : AppStrings.couponUpdate,
+                      child: Text(
+                      _isSubmitting
+                          ? '저장 중...'
+                          : widget.membership == null
+                              ? AppStrings.couponSubmit
+                              : AppStrings.couponUpdate,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

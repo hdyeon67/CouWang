@@ -74,6 +74,26 @@ class CouponRepository {
     return null;
   }
 
+  static CouponDetailModel? findByBarcodeNumber(
+    String barcodeNumber, {
+    String? excludingId,
+  }) {
+    final normalizedTarget = _normalizeCodeValue(barcodeNumber);
+    if (normalizedTarget.isEmpty) {
+      return null;
+    }
+
+    for (final coupon in _cache) {
+      if (excludingId != null && coupon.id == excludingId) {
+        continue;
+      }
+      if (_normalizeCodeValue(coupon.barcodeNumber) == normalizedTarget) {
+        return coupon;
+      }
+    }
+    return null;
+  }
+
   static Future<CouponDetailModel> saveDraft(CouponDraft draft) async {
     final db = await LocalDatabaseService.instance.database;
     final now = DateTime.now().toIso8601String();
@@ -451,5 +471,9 @@ class CouponRepository {
     final month = normalized.month.toString().padLeft(2, '0');
     final day = normalized.day.toString().padLeft(2, '0');
     return '$year.$month.$day';
+  }
+
+  static String _normalizeCodeValue(String value) {
+    return value.replaceAll(RegExp(r'\s+'), '').trim().toLowerCase();
   }
 }

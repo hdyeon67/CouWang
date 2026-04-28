@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
@@ -11,7 +12,10 @@ import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
 import '../../../../services/analytics_service.dart';
+import '../../../../services/gallery_scan_service.dart';
 import '../../../../services/notification_service.dart';
+import '../../../../utils/scanned_image_store.dart';
+import '../../../coupons/presentation/screens/coupon_create_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _day3Enabled = false;
   bool _day7Enabled = false;
   bool _day30Enabled = false;
+  bool _autoScanEnabled = false;
   int _testNotificationDelaySeconds = 10;
   String _appVersionLabel = '';
   Timer? _foregroundTestNotificationTimer;
@@ -48,6 +53,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _syncNotificationPermissionState();
     _loadVersionInfo();
+    _loadAutoScanSetting();
   }
 
   Future<void> _loadVersionInfo() async {
@@ -58,6 +64,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() {
       _appVersionLabel = 'v${packageInfo.version} (${packageInfo.buildNumber})';
+    });
+  }
+
+  Future<void> _loadAutoScanSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _autoScanEnabled =
+          prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
     });
   }
 
@@ -227,6 +244,71 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {});
   }
 
+  Future<void> _runGalleryScanTest() async {
+    final service = GalleryScanService();
+    final hasPermission = await service.checkAndRequestPermission();
+    if (!hasPermission || !mounted) {
+      return;
+    }
+
+    final detected = await service.scanNewImagesWithOptions(
+      respectAutoSetting: false,
+      respectDailyLimit: false,
+      forceRescan: true,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (detected.isEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('감지된 쿠폰 이미지가 없어요. 최근 갤러리 이미지를 확인해보세요.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
+    final first = detected.first;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            '${detected.length}개의 후보를 찾았어요. 첫 번째 이미지를 등록 화면에서 열어요.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+    final savedCoupon = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CouponCreateScreen(preloadedImage: first.file),
+      ),
+    );
+    if (savedCoupon != null) {
+      await ScannedImageStore.addRegisteredHash(first.imageHash);
+    }
+  }
+
+  Future<void> _resetGalleryScanState() async {
+    await GalleryScanService().resetScanState();
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('갤러리 감지 이력과 스캔 기준을 초기화했어요.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+
   void _triggerCrashlyticsTestCrash() {
     final analytics = AnalyticsService();
     if (!analytics.isAvailable) {
@@ -243,6 +325,127 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
     analytics.crashForTesting();
+  }
+
+  Future<void> _handleAutoScanToggle(bool value) async {
+    if (value) {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) {
+        return;
+      }
+      final guideShown =
+          prefs.getBool(GalleryScanService.autoScanGuideShownKey) ?? false;
+      if (!guideShown) {
+        final shouldContinue = await _showPermissionGuideDialog(context);
+        if (shouldContinue != true || !mounted) {
+          return;
+        }
+        await prefs.setBool(GalleryScanService.autoScanGuideShownKey, true);
+      }
+
+      final hasPermission =
+          await GalleryScanService().checkAndRequestPermission();
+      if (!hasPermission || !mounted) {
+        return;
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(GalleryScanService.autoScanEnabledKey, value);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _autoScanEnabled = value;
+    });
+  }
+
+  Future<bool?> _showPermissionGuideDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/icon/4.png', width: 60, height: 60),
+                const SizedBox(height: 16),
+                const Text(
+                  '쿠왕이 쿠폰을 찾아드릴게요!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '갤러리에 저장된 쿠폰·기프티콘을\n자동으로 찾아서 알려드려요.\n\n• 이미지는 기기 안에서만 분석해요\n• 수집하거나 전송하지 않아요\n• 설정에서 언제든 끌 수 있어요',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF666666),
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFE0E0E0)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          '지금은 괜찮아요',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF9E9E9E),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF64CAFA),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          '허용하기',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -375,6 +578,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         apply: (value) => _day30Enabled = value,
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDF6FF),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFD0ECFF),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '갤러리 자동 감지',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF1A1A1A),
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                '갤러리에서 쿠폰을 자동으로 찾아드려요.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF9E9E9E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _CouWangSwitch(
+                          value: _autoScanEnabled,
+                          onChanged: _handleAutoScanToggle,
+                        ),
+                      ],
+                    ),
+                    if (_autoScanEnabled) ...[
+                      const SizedBox(height: 12),
+                      const Divider(
+                        height: 1,
+                        color: Color(0xFFCCE8F8),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '• 이미지는 기기 안에서만 분석돼요\n• 서버로 전송되지 않아요\n• 앱 실행 시 새로운 쿠폰을 찾아드려요',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF9E9E9E),
+                          height: 1.8,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -527,6 +799,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     label: const Text(
                       'Crashlytics 테스트 크래시 발생',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _runGalleryScanTest,
+                    icon: const Icon(
+                      Icons.photo_library_outlined,
+                      size: 20,
+                      color: Color(0xFF555555),
+                    ),
+                    label: const Text(
+                      AppStrings.settingsTestGalleryScan,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      side: BorderSide.none,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: _resetGalleryScanState,
+                    icon: const Icon(
+                      Icons.restart_alt_outlined,
+                      size: 20,
+                      color: Color(0xFF555555),
+                    ),
+                    label: const Text(
+                      AppStrings.settingsTestGalleryReset,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

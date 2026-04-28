@@ -15,12 +15,6 @@ class MembershipListScreen extends StatefulWidget {
 }
 
 class _MembershipListScreenState extends State<MembershipListScreen> {
-  void _showPlaceholderMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
   List<MembershipCardItem> get _memberships {
     return MembershipRepository.getAll()
         .map(MembershipCardItem.fromDetail)
@@ -69,12 +63,6 @@ class _MembershipListScreenState extends State<MembershipListScreen> {
                         setState(() {});
                       }
                     });
-                  },
-                  onMenuTap: (membership) {
-                    _showPlaceholderMessage(
-                      context,
-                      '${membership.name} 메뉴는 수정·삭제 같은 빠른 관리 액션용으로 둘 예정입니다.',
-                    );
                   },
                 ),
               ] else
@@ -156,12 +144,10 @@ class MembershipCardList extends StatelessWidget {
     super.key,
     required this.memberships,
     required this.onMembershipTap,
-    required this.onMenuTap,
   });
 
   final List<MembershipCardItem> memberships;
   final ValueChanged<MembershipCardItem> onMembershipTap;
-  final ValueChanged<MembershipCardItem> onMenuTap;
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +171,6 @@ class MembershipCardList extends StatelessWidget {
               isFirst: index == 0,
               isLast: index == memberships.length - 1,
               onTap: () => onMembershipTap(memberships[index]),
-              onMenuTap: () => onMenuTap(memberships[index]),
             ),
         ],
       ),
@@ -200,14 +185,12 @@ class MembershipCard extends StatelessWidget {
     required this.isFirst,
     required this.isLast,
     required this.onTap,
-    required this.onMenuTap,
   });
 
   final MembershipCardItem membership;
   final bool isFirst;
   final bool isLast;
   final VoidCallback onTap;
-  final VoidCallback onMenuTap;
 
   @override
   Widget build(BuildContext context) {
@@ -260,12 +243,10 @@ class MembershipCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: onMenuTap,
-                    padding: const EdgeInsets.only(right: 20),
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
-                      Icons.menu,
+                  const Padding(
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
                       size: 22,
                       color: Color(0xFFBDBDBD),
                     ),

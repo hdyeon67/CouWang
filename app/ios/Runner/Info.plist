@@ -28,8 +28,10 @@
 	<string>ca-app-pub-9758365972980092~8594749463</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>쿠폰 이미지를 저장하기 위해 사용해요.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>쿠폰 이미지를 선택해 바코드와 QR 코드를 인식하기 위해 사진 접근이 필요합니다.</string>
+	<string>갤러리에서 쿠폰·기프티콘 이미지를 자동으로 찾아드리기 위해 사용해요.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

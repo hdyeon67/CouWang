@@ -89,6 +89,8 @@ class AppStrings {
   static const settingsTestNotificationDday = '당일 테스트';
   static const settingsTestNotificationExpired = '만료 테스트';
   static const settingsTestNotificationScheduled = '테스트 알림을 예약했어요. 앱을 잠시 닫고 확인해보세요.';
+  static const settingsTestGalleryScan = '갤러리 자동 감지 테스트';
+  static const settingsTestGalleryReset = '갤러리 감지 이력 초기화';
 
   static const couponInputCode = '교환 코드';
   static const couponInputCodeHint = '예: 1234-5678-9012 또는 https://gifticon.example/abc';
@@ -117,6 +119,7 @@ class AppStrings {
   static const couponInputTitleRequired = '제목을 입력해주세요.';
   static const couponBrandRequired = '브랜드를 입력해주세요.';
   static const couponDateRequired = '만료일을 선택해주세요.';
+  static const couponDuplicateCode = '같은 교환 코드를 가진 쿠폰이 이미 저장되어 있어요.';
   static const couponEntryAuto = '자동 입력';
   static const couponEntryManual = '수동 입력';
   static const couponRegisteredSuffix = ' 방식으로 쿠폰이 등록되었어요.';

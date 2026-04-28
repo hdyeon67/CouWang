@@ -34,6 +34,10 @@ class _CouWangBannerAdState extends State<CouWangBannerAd> {
       return;
     }
 
+    debugPrint(
+      '[AdMob] Loading banner ad. platform=$defaultTargetPlatform unitId=${AdMobIds.bannerAdUnitId}',
+    );
+
     final bannerAd = BannerAd(
       size: AdSize.banner,
       adUnitId: AdMobIds.bannerAdUnitId,
@@ -47,8 +51,12 @@ class _CouWangBannerAdState extends State<CouWangBannerAd> {
             _bannerAd = ad as BannerAd;
             _isLoaded = true;
           });
+          debugPrint('[AdMob] Banner ad loaded successfully.');
         },
         onAdFailedToLoad: (ad, error) {
+          debugPrint(
+            '[AdMob] Banner ad failed to load. code=${error.code}, domain=${error.domain}, message=${error.message}',
+          );
           ad.dispose();
         },
       ),
