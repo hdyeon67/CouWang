@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:sqflite/sqflite.dart';
@@ -109,11 +110,13 @@ class CouponRepository {
       imageBytes = existing.imageBytes;
     }
 
-    if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
+    final resolvedImageBytes = await _resolveImageBytes(draft);
+
+    if (resolvedImageBytes != null && resolvedImageBytes.isNotEmpty) {
       final storedImage = await LocalImageStorageService.instance.saveImage(
         ownerType: 'coupons',
         entityId: couponId,
-        bytes: draft.imageBytes!,
+        bytes: resolvedImageBytes,
         sourcePath: draft.sourceImagePath,
       );
 
@@ -147,7 +150,7 @@ class CouponRepository {
       }
 
       imagePath = storedImage.absolutePath;
-      imageBytes = draft.imageBytes;
+      imageBytes = resolvedImageBytes;
     }
 
     final expiryDate = _parseDate(draft.expiry);
@@ -220,6 +223,24 @@ class CouponRepository {
 
     await db.delete('coupons', where: 'id = ?', whereArgs: [id]);
     _cache.removeWhere((coupon) => coupon.id == id);
+  }
+
+  static Future<Uint8List?> _resolveImageBytes(CouponDraft draft) async {
+    if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
+      return draft.imageBytes;
+    }
+
+    final sourcePath = draft.sourceImagePath;
+    if (sourcePath == null || sourcePath.isEmpty) {
+      return null;
+    }
+
+    final file = File(sourcePath);
+    if (!await file.exists()) {
+      return null;
+    }
+
+    return file.readAsBytes();
   }
 
   static Future<CouponDetailModel?> markUsed(String id) async {

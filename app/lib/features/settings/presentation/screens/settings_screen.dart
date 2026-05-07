@@ -24,7 +24,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   static const bool _internalTestToolsEnabled = bool.fromEnvironment(
     'ENABLE_INTERNAL_TEST_TOOLS',
   );
@@ -36,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _day7Enabled = false;
   bool _day30Enabled = false;
   bool _autoScanEnabled = false;
+  bool _isHandlingAutoScanToggle = false;
   int _testNotificationDelaySeconds = 10;
   String _appVersionLabel = '';
   Timer? _foregroundTestNotificationTimer;
@@ -51,8 +53,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _syncNotificationPermissionState();
     _loadVersionInfo();
+    _loadAutoScanSetting();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _foregroundTestNotificationTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      return;
+    }
+    _syncNotificationPermissionState();
     _loadAutoScanSetting();
   }
 
@@ -69,12 +88,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadAutoScanSetting() async {
     final prefs = await SharedPreferences.getInstance();
+    final permissionGranted = await GalleryScanService().hasPermission();
+    final savedValue =
+        prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
+    final nextValue = savedValue && permissionGranted;
+
+    if (savedValue != nextValue) {
+      await prefs.setBool(GalleryScanService.autoScanEnabledKey, nextValue);
+    }
     if (!mounted) {
       return;
     }
     setState(() {
-      _autoScanEnabled =
-          prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
+      _autoScanEnabled = nextValue;
     });
   }
 
@@ -328,36 +354,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleAutoScanToggle(bool value) async {
+    if (_isHandlingAutoScanToggle) {
+      return;
+    }
+
+    setState(() {
+      _isHandlingAutoScanToggle = true;
+    });
+
     if (value) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final service = GalleryScanService();
+
+        if (!mounted) {
+          return;
+        }
+
+        final alreadyGranted = await service.hasPermission();
+        if (!alreadyGranted) {
+          final guideShown =
+              prefs.getBool(GalleryScanService.autoScanGuideShownKey) ?? false;
+          if (!guideShown) {
+            if (!mounted) {
+              return;
+            }
+            final shouldContinue = await _showPermissionGuideDialog(context);
+            if (shouldContinue != true || !mounted) {
+              return;
+            }
+            await prefs.setBool(
+              GalleryScanService.autoScanGuideShownKey,
+              true,
+            );
+          }
+
+          final hasPermission = await service.checkAndRequestPermission();
+          await Future<void>.delayed(const Duration(milliseconds: 150));
+          final confirmedPermission = hasPermission || await service.hasPermission();
+          if (!confirmedPermission || !mounted) {
+            await prefs.setBool(GalleryScanService.autoScanEnabledKey, false);
+            await _loadAutoScanSetting();
+            return;
+          }
+        }
+
+        await prefs.setBool(GalleryScanService.autoScanEnabledKey, true);
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _autoScanEnabled = true;
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isHandlingAutoScanToggle = false;
+          });
+        }
+      }
+      return;
+    }
+
+    try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(GalleryScanService.autoScanEnabledKey, false);
       if (!mounted) {
         return;
       }
-      final guideShown =
-          prefs.getBool(GalleryScanService.autoScanGuideShownKey) ?? false;
-      if (!guideShown) {
-        final shouldContinue = await _showPermissionGuideDialog(context);
-        if (shouldContinue != true || !mounted) {
-          return;
-        }
-        await prefs.setBool(GalleryScanService.autoScanGuideShownKey, true);
-      }
-
-      final hasPermission =
-          await GalleryScanService().checkAndRequestPermission();
-      if (!hasPermission || !mounted) {
-        return;
+      setState(() {
+        _autoScanEnabled = false;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isHandlingAutoScanToggle = false;
+        });
       }
     }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(GalleryScanService.autoScanEnabledKey, value);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _autoScanEnabled = value;
-    });
   }
 
   Future<bool?> _showPermissionGuideDialog(BuildContext context) {
@@ -446,12 +520,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-  }
-
-  @override
-  void dispose() {
-    _foregroundTestNotificationTimer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -627,7 +695,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 12),
                         _CouWangSwitch(
                           value: _autoScanEnabled,
-                          onChanged: _handleAutoScanToggle,
+                          onChanged: _isHandlingAutoScanToggle
+                              ? null
+                              : _handleAutoScanToggle,
                         ),
                       ],
                     ),

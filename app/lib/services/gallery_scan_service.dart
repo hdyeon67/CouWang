@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/scanned_image_store.dart';
@@ -72,14 +73,45 @@ class GalleryScanService {
     if (kIsWeb) {
       return false;
     }
-    if (Platform.isAndroid) {
-      final state = await PhotoManager.requestPermissionExtend();
-      return state.isAuth || state.hasAccess;
-    } else if (Platform.isIOS) {
-      final state = await PhotoManager.requestPermissionExtend();
-      return state.isAuth || state.hasAccess;
+    final currentStatus = await _currentPhotoPermissionStatus();
+    if (_isGranted(currentStatus)) {
+      return true;
     }
-    return false;
+
+    final requestedStatus = await _requestPhotoPermission();
+    return _isGranted(requestedStatus);
+  }
+
+  Future<bool> hasPermission() async {
+    if (kIsWeb) {
+      return false;
+    }
+    final currentStatus = await _currentPhotoPermissionStatus();
+    return _isGranted(currentStatus);
+  }
+
+  Future<PermissionStatus> _currentPhotoPermissionStatus() async {
+    final photoStatus = await Permission.photos.status;
+    if (_isGranted(photoStatus)) {
+      return photoStatus;
+    }
+
+    final storageStatus = await Permission.storage.status;
+    return _isGranted(storageStatus) ? storageStatus : photoStatus;
+  }
+
+  Future<PermissionStatus> _requestPhotoPermission() async {
+    final photoStatus = await Permission.photos.request();
+    if (_isGranted(photoStatus)) {
+      return photoStatus;
+    }
+
+    final storageStatus = await Permission.storage.request();
+    return _isGranted(storageStatus) ? storageStatus : photoStatus;
+  }
+
+  bool _isGranted(PermissionStatus status) {
+    return status.isGranted || status.isLimited || status.isProvisional;
   }
 
   Future<List<DetectedCouponImage>> scanNewImages() async {

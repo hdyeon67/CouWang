@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:barcode_widget/barcode_widget.dart' as bw;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -32,6 +31,7 @@ class CouponCreateScreen extends StatefulWidget {
 }
 
 class _CouponCreateScreenState extends State<CouponCreateScreen> {
+  static const double _ocrTopExclusionRatio = 0.12;
   static const Color _fieldFillColor = Color(0xFFF0F0F0);
   static const Color _fieldIconColor = Color(0xFFBDBDBD);
 
@@ -89,7 +89,9 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     AppStrings.categoryEtc,
   ];
 
-  bool get _isExtractEnabled => _selectedImage != null && !_isProcessingImage;
+  bool get _isExtractEnabled =>
+      (_selectedImage != null || (_selectedImagePath?.isNotEmpty ?? false)) &&
+      !_isProcessingImage;
 
   bool get _isFormValid =>
       _barcodeController.text.trim().isNotEmpty &&
@@ -114,6 +116,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
     if (widget.preloadedImage != null) {
       _selectedImagePath = widget.preloadedImage!.path;
+      _selectedImage = XFile(widget.preloadedImage!.path);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
@@ -493,12 +496,17 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
           .map((line) => line.trim())
           .where((line) => line.isNotEmpty)
           .toList();
+      final imageHeight = await _resolveImageHeight(imagePath);
+      final titleCandidateLines = _buildTitleCandidateLines(
+        recognizedText,
+        imageHeight: imageHeight,
+      );
 
       return _DetectedCouponText(
         rawText: rawText,
         brand: _extractBrand(lines),
         expiryDate: _extractExpiryDate(rawText),
-        title: _extractTitle(lines),
+        title: _extractTitle(titleCandidateLines),
       );
     } catch (_) {
       return null;
@@ -774,32 +782,160 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return detectedDates;
   }
 
-  String? _extractTitle(List<String> lines) {
-    for (final line in lines) {
-      final cleanedLine = line.replaceAll(RegExp(r'\s+'), ' ').trim();
-      if (cleanedLine.length < 4) {
-        continue;
-      }
-      if (RegExp(r'^\d[\d\s./:-]+$').hasMatch(cleanedLine)) {
-        continue;
-      }
-      if (cleanedLine.contains(AppStrings.couponInfoKeyword) ||
-          cleanedLine.contains('barcode') ||
-          cleanedLine.contains('qr') ||
-          cleanedLine.contains(AppStrings.couponExpiryKeyword) ||
-          cleanedLine.contains('브랜드') ||
-          cleanedLine.contains('교환처') ||
-          cleanedLine.contains('사용처')) {
-        continue;
-      }
-      if (_matchKnownBrand(cleanedLine) != null) {
+  String? _extractTitle(List<_OcrLineCandidate> lines) {
+    for (var i = 0; i < lines.length; i++) {
+      final currentLine = lines[i].text;
+      if (!_isTitleCandidate(currentLine)) {
         continue;
       }
 
-      return cleanedLine;
+      final titleLines = <String>[currentLine];
+
+      for (var j = i + 1; j < lines.length; j++) {
+        final nextLine = lines[j].text;
+        if (!_isTitleContinuationCandidate(nextLine)) {
+          break;
+        }
+        titleLines.add(nextLine);
+        if (titleLines.length >= 2) {
+          break;
+        }
+      }
+
+      return titleLines.join('\n');
     }
 
     return null;
+  }
+
+  String _normalizeOcrLine(String line) {
+    return line.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  bool _isTitleCandidate(String line) {
+    if (line.length < 4) {
+      return false;
+    }
+    if (_looksLikeStatusBarText(line)) {
+      return false;
+    }
+    if (RegExp(r'^\d[\d\s./:-]+$').hasMatch(line)) {
+      return false;
+    }
+    if (line.contains(AppStrings.couponInfoKeyword) ||
+        line.contains('barcode') ||
+        line.contains('qr') ||
+        line.contains(AppStrings.couponExpiryKeyword) ||
+        line.contains('브랜드') ||
+        line.contains('교환처') ||
+        line.contains('사용처')) {
+      return false;
+    }
+    if (_matchKnownBrand(line) != null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _isTitleContinuationCandidate(String line) {
+    if (!_isTitleCandidate(line)) {
+      return false;
+    }
+
+    if (line.length <= 2) {
+      return false;
+    }
+    if (_containsDateLikeText(line)) {
+      return false;
+    }
+    if (line.contains(AppStrings.couponUsePeriodKeyword) ||
+        line.contains(AppStrings.couponPeriodKeyword) ||
+        line.contains('유효') ||
+        line.contains('기한') ||
+        line.contains('교환') ||
+        line.contains('사용처')) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _containsDateLikeText(String line) {
+    return RegExp(r'(20\d{2}|\d{2})[./-]\s?\d{1,2}[./-]\s?\d{1,2}')
+            .hasMatch(line) ||
+        RegExp(r'20\d{2}년\s*\d{1,2}월\s*\d{1,2}일').hasMatch(line);
+  }
+
+  bool _looksLikeStatusBarText(String line) {
+    final normalized = line.toLowerCase();
+    if (RegExp(r'^(오전|오후)?\s*\d{1,2}:\d{2}$').hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(r'^\d{1,2}:\d{2}\s*(am|pm)?$', caseSensitive: false).hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(r'^\d{1,3}%$').hasMatch(line)) {
+      return true;
+    }
+    const statusBarKeywords = ['5g', 'lte', 'skt', 'kt', 'u+', 'battery', '알림'];
+    return statusBarKeywords.any(normalized.contains);
+  }
+
+  Future<double?> _resolveImageHeight(String imagePath) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final image = await decodeImageFromList(bytes);
+      final height = image.height.toDouble();
+      image.dispose();
+      return height;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<_OcrLineCandidate> _buildTitleCandidateLines(
+    RecognizedText recognizedText, {
+    required double? imageHeight,
+  }) {
+    final exclusionThreshold = imageHeight == null
+        ? null
+        : imageHeight * _ocrTopExclusionRatio;
+    final lines = <_OcrLineCandidate>[];
+
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        final text = _normalizeOcrLine(line.text);
+        if (text.isEmpty) {
+          continue;
+        }
+
+        final top = line.boundingBox.top.toDouble();
+        final bottom = line.boundingBox.bottom.toDouble();
+
+        if (exclusionThreshold != null && top < exclusionThreshold) {
+          continue;
+        }
+
+        lines.add(
+          _OcrLineCandidate(
+            text: text,
+            top: top,
+            bottom: bottom,
+          ),
+        );
+      }
+    }
+
+    lines.sort((a, b) {
+      final topCompare = a.top.compareTo(b.top);
+      if (topCompare != 0) {
+        return topCompare;
+      }
+      return a.bottom.compareTo(b.bottom);
+    });
+
+    return lines;
   }
 
   Future<void> _onSubmit() async {
@@ -810,6 +946,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     if (_isSubmitting) {
       return;
     }
+    FocusScope.of(context).unfocus();
     final title = _couponNameController.text.trim();
     final brand = _brandController.text.trim();
     final barcodeNumber = _barcodeController.text.trim();
@@ -839,82 +976,99 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       _isSubmitting = true;
     });
 
-    final savedCoupon = CouponDetailModel(
-      id:
-          widget.coupon?.id ??
-          'coupon_${DateTime.now().microsecondsSinceEpoch}',
-      brand: brand,
-      name: title,
-      category: _selectedCategory,
-      dday: _calculateDday(_selectedDate!),
-      expiry: _formatSelectedDate(_selectedDate!),
-      barcodeNumber: barcodeNumber,
-      imagePath:
-          _selectedImage?.path ?? _selectedImagePath ?? widget.coupon?.imagePath,
-      imageBytes: _selectedImageBytes,
-      memo: _memoController.text.trim().isEmpty
-          ? null
-          : _memoController.text.trim(),
-      isUsed: widget.coupon?.isUsed ?? false,
-      status: _resolveStatus(
-        selectedDate: _selectedDate!,
+    try {
+      final savedCoupon = CouponDetailModel(
+        id:
+            widget.coupon?.id ??
+            'coupon_${DateTime.now().microsecondsSinceEpoch}',
+        brand: brand,
+        name: title,
+        category: _selectedCategory,
+        dday: _calculateDday(_selectedDate!),
+        expiry: _formatSelectedDate(_selectedDate!),
+        barcodeNumber: barcodeNumber,
+        imagePath:
+            _selectedImage?.path ?? _selectedImagePath ?? widget.coupon?.imagePath,
+        imageBytes: _selectedImageBytes,
+        memo: _memoController.text.trim().isEmpty
+            ? null
+            : _memoController.text.trim(),
         isUsed: widget.coupon?.isUsed ?? false,
-      ),
-      couponType: _selectedCouponType == CouponType.qr
-          ? AppStrings.couponTypeQr
-          : AppStrings.couponTypeBarcode,
-      createdAt: widget.coupon?.createdAt ?? DateTime.now().toIso8601String(),
-      usedAt: widget.coupon?.usedAt,
-    );
-
-    final repositoryCoupon = await CouponRepository.saveDraft(
-      CouponDraft(
-        id: savedCoupon.id,
-        name: savedCoupon.name,
-        brand: savedCoupon.brand,
-        category: savedCoupon.category,
-        barcodeNumber: savedCoupon.barcodeNumber,
-        expiry: savedCoupon.expiry,
-        memo: savedCoupon.memo,
-        isUsed: savedCoupon.isUsed,
-        couponType: savedCoupon.couponType,
-        status: savedCoupon.status,
-        imageBytes: savedCoupon.imageBytes,
-        sourceImagePath: savedCoupon.imagePath,
-        createdAt: savedCoupon.createdAt,
-        usedAt: savedCoupon.usedAt,
-      ),
-    );
-    final settings = SettingsRepository.load();
-    final notificationService = NotificationService();
-
-    if (widget.coupon != null) {
-      await notificationService.cancelCouponNotifications(widget.coupon!.id);
-    }
-    await notificationService.scheduleCouponNotifications(
-      repositoryCoupon,
-      settings,
-    );
-
-    final entryType = _usedAutoFill
-        ? AppStrings.couponEntryAuto
-        : AppStrings.couponEntryManual;
-    if (widget.coupon == null) {
-      await AnalyticsService().logCouponCreated(
-        category: repositoryCoupon.category,
-        couponType: repositoryCoupon.couponType ?? AppStrings.couponTypeBarcode,
-        entryType: entryType,
-        hasImage: repositoryCoupon.imagePath != null ||
-            repositoryCoupon.imageBytes != null,
-        dday: repositoryCoupon.dday,
+        status: _resolveStatus(
+          selectedDate: _selectedDate!,
+          isUsed: widget.coupon?.isUsed ?? false,
+        ),
+        couponType: _selectedCouponType == CouponType.qr
+            ? AppStrings.couponTypeQr
+            : AppStrings.couponTypeBarcode,
+        createdAt: widget.coupon?.createdAt ?? DateTime.now().toIso8601String(),
+        usedAt: widget.coupon?.usedAt,
       );
-    }
-    if (!mounted) {
-      return;
-    }
 
-    _showMessage('$entryType${AppStrings.couponRegisteredSuffix}');
-    Navigator.of(context).pop(repositoryCoupon);
+      final repositoryCoupon = await CouponRepository.saveDraft(
+        CouponDraft(
+          id: savedCoupon.id,
+          name: savedCoupon.name,
+          brand: savedCoupon.brand,
+          category: savedCoupon.category,
+          barcodeNumber: savedCoupon.barcodeNumber,
+          expiry: savedCoupon.expiry,
+          memo: savedCoupon.memo,
+          isUsed: savedCoupon.isUsed,
+          couponType: savedCoupon.couponType,
+          status: savedCoupon.status,
+          imageBytes: savedCoupon.imageBytes,
+          sourceImagePath: savedCoupon.imagePath,
+          createdAt: savedCoupon.createdAt,
+          usedAt: savedCoupon.usedAt,
+        ),
+      );
+      final settings = SettingsRepository.load();
+      final notificationService = NotificationService();
+
+      if (widget.coupon != null) {
+        await notificationService.cancelCouponNotifications(widget.coupon!.id);
+      }
+      await notificationService.scheduleCouponNotifications(
+        repositoryCoupon,
+        settings,
+      );
+
+      if (widget.coupon == null) {
+        await AnalyticsService().logCouponCreated(
+          category: repositoryCoupon.category,
+          couponType: repositoryCoupon.couponType ?? AppStrings.couponTypeBarcode,
+          entryType: _usedAutoFill
+              ? AppStrings.couponEntryAuto
+              : AppStrings.couponEntryManual,
+          hasImage: repositoryCoupon.imagePath != null ||
+              repositoryCoupon.imageBytes != null,
+          dday: repositoryCoupon.dday,
+        );
+      }
+      if (!mounted) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop(repositoryCoupon);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: const Text(AppStrings.couponRegistered),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+      });
+      _showMessage(AppStrings.couponSaveFailed);
+    }
   }
 
   CouponDetailStatus _resolveStatus({
@@ -1001,6 +1155,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom + 24;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: GestureDetector(
@@ -1008,7 +1164,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         child: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1066,6 +1222,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
                 _FilledTextField(
                   controller: _couponNameController,
                   hintText: AppStrings.couponNameHint,
+                  minLines: 1,
+                  maxLines: 2,
                   prefixIcon: const Icon(
                     Icons.confirmation_number_outlined,
                     size: 20,
@@ -1262,6 +1420,18 @@ class _DetectedCouponText {
   final String? brand;
   final String? expiryDate;
   final String? title;
+}
+
+class _OcrLineCandidate {
+  const _OcrLineCandidate({
+    required this.text,
+    required this.top,
+    required this.bottom,
+  });
+
+  final String text;
+  final double top;
+  final double bottom;
 }
 
 class _AutoFillExtractionResult {

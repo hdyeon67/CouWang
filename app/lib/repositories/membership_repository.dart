@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:sqflite/sqflite.dart';
@@ -79,11 +80,13 @@ class MembershipRepository {
       imageBytes = existing.imageBytes;
     }
 
-    if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
+    final resolvedImageBytes = await _resolveImageBytes(draft);
+
+    if (resolvedImageBytes != null && resolvedImageBytes.isNotEmpty) {
       final storedImage = await LocalImageStorageService.instance.saveImage(
         ownerType: 'memberships',
         entityId: membershipId,
-        bytes: draft.imageBytes!,
+        bytes: resolvedImageBytes,
         sourcePath: draft.sourceImagePath,
       );
 
@@ -117,7 +120,7 @@ class MembershipRepository {
       }
 
       imagePath = storedImage.absolutePath;
-      imageBytes = draft.imageBytes;
+      imageBytes = resolvedImageBytes;
     }
 
     await db.insert(
@@ -217,6 +220,24 @@ class MembershipRepository {
         ),
       );
     }
+  }
+
+  static Future<Uint8List?> _resolveImageBytes(MembershipDraft draft) async {
+    if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
+      return draft.imageBytes;
+    }
+
+    final sourcePath = draft.sourceImagePath;
+    if (sourcePath == null || sourcePath.isEmpty) {
+      return null;
+    }
+
+    final file = File(sourcePath);
+    if (!await file.exists()) {
+      return null;
+    }
+
+    return file.readAsBytes();
   }
 
   static Future<List<MembershipDetailModel>> _mapMemberships(

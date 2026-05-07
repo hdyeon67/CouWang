@@ -17,6 +17,10 @@
 | `handoff/` | 다른 AI에게 프로젝트를 인계하기 위한 요약과 프롬프트 | 프로젝트 인계서, 복붙용 프롬프트 |
 | `meetings/` | 회의록과 원본 참고 자료 | 날짜별 회의록, 참고 원문 |
 
+프로젝트 루트에는 `docs/` 바깥 별도 산출물 폴더가 있을 수 있습니다.
+
+- `kmong_portfolio_couwang/`: 크몽 등록용 포트폴리오 문구, 이미지 문안, SVG 템플릿
+
 ## 읽는 순서
 
 처음 보는 사람은 아래 순서로 보면 전체 맥락을 빠르게 잡을 수 있습니다.
@@ -35,11 +39,14 @@
 3. `store/03_store_image_plan.md`
 4. `legal/privacy_policy_ko.md`
 5. `legal/ios_privacy_nutrition.md`
+6. `store/04_release_notes.md`
 
 ## 문서 관리 원칙
 
 - 실제 제출/배포에 쓰는 문서는 `store/`, `legal/`, `operations/`에 둡니다.
+- `store/04_release_notes.md`는 최신 스토어 제출 문안과 현재 배포 산출물 정보만 유지합니다.
 - 제품 의사결정의 최종 기준은 `notes/decision_log.md`에 짧게 남깁니다.
 - 날짜별 작업 내역은 `notes/YYYY-MM-DD_*.md`에 정리합니다.
 - 회의 원문이나 장문의 참고 자료는 `meetings/reference/`에 보관하고, 요약본은 `meetings/` 루트에 둡니다.
 - 공개 URL이 필요한 HTML 문서는 GitHub Pages 구조 때문에 기존 경로를 유지합니다.
+- 외부 판매/홍보용 포트폴리오 산출물은 앱 운영 문서와 구분하기 위해 필요하면 프로젝트 루트 별도 폴더에 둡니다.

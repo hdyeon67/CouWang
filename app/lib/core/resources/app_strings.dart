@@ -120,9 +120,10 @@ class AppStrings {
   static const couponBrandRequired = '브랜드를 입력해주세요.';
   static const couponDateRequired = '만료일을 선택해주세요.';
   static const couponDuplicateCode = '같은 교환 코드를 가진 쿠폰이 이미 저장되어 있어요.';
+  static const couponSaveFailed = '쿠폰 저장 중 문제가 생겼어요. 다시 시도해주세요.';
   static const couponEntryAuto = '자동 입력';
   static const couponEntryManual = '수동 입력';
-  static const couponRegisteredSuffix = ' 방식으로 쿠폰이 등록되었어요.';
+  static const couponRegistered = '쿠폰이 등록되었어요. 멍!';
   static const couponOcrWebUnsupported = '웹에서는 OCR과 바코드/QR 이미지 분석을 지원하지 않아요. 모바일 기기에서 테스트해 주세요.';
   static const couponExtractFailed = '이미지에서 텍스트나 코드를 읽지 못했어요.';
   static const couponExtractFilled = '이미지 스캔 결과를 입력란에 채웠어요.';
@@ -166,9 +167,10 @@ class AppStrings {
   static const membershipTitle = '나의 멤버십';
   static const membershipGuide = '• 멤버십 바코드를 등록해놓으면 쿠폰 사용과 함께 적립·할인을 받을 수 있어요';
   static const membershipEmpty = '멤버십 바코드를 등록해보세요!';
-  static const membershipRegistered = '멤버십이 등록되었어요.';
+  static const membershipRegistered = '멤버십이 등록되었어요. 멍!';
   static const membershipNameRequired = '멤버십명을 입력해주세요.';
   static const membershipBrandRequired = '브랜드를 선택해주세요.';
+  static const membershipSaveFailed = '멤버십 저장 중 문제가 생겼어요. 다시 시도해주세요.';
   static const membershipNameLabel = '멤버십 이름';
   static const membershipNameHint = '예: 쿠왕 베이커리 멤버십';
   static const membershipCardNumberLabel = '포인트/카드 번호';

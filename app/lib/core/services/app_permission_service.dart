@@ -35,7 +35,10 @@ class AppPermissionService {
       return;
     }
 
-    await requestNotificationPermissionSilently();
+    final granted = await requestNotificationPermissionSilently();
+    if (granted) {
+      await _enableDefaultCouponNotificationsIfNeeded();
+    }
   }
 
   static Future<bool> requestNotificationPermissionSilently() async {
@@ -50,6 +53,26 @@ class AppPermissionService {
 
     final requestedStatus = await Permission.notification.request();
     return _isGranted(requestedStatus);
+  }
+
+  static Future<void> _enableDefaultCouponNotificationsIfNeeded() async {
+    final saved = SettingsRepository.load();
+    if (saved.notificationConsentAsked || saved.masterEnabled) {
+      return;
+    }
+
+    final nextSettings = saved.copyWith(
+      masterEnabled: true,
+      expireDayEnabled: true,
+      day1Enabled: true,
+      day3Enabled: true,
+      day7Enabled: true,
+      day30Enabled: false,
+      notificationConsentAsked: true,
+    );
+
+    await SettingsRepository.save(nextSettings);
+    await NotificationService().rescheduleAllCouponNotifications();
   }
 
   static Future<bool> ensureNotificationPermission(BuildContext context) async {

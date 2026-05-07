@@ -24,6 +24,8 @@ class MembershipCreateScreen extends StatefulWidget {
 }
 
 class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
+  static const double _ocrTopExclusionRatio = 0.12;
+
   final _nameController = TextEditingController();
   final _cardNumberController = TextEditingController();
   final _memoController = TextEditingController();
@@ -189,18 +191,179 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
       final recognizedText = await recognizer.processImage(
         InputImage.fromFilePath(imagePath),
       );
-      for (final rawLine in recognizedText.text.split('\n')) {
-        final line = rawLine.trim();
-        if (line.length >= 2 && !RegExp(r'^[0-9\s-]+$').hasMatch(line)) {
-          return line;
-        }
-      }
+      final imageHeight = await _resolveImageHeight(imagePath);
+      final candidateLines = _buildTitleCandidateLines(
+        recognizedText,
+        imageHeight: imageHeight,
+      );
+      return _extractMembershipTitle(candidateLines);
     } catch (_) {
       return null;
     } finally {
       recognizer.close();
     }
+  }
+
+  Future<double?> _resolveImageHeight(String imagePath) async {
+    try {
+      final bytes = await File(imagePath).readAsBytes();
+      final image = await decodeImageFromList(bytes);
+      final height = image.height.toDouble();
+      image.dispose();
+      return height;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<_MembershipOcrLineCandidate> _buildTitleCandidateLines(
+    RecognizedText recognizedText, {
+    required double? imageHeight,
+  }) {
+    final exclusionThreshold = imageHeight == null
+        ? null
+        : imageHeight * _ocrTopExclusionRatio;
+    final lines = <_MembershipOcrLineCandidate>[];
+
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        final text = _normalizeOcrLine(line.text);
+        if (text.isEmpty) {
+          continue;
+        }
+
+        final top = line.boundingBox.top.toDouble();
+        final bottom = line.boundingBox.bottom.toDouble();
+
+        if (exclusionThreshold != null && top < exclusionThreshold) {
+          continue;
+        }
+
+        lines.add(
+          _MembershipOcrLineCandidate(
+            text: text,
+            top: top,
+            bottom: bottom,
+          ),
+        );
+      }
+    }
+
+    lines.sort((a, b) {
+      final topCompare = a.top.compareTo(b.top);
+      if (topCompare != 0) {
+        return topCompare;
+      }
+      return a.bottom.compareTo(b.bottom);
+    });
+
+    return lines;
+  }
+
+  String? _extractMembershipTitle(List<_MembershipOcrLineCandidate> lines) {
+    for (var i = 0; i < lines.length; i++) {
+      final currentLine = lines[i].text;
+      if (!_isMembershipTitleCandidate(currentLine)) {
+        continue;
+      }
+
+      final titleLines = <String>[currentLine];
+
+      for (var j = i + 1; j < lines.length; j++) {
+        final nextLine = lines[j].text;
+        if (!_isMembershipTitleContinuationCandidate(nextLine)) {
+          break;
+        }
+        titleLines.add(nextLine);
+        if (titleLines.length >= 2) {
+          break;
+        }
+      }
+
+      return titleLines.join('\n');
+    }
+
     return null;
+  }
+
+  String _normalizeOcrLine(String line) {
+    return line.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  bool _isMembershipTitleCandidate(String line) {
+    if (line.length < 2) {
+      return false;
+    }
+    if (_looksLikeStatusBarText(line)) {
+      return false;
+    }
+    if (RegExp(r'^[0-9\s-]+$').hasMatch(line)) {
+      return false;
+    }
+    if (RegExp(r'^\d{1,3}%$').hasMatch(line)) {
+      return false;
+    }
+
+    final normalized = line.toLowerCase();
+    const blockedKeywords = [
+      'barcode',
+      'qr',
+      'membership',
+      '멤버십',
+      '회원번호',
+      '카드번호',
+      '적립',
+      '사용',
+      '혜택',
+      '포인트',
+      '로그인',
+      '설정',
+    ];
+    if (blockedKeywords.any(normalized.contains)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _isMembershipTitleContinuationCandidate(String line) {
+    if (!_isMembershipTitleCandidate(line)) {
+      return false;
+    }
+    if (line.length <= 2) {
+      return false;
+    }
+    if (RegExp(r'^[A-Z0-9 -]{6,}$').hasMatch(line)) {
+      return false;
+    }
+    if (_containsDateLikeText(line)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool _containsDateLikeText(String line) {
+    return RegExp(r'(20\d{2}|\d{2})[./-]\s?\d{1,2}[./-]\s?\d{1,2}')
+            .hasMatch(line) ||
+        RegExp(r'20\d{2}년\s*\d{1,2}월\s*\d{1,2}일').hasMatch(line);
+  }
+
+  bool _looksLikeStatusBarText(String line) {
+    final normalized = line.toLowerCase();
+    if (RegExp(r'^(오전|오후)?\s*\d{1,2}:\d{2}$').hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(
+      r'^\d{1,2}:\d{2}\s*(am|pm)?$',
+      caseSensitive: false,
+    ).hasMatch(line)) {
+      return true;
+    }
+    if (RegExp(r'^\d{1,3}%$').hasMatch(line)) {
+      return true;
+    }
+    const statusBarKeywords = ['5g', 'lte', 'skt', 'kt', 'u+', 'battery', '알림'];
+    return statusBarKeywords.any(normalized.contains);
   }
 
   void _showImageFullScreen() {
@@ -276,6 +439,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     if (_isSubmitting) {
       return;
     }
+    FocusScope.of(context).unfocus();
     final membershipName = _nameController.text.trim();
 
     if (membershipName.isEmpty) {
@@ -286,27 +450,45 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
       _isSubmitting = true;
     });
 
-    final saved = await MembershipRepository.saveDraft(
-      MembershipDraft(
-        id: widget.membership?.id,
-        name: membershipName,
-        brand: _resolveBrand(membershipName),
-        cardNumber: _cardNumberController.text.trim(),
-        memo: _memoController.text.trim().isEmpty
-            ? null
-            : _memoController.text.trim(),
-        imageBytes: _selectedImageBytes,
-        sourceImagePath: _selectedImagePath,
-        createdAt: widget.membership?.createdAt,
-      ),
-    );
+    try {
+      final saved = await MembershipRepository.saveDraft(
+        MembershipDraft(
+          id: widget.membership?.id,
+          name: membershipName,
+          brand: _resolveBrand(membershipName),
+          cardNumber: _cardNumberController.text.trim(),
+          memo: _memoController.text.trim().isEmpty
+              ? null
+              : _memoController.text.trim(),
+          imageBytes: _selectedImageBytes,
+          sourceImagePath: _selectedImagePath,
+          createdAt: widget.membership?.createdAt,
+        ),
+      );
 
-    if (!mounted) {
-      return;
+      if (!mounted) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop(saved);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(AppStrings.membershipRegistered),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isSubmitting = false;
+      });
+      _showMessage(AppStrings.membershipSaveFailed);
     }
-
-    _showMessage(AppStrings.membershipRegistered);
-    Navigator.of(context).pop(saved);
   }
 
   void _showMessage(String message) {
@@ -339,6 +521,8 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom + 24;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: GestureDetector(
@@ -346,7 +530,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
         child: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -385,6 +569,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
                 _FilledTextField(
                   controller: _nameController,
                   hintText: AppStrings.membershipNameHint,
+                  maxLines: 2,
                 ),
                 const SizedBox(height: 18),
                 const _FieldLabel(AppStrings.membershipCardNumberLabel),
@@ -767,4 +952,16 @@ class DashedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class _MembershipOcrLineCandidate {
+  const _MembershipOcrLineCandidate({
+    required this.text,
+    required this.top,
+    required this.bottom,
+  });
+
+  final String text;
+  final double top;
+  final double bottom;
 }

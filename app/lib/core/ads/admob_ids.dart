@@ -3,13 +3,8 @@ import 'package:flutter/foundation.dart';
 class AdMobIds {
   const AdMobIds._();
 
-  static const bool _useRealAds = bool.fromEnvironment(
-    'USE_REAL_ADS',
-    defaultValue: false,
-  );
-
   static String get bannerAdUnitId {
-    if (!_useRealAds) {
+    if (!kReleaseMode) {
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
           return 'ca-app-pub-3940256099942544/6300978111';
