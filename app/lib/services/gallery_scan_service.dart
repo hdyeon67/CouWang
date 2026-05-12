@@ -6,6 +6,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../repositories/coupon_repository.dart';
 import '../utils/scanned_image_store.dart';
 
 enum CouponConfidence { high, medium, low }
@@ -39,6 +40,8 @@ class GalleryScanService {
 
   static const List<String> _couponKeywords = <String>[
     '유효기간',
+    '유효 기간',
+    '유효기한',
     '사용기한',
     '만료일',
     '교환권',
@@ -259,6 +262,7 @@ class GalleryScanService {
       inputImage,
     );
     final hasBarcode = barcodes.isNotEmpty;
+    final barcodeValue = _resolveBarcodeValue(barcodes);
 
     final recognized =
         await (_textRecognizer ??=
@@ -282,6 +286,17 @@ class GalleryScanService {
       return null;
     }
 
+    final extractedText = recognized.text;
+    final extractedExpiry = _extractExpiryDate(extractedText);
+    final extractedTitle = _extractTitle(recognized);
+    if (_matchesExistingCoupon(
+      barcodeValue: barcodeValue,
+      extractedTitle: extractedTitle,
+      extractedExpiry: extractedExpiry,
+    )) {
+      return null;
+    }
+
     final confidence = hasBarcode && hasKeyword
         ? CouponConfidence.high
         : CouponConfidence.medium;
@@ -292,5 +307,162 @@ class GalleryScanService {
       imageHash: hash,
       confidence: confidence,
     );
+  }
+
+  String? _resolveBarcodeValue(List<Barcode> barcodes) {
+    for (final barcode in barcodes) {
+      final rawValue = barcode.rawValue?.trim();
+      if (rawValue?.isNotEmpty ?? false) {
+        return rawValue;
+      }
+      final displayValue = barcode.displayValue?.trim();
+      if (displayValue?.isNotEmpty ?? false) {
+        return displayValue;
+      }
+    }
+    return null;
+  }
+
+  bool _matchesExistingCoupon({
+    required String? barcodeValue,
+    required String? extractedTitle,
+    required String? extractedExpiry,
+  }) {
+    if (barcodeValue != null &&
+        CouponRepository.findByBarcodeNumber(barcodeValue) != null) {
+      return true;
+    }
+
+    final normalizedTitle = _normalizeComparisonText(extractedTitle);
+    final normalizedExpiry = _normalizeDateText(extractedExpiry);
+    if (normalizedTitle.isEmpty || normalizedExpiry.isEmpty) {
+      return false;
+    }
+
+    for (final coupon in CouponRepository.getAll()) {
+      final sameTitle =
+          _normalizeComparisonText(coupon.name) == normalizedTitle;
+      final sameExpiry =
+          _normalizeDateText(coupon.expiry) == normalizedExpiry;
+      if (sameTitle && sameExpiry) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizeComparisonText(String? value) {
+    if (value == null) {
+      return '';
+    }
+    return value.replaceAll(RegExp(r'\s+'), '').trim().toLowerCase();
+  }
+
+  String _normalizeDateText(String? value) {
+    if (value == null) {
+      return '';
+    }
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  String? _extractExpiryDate(String rawText) {
+    final lines = rawText
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    for (final line in lines) {
+      if (_containsExpiryKeyword(line)) {
+        final dates = _extractAllDates(line);
+        if (dates.isNotEmpty) {
+          return dates.last;
+        }
+      }
+    }
+
+    final detectedDates = _extractAllDates(rawText);
+    if (detectedDates.isNotEmpty) {
+      return detectedDates.last;
+    }
+
+    return null;
+  }
+
+  bool _containsExpiryKeyword(String line) {
+    const expiryKeywords = <String>[
+      '유효기간',
+      '유효 기간',
+      '유효기한',
+      '사용기한',
+      '만료일',
+      '이용기한',
+      '유효일',
+    ];
+
+    return expiryKeywords.any(line.contains);
+  }
+
+  List<String> _extractAllDates(String rawText) {
+    final normalizedText = rawText
+        .replaceAll('·', '.')
+        .replaceAll('ㆍ', '.')
+        .replaceAll('•', '.')
+        .replaceAll('。', '.')
+        .replaceAll(',', '.')
+        .replaceAll(':', '.')
+        .replaceAll(';', '.');
+
+    final patterns = <RegExp>[
+      RegExp(r'(20\d{2})년\s*(\d{1,2})월\s*(\d{1,2})일'),
+      RegExp(r'(20\d{2})\s*[./\-\s]\s*(\d{1,2})\s*[./\-\s]\s*(\d{1,2})'),
+      RegExp(r'(\d{2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,2})'),
+      RegExp(r'(?<!\d)(20\d{2})(\d{2})(\d{2})(?!\d)'),
+    ];
+    final detectedDates = <String>[];
+
+    for (final pattern in patterns) {
+      for (final match in pattern.allMatches(normalizedText)) {
+        final yearGroup = match.group(1)!;
+        final year = yearGroup.length == 2
+            ? int.parse('20$yearGroup')
+            : int.parse(yearGroup);
+        final month = int.parse(match.group(2)!);
+        final day = int.parse(match.group(3)!);
+
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+          continue;
+        }
+
+        final normalizedMonth = month.toString().padLeft(2, '0');
+        final normalizedDay = day.toString().padLeft(2, '0');
+        detectedDates.add('$year.$normalizedMonth.$normalizedDay');
+      }
+
+      if (detectedDates.isNotEmpty) {
+        return detectedDates;
+      }
+    }
+
+    return detectedDates;
+  }
+
+  String? _extractTitle(RecognizedText recognizedText) {
+    for (final block in recognizedText.blocks) {
+      for (final line in block.lines) {
+        final text = line.text.trim();
+        if (text.length < 4) {
+          continue;
+        }
+        if (_containsExpiryKeyword(text)) {
+          continue;
+        }
+        if (RegExp(r'^[0-9\s./:-]+$').hasMatch(text)) {
+          continue;
+        }
+        return text;
+      }
+    }
+    return null;
   }
 }

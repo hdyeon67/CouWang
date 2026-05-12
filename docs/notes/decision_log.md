@@ -1,5 +1,12 @@
 # 쿠왕 결정사항 로그
 
+## 2026-05-12
+
+### Android 갤러리 이미지 권한
+- Android에서 쿠폰 이미지 선택과 갤러리 자동 감지 기능을 유지하려면 `READ_MEDIA_IMAGES` 권한을 사용한다.
+- Android 12 이하 호환을 위해 `READ_EXTERNAL_STORAGE`는 `maxSdkVersion=32` 조건으로만 유지한다.
+- `READ_MEDIA_VIDEO`는 현재 기능 범위에 필요하지 않으므로 추가하지 않는다.
+
 ## 2026-05-07
 
 ### OCR 제목 추출 규칙

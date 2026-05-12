@@ -11,6 +11,7 @@ import '../../../../repositories/membership_repository.dart';
 import '../../../../repositories/settings_repository.dart';
 import '../../../../services/analytics_service.dart';
 import '../../../../services/notification_service.dart';
+import '../../../../app/router.dart';
 import 'coupon_create_screen.dart';
 import '../../../memberships/presentation/screens/membership_detail_screen.dart';
 
@@ -165,7 +166,9 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                 if (!mounted) {
                   return;
                 }
-                Navigator.pop(context);
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRouter.home, (route) => false);
                 messenger
                   ..hideCurrentSnackBar()
                   ..showSnackBar(

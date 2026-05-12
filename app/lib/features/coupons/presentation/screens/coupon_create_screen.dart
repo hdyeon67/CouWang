@@ -296,7 +296,16 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       couponType: extracted.couponType,
       categoryResolved: categoryResolved,
     );
-    _showMessage(AppStrings.couponExtractFilled);
+    final missingRequiredFields = _resolveMissingRequiredExtractFields(extracted);
+    if (missingRequiredFields.isEmpty) {
+      _showMessage(AppStrings.couponExtractFilled);
+      return;
+    }
+
+    _showMessage(
+      '${AppStrings.couponExtractMissingPrefix}'
+      '${missingRequiredFields.join(', ')}',
+    );
   }
 
   void _applyAutoFillResult(_AutoFillExtractionResult extracted) {
@@ -325,6 +334,31 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         _selectedCategory = resolvedCategory;
       }
     });
+  }
+
+  List<String> _resolveMissingRequiredExtractFields(
+    _AutoFillExtractionResult extracted,
+  ) {
+    final missing = <String>[];
+
+    if (extracted.detectedCode == AppStrings.couponNoDetectedCode) {
+      missing.add(AppStrings.couponFieldCode);
+    }
+    if (extracted.title == AppStrings.couponPartialResultTitle ||
+        extracted.title == AppStrings.couponNoDetectionTitle ||
+        extracted.title.trim().isEmpty) {
+      missing.add(AppStrings.couponFieldTitle);
+    }
+    if (extracted.brand == AppStrings.couponUnknown ||
+        extracted.brand.trim().isEmpty) {
+      missing.add(AppStrings.couponFieldBrand);
+    }
+    if (extracted.expiryDate == AppStrings.couponUnknown ||
+        extracted.expiryDate.trim().isEmpty) {
+      missing.add(AppStrings.couponFieldExpiry);
+    }
+
+    return missing;
   }
 
   String? _resolveCategoryFromExtractedData(_AutoFillExtractionResult extracted) {
@@ -730,9 +764,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
         .toList();
 
     for (final line in lines) {
-      if (line.contains(AppStrings.couponExpiryKeyword) ||
-          line.contains(AppStrings.couponUsePeriodKeyword) ||
-          line.contains(AppStrings.couponPeriodKeyword)) {
+      if (_containsExpiryKeyword(line)) {
         final dates = _extractAllDates(line);
         if (dates.isNotEmpty) {
           return dates.last;
@@ -748,16 +780,44 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
+  bool _containsExpiryKeyword(String line) {
+    const expiryKeywords = <String>[
+      '유효기간',
+      '유효 기간',
+      '유효기한',
+      '사용기한',
+      '이용기한',
+      '유효일',
+      '만료일',
+    ];
+
+    if (line.contains(AppStrings.couponUsePeriodKeyword) ||
+        line.contains(AppStrings.couponPeriodKeyword)) {
+      return true;
+    }
+
+    return expiryKeywords.any(line.contains);
+  }
+
   List<String> _extractAllDates(String rawText) {
+    final normalizedText = rawText
+        .replaceAll('·', '.')
+        .replaceAll('ㆍ', '.')
+        .replaceAll('•', '.')
+        .replaceAll('。', '.')
+        .replaceAll(',', '.')
+        .replaceAll(':', '.')
+        .replaceAll(';', '.');
     final patterns = [
       RegExp(r'(20\d{2})년\s*(\d{1,2})월\s*(\d{1,2})일'),
-      RegExp(r'(20\d{2})[./-]\s?(\d{1,2})[./-]\s?(\d{1,2})'),
-      RegExp(r'(\d{2})[./-]\s?(\d{1,2})[./-]\s?(\d{1,2})'),
+      RegExp(r'(20\d{2})\s*[./\-\s]\s*(\d{1,2})\s*[./\-\s]\s*(\d{1,2})'),
+      RegExp(r'(\d{2})\s*[./-]\s*(\d{1,2})\s*[./-]\s*(\d{1,2})'),
+      RegExp(r'(?<!\d)(20\d{2})(\d{2})(\d{2})(?!\d)'),
     ];
     final detectedDates = <String>[];
 
     for (final pattern in patterns) {
-      for (final match in pattern.allMatches(rawText)) {
+      for (final match in pattern.allMatches(normalizedText)) {
         final yearGroup = match.group(1)!;
         final year = yearGroup.length == 2
             ? int.parse('20$yearGroup')
@@ -1023,29 +1083,36 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
           usedAt: savedCoupon.usedAt,
         ),
       );
-      final settings = SettingsRepository.load();
-      final notificationService = NotificationService();
+      try {
+        final settings = SettingsRepository.load();
+        final notificationService = NotificationService();
 
-      if (widget.coupon != null) {
-        await notificationService.cancelCouponNotifications(widget.coupon!.id);
-      }
-      await notificationService.scheduleCouponNotifications(
-        repositoryCoupon,
-        settings,
-      );
-
-      if (widget.coupon == null) {
-        await AnalyticsService().logCouponCreated(
-          category: repositoryCoupon.category,
-          couponType: repositoryCoupon.couponType ?? AppStrings.couponTypeBarcode,
-          entryType: _usedAutoFill
-              ? AppStrings.couponEntryAuto
-              : AppStrings.couponEntryManual,
-          hasImage: repositoryCoupon.imagePath != null ||
-              repositoryCoupon.imageBytes != null,
-          dday: repositoryCoupon.dday,
+        if (widget.coupon != null) {
+          await notificationService.cancelCouponNotifications(widget.coupon!.id);
+        }
+        await notificationService.scheduleCouponNotifications(
+          repositoryCoupon,
+          settings,
         );
+
+        if (widget.coupon == null) {
+          await AnalyticsService().logCouponCreated(
+            category: repositoryCoupon.category,
+            couponType:
+                repositoryCoupon.couponType ?? AppStrings.couponTypeBarcode,
+            entryType: _usedAutoFill
+                ? AppStrings.couponEntryAuto
+                : AppStrings.couponEntryManual,
+            hasImage: repositoryCoupon.imagePath != null ||
+                repositoryCoupon.imageBytes != null,
+            dday: repositoryCoupon.dday,
+          );
+        }
+      } catch (error, stackTrace) {
+        debugPrint('Coupon post-save side effects failed: $error');
+        await AnalyticsService().recordNonFatal(error, stackTrace);
       }
+
       if (!mounted) {
         return;
       }

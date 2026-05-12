@@ -127,6 +127,11 @@ class AppStrings {
   static const couponOcrWebUnsupported = '웹에서는 OCR과 바코드/QR 이미지 분석을 지원하지 않아요. 모바일 기기에서 테스트해 주세요.';
   static const couponExtractFailed = '이미지에서 텍스트나 코드를 읽지 못했어요.';
   static const couponExtractFilled = '이미지 스캔 결과를 입력란에 채웠어요.';
+  static const couponExtractMissingPrefix = '일부 필수값을 읽지 못했어요: ';
+  static const couponFieldCode = '교환 코드';
+  static const couponFieldTitle = '쿠폰명';
+  static const couponFieldBrand = '브랜드';
+  static const couponFieldExpiry = '유효기간';
   static const couponUnknown = '미확인';
   static const couponNoDetectedCode = '인식된 코드가 없어요';
   static const couponNoDetectionTitle = '인식 결과를 확인할 수 없어요';
