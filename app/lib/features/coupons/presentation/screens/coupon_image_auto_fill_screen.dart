@@ -1,3 +1,4 @@
+// 쿠폰 이미지 자동 입력 결과를 별도 확인하는 보조 화면.
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 
+// CouponImageAutoFillScreen 화면 역할을 담당하는 클래스.
 class CouponImageAutoFillScreen extends StatelessWidget {
   const CouponImageAutoFillScreen({
     super.key,
@@ -25,6 +27,7 @@ class CouponImageAutoFillScreen extends StatelessWidget {
   final CouponAutoFillDraft draft;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -204,6 +207,7 @@ class CouponImageAutoFillScreen extends StatelessWidget {
   }
 }
 
+// CouponAutoFillDraft 초안 데이터 모델 역할을 담당하는 클래스.
 class CouponAutoFillDraft {
   const CouponAutoFillDraft({
     required this.title,
@@ -230,12 +234,14 @@ class CouponAutoFillDraft {
   final String statusDescription;
 }
 
+// RecognitionStatusCard 관련 역할을 담당하는 클래스.
 class _RecognitionStatusCard extends StatelessWidget {
   const _RecognitionStatusCard({required this.draft});
 
   final CouponAutoFillDraft draft;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final backgroundColor = draft.isRecognized
         ? const Color(0xFFF4F8FF)
@@ -297,6 +303,7 @@ class _RecognitionStatusCard extends StatelessWidget {
   }
 }
 
+// InfoRow 관련 역할을 담당하는 클래스.
 class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
@@ -307,6 +314,7 @@ class _InfoRow extends StatelessWidget {
   final String value;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -339,10 +347,12 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+// SectionDivider 관련 역할을 담당하는 클래스.
 class _SectionDivider extends StatelessWidget {
   const _SectionDivider();
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return const Divider(
       height: 1,

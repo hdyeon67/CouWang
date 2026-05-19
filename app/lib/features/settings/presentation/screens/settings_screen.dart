@@ -1,3 +1,7 @@
+// 설정 화면.
+//
+// 알림 주기, 갤러리 자동 감지, 테스트 도구, 앱 버전 표시처럼 운영/QA 성격의
+// 기능이 한 곳에 모여 있다.
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -17,6 +21,7 @@ import '../../../../services/notification_service.dart';
 import '../../../../utils/scanned_image_store.dart';
 import '../../../coupons/presentation/screens/coupon_create_screen.dart';
 
+// SettingsScreen 화면 역할을 담당하는 클래스.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -24,6 +29,7 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+// SettingsScreenState 관련 역할을 담당하는 클래스.
 class _SettingsScreenState extends State<SettingsScreen>
     with WidgetsBindingObserver {
   static const bool _internalTestToolsEnabled = bool.fromEnvironment(
@@ -51,6 +57,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   ];
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -60,6 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _foregroundTestNotificationTimer?.cancel();
@@ -67,6 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   @override
+  // 앱 lifecycle 변화에 맞춰 후속 동작을 처리한다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
       return;
@@ -75,6 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _loadAutoScanSetting();
   }
 
+  // 필요한 데이터나 상태를 불러온다.
   Future<void> _loadVersionInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
     if (!mounted) {
@@ -86,7 +96,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
+  // 필요한 데이터나 상태를 불러온다.
   Future<void> _loadAutoScanSetting() async {
+    // 저장된 토글값만 믿지 않고 실제 사진 권한 상태와 교차 검증해서,
+    // "권한은 없는데 스위치만 켜진 상태"를 막는다.
     final prefs = await SharedPreferences.getInstance();
     final permissionGranted = await GalleryScanService().hasPermission();
     final savedValue =
@@ -104,7 +117,10 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
+  // 외부 상태와 현재 화면 상태를 동기화한다.
   Future<void> _syncNotificationPermissionState() async {
+    // 시스템 권한이 꺼져 있으면 앱 내부 토글도 false처럼 보여줘야
+    // 사용자가 현재 상태를 자연스럽게 이해할 수 있다.
     final granted =
         await AppPermissionService.isNotificationPermissionGranted();
     final saved = SettingsRepository.load();
@@ -131,6 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
   }
 
+  // 현재 상태를 바탕으로 표시용 데이터나 UI 조각을 만든다.
   NotificationSettingsModel _buildSettings() {
     final saved = SettingsRepository.load();
     return NotificationSettingsModel(
@@ -145,12 +162,16 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
+  // 변경된 데이터나 상태를 저장한다.
   Future<void> _saveAndReschedule() async {
     SettingsRepository.save(_buildSettings());
     await NotificationService().rescheduleAllCouponNotifications();
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   Future<void> _handleMasterToggle(bool val) async {
+    // 메인 토글은 하위 토글 묶음의 진입점이다.
+    // ON일 때는 기본 세트(당일/1/3/7일)를 함께 켠다.
     if (val) {
       final granted =
           await AppPermissionService.ensureNotificationPermission(context);
@@ -196,6 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     await _saveAndReschedule();
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   Future<void> _showTestNotification() async {
     final granted =
         await AppPermissionService.ensureNotificationPermission(context);
@@ -237,6 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
   }
 
+  // addInternalTestCoupons 관련 처리를 수행한다.
   Future<void> _addInternalTestCoupons() async {
     await CouponRepository.addInternalNotificationTestCoupons();
     await NotificationService().rescheduleAllCouponNotifications();
@@ -254,6 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {});
   }
 
+  // addVirtualMemberships 관련 처리를 수행한다.
   Future<void> _addVirtualMemberships() async {
     await MembershipRepository.addVirtualMemberships();
     if (!mounted) {
@@ -270,6 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     setState(() {});
   }
 
+  // 여러 단계를 포함한 주요 실행 흐름을 처리한다.
   Future<void> _runGalleryScanTest() async {
     final service = GalleryScanService();
     final hasPermission = await service.checkAndRequestPermission();
@@ -320,6 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  // 관련 상태를 초기값으로 되돌린다.
   Future<void> _resetGalleryScanState() async {
     await GalleryScanService().resetScanState();
     if (!mounted) {
@@ -335,6 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
   }
 
+  // triggerCrashlyticsTestCrash 관련 처리를 수행한다.
   void _triggerCrashlyticsTestCrash() {
     final analytics = AnalyticsService();
     if (!analytics.isAvailable) {
@@ -353,6 +380,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     analytics.crashForTesting();
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   Future<void> _handleAutoScanToggle(bool value) async {
     if (_isHandlingAutoScanToggle) {
       return;
@@ -434,6 +462,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   Future<bool?> _showPermissionGuideDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
@@ -523,6 +552,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return AppTabScaffold(
       currentTab: BottomTabItem.settings,
@@ -963,6 +993,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 }
 
+// SubToggleRow 관련 역할을 담당하는 클래스.
 class _SubToggleRow extends StatelessWidget {
   const _SubToggleRow({
     required this.label,
@@ -977,6 +1008,7 @@ class _SubToggleRow extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: 44,
@@ -1001,6 +1033,7 @@ class _SubToggleRow extends StatelessWidget {
   }
 }
 
+// CouWangSwitch 관련 역할을 담당하는 클래스.
 class _CouWangSwitch extends StatelessWidget {
   const _CouWangSwitch({
     required this.value,
@@ -1011,6 +1044,7 @@ class _CouWangSwitch extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final isEnabled = onChanged != null;
     final trackColor =

@@ -1,3 +1,6 @@
+// 쿠폰 상세/사용완료/삭제를 담당하는 화면.
+//
+// 수정과 삭제 이후에는 화면 스택이 꼬이지 않도록 홈 복귀 기준을 명확히 둔다.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -15,6 +18,7 @@ import '../../../../app/router.dart';
 import 'coupon_create_screen.dart';
 import '../../../memberships/presentation/screens/membership_detail_screen.dart';
 
+// CouponDetailScreen 화면 역할을 담당하는 클래스.
 class CouponDetailScreen extends StatefulWidget {
   const CouponDetailScreen({
     super.key,
@@ -36,6 +40,7 @@ class CouponDetailScreen extends StatefulWidget {
   State<CouponDetailScreen> createState() => _CouponDetailScreenState();
 }
 
+// CouponDetailScreenState 관련 역할을 담당하는 클래스.
 class _CouponDetailScreenState extends State<CouponDetailScreen> {
   final GlobalKey _menuButtonKey = GlobalKey();
   late bool _isUsed = widget.coupon.isUsed ||
@@ -50,6 +55,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
         .toList();
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showContextMenu() {
     final buttonContext = _menuButtonKey.currentContext;
     if (buttonContext == null) {
@@ -111,6 +117,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     });
   }
 
+  // navigateToEdit 관련 처리를 수행한다.
   void _navigateToEdit() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -123,6 +130,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     });
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showDeleteDialog() {
     showDialog<void>(
       context: context,
@@ -217,6 +225,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
         normalized.startsWith('https://');
   }
 
+  // 현재 상태를 바탕으로 표시용 데이터나 UI 조각을 만든다.
   Widget _buildDdayBadge(int dday) {
     late final Color color;
     late final String label;
@@ -308,6 +317,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showImageFullScreen() {
     _showFullscreenOverlay(
       child: InteractiveViewer(
@@ -327,6 +337,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
+  // 표시용 문자열로 값을 변환한다.
   String _formatBarcodeNumber(String raw) {
     if (_showsQrCode) {
       return raw;
@@ -342,6 +353,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     return buffer.toString();
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showBarcodeFullScreen() {
     _showFullscreenOverlay(
       child: Container(
@@ -384,6 +396,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   void _markAsUsed() {
     showDialog<void>(
       context: context,
@@ -462,6 +475,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   void _markAsUnused() {
     showDialog<void>(
       context: context,
@@ -541,6 +555,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
     );
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showMembershipListBottomSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -567,6 +582,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final coupon = _coupon;
 
@@ -852,6 +868,7 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
   }
 }
 
+// CouponDetailModel 모델 역할을 담당하는 클래스.
 class CouponDetailModel {
   const CouponDetailModel({
     this.id = '',
@@ -963,6 +980,7 @@ class CouponDetailModel {
   }
 }
 
+// CouponDetailStatus 상태 값을 정의하는 enum.
 enum CouponDetailStatus {
   available,
   urgent,
@@ -970,6 +988,7 @@ enum CouponDetailStatus {
   redeemed,
 }
 
+// CouponImage 관련 역할을 담당하는 클래스.
 class _CouponImage extends StatelessWidget {
   const _CouponImage({
     required this.coupon,
@@ -984,6 +1003,7 @@ class _CouponImage extends StatelessWidget {
   final double? fallbackHeight;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     if (coupon.imageBytes != null) {
       return Image.memory(
@@ -1003,6 +1023,7 @@ class _CouponImage extends StatelessWidget {
     return _buildFallback();
   }
 
+  // 현재 상태를 바탕으로 표시용 데이터나 UI 조각을 만든다.
   Widget _buildFallback() {
     return Container(
       width: fallbackWidth,
@@ -1018,6 +1039,7 @@ class _CouponImage extends StatelessWidget {
   }
 }
 
+// MembershipListSheet 관련 역할을 담당하는 클래스.
 class _MembershipListSheet extends StatelessWidget {
   const _MembershipListSheet({
     required this.memberships,
@@ -1030,6 +1052,7 @@ class _MembershipListSheet extends StatelessWidget {
   final ValueChanged<_MembershipSheetItem> onMembershipTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.60,
@@ -1143,6 +1166,7 @@ class _MembershipListSheet extends StatelessWidget {
   }
 }
 
+// MembershipSheetItem 관련 역할을 담당하는 클래스.
 class _MembershipSheetItem {
   const _MembershipSheetItem({
     required this.name,

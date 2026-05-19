@@ -1,3 +1,6 @@
+// 갤러리 자동 감지 핵심 서비스.
+//
+// 최근 저장 이미지 조회, 쿠폰 후보 판별, 중복 감지, 스캔 빈도 제한을 한곳에 모은다.
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
@@ -9,8 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../repositories/coupon_repository.dart';
 import '../utils/scanned_image_store.dart';
 
+// CouponConfidence 상태 값을 정의하는 enum.
 enum CouponConfidence { high, medium, low }
 
+// DetectedCouponImage 관련 역할을 담당하는 클래스.
 class DetectedCouponImage {
   const DetectedCouponImage({
     required this.asset,
@@ -25,6 +30,7 @@ class DetectedCouponImage {
   final CouponConfidence confidence;
 }
 
+// 갤러리 자동 감지 흐름을 담당하는 서비스.
 class GalleryScanService {
   GalleryScanService._internal();
 
@@ -56,6 +62,7 @@ class GalleryScanService {
   BarcodeScanner? _barcodeScanner;
   TextRecognizer? _textRecognizer;
 
+  // warmUp 관련 처리를 수행한다.
   void warmUp() {
     if (kIsWeb) {
       return;
@@ -65,6 +72,7 @@ class GalleryScanService {
         TextRecognizer(script: TextRecognitionScript.korean);
   }
 
+  // 사용이 끝난 리소스를 정리한다.
   Future<void> dispose() async {
     await _barcodeScanner?.close();
     await _textRecognizer?.close();
@@ -72,6 +80,7 @@ class GalleryScanService {
     _textRecognizer = null;
   }
 
+  // checkAndRequestPermission 관련 처리를 수행한다.
   Future<bool> checkAndRequestPermission() async {
     if (kIsWeb) {
       return false;
@@ -85,6 +94,7 @@ class GalleryScanService {
     return _isGranted(requestedStatus);
   }
 
+  // hasPermission 관련 처리를 수행한다.
   Future<bool> hasPermission() async {
     if (kIsWeb) {
       return false;
@@ -93,6 +103,7 @@ class GalleryScanService {
     return _isGranted(currentStatus);
   }
 
+  // currentPhotoPermissionStatus 관련 처리를 수행한다.
   Future<PermissionStatus> _currentPhotoPermissionStatus() async {
     final photoStatus = await Permission.photos.status;
     if (_isGranted(photoStatus)) {
@@ -103,6 +114,7 @@ class GalleryScanService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
+  // 외부 권한이나 리소스를 요청한다.
   Future<PermissionStatus> _requestPhotoPermission() async {
     final photoStatus = await Permission.photos.request();
     if (_isGranted(photoStatus)) {
@@ -113,6 +125,7 @@ class GalleryScanService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   bool _isGranted(PermissionStatus status) {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
@@ -126,6 +139,7 @@ class GalleryScanService {
     bool respectDailyLimit = true,
     bool forceRescan = false,
   }) async {
+    // 자동 감지는 설정값, 권한, 일일 제한을 모두 통과해야 실제 스캔을 시작한다.
     final prefs = await SharedPreferences.getInstance();
     final autoScanEnabled = prefs.getBool(autoScanEnabledKey) ?? false;
     if (respectAutoSetting && !autoScanEnabled) {
@@ -159,6 +173,7 @@ class GalleryScanService {
     return detected;
   }
 
+  // 현재 조건에서 동작 가능 여부를 판단한다.
   Future<bool> _canScanToday() async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now().toIso8601String().substring(0, 10);
@@ -174,6 +189,8 @@ class GalleryScanService {
   Future<List<AssetEntity>> _fetchNewImages({
     bool ignoreLastScan = false,
   }) async {
+    // photo_manager는 앨범별로 결과를 주기 때문에, id 중복 제거와 최근순 정렬을
+    // 서비스 레벨에서 다시 맞춰준다.
     final lastScan = await ScannedImageStore.getLastScanTime();
     final now = DateTime.now();
     final minDate = now.subtract(const Duration(days: scanRangeDays));
@@ -228,6 +245,7 @@ class GalleryScanService {
     return assets.take(maxScanImages).toList();
   }
 
+  // 관련 상태를 초기값으로 되돌린다.
   Future<void> resetScanState() async {
     await ScannedImageStore.clearProcessedState();
     final prefs = await SharedPreferences.getInstance();
@@ -238,7 +256,10 @@ class GalleryScanService {
     }
   }
 
+  // analyzeImage 관련 처리를 수행한다.
   Future<DetectedCouponImage?> _analyzeImage(AssetEntity asset) async {
+    // 후보 판정은 "해시 중복 확인 -> 바코드 감지 -> OCR 키워드 감지 ->
+    // 기존 저장 쿠폰 비교" 순으로 진행한다.
     final bytes = await asset.thumbnailDataWithSize(
       const ThumbnailSize(800, 800),
     );
@@ -351,6 +372,7 @@ class GalleryScanService {
     return false;
   }
 
+  // normalizeComparisonText 관련 처리를 수행한다.
   String _normalizeComparisonText(String? value) {
     if (value == null) {
       return '';
@@ -358,6 +380,7 @@ class GalleryScanService {
     return value.replaceAll(RegExp(r'\s+'), '').trim().toLowerCase();
   }
 
+  // normalizeDateText 관련 처리를 수행한다.
   String _normalizeDateText(String? value) {
     if (value == null) {
       return '';
@@ -389,6 +412,7 @@ class GalleryScanService {
     return null;
   }
 
+  // containsExpiryKeyword 관련 처리를 수행한다.
   bool _containsExpiryKeyword(String line) {
     const expiryKeywords = <String>[
       '유효기간',
@@ -403,6 +427,7 @@ class GalleryScanService {
     return expiryKeywords.any(line.contains);
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   List<String> _extractAllDates(String rawText) {
     final normalizedText = rawText
         .replaceAll('·', '.')

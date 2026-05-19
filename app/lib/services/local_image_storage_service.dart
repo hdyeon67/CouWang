@@ -1,9 +1,11 @@
+// 쿠폰/멤버십 이미지를 앱 전용 디렉터리에 저장하는 서비스.
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+// StoredImageFile 관련 역할을 담당하는 클래스.
 class StoredImageFile {
   const StoredImageFile({
     required this.originalName,
@@ -22,6 +24,7 @@ class StoredImageFile {
   final String? mimeType;
 }
 
+// 쿠폰/멤버십 이미지를 앱 전용 디렉터리에 저장하는 서비스.
 class LocalImageStorageService {
   LocalImageStorageService._();
 
@@ -56,6 +59,7 @@ class LocalImageStorageService {
     );
   }
 
+  // 대상 데이터를 삭제한다.
   Future<void> deleteImage(String? absolutePath) async {
     if (absolutePath == null || absolutePath.isEmpty) {
       return;
@@ -66,6 +70,7 @@ class LocalImageStorageService {
     }
   }
 
+  // readBytes 관련 처리를 수행한다.
   Future<Uint8List?> readBytes(String? absolutePath) async {
     if (absolutePath == null || absolutePath.isEmpty) {
       return null;
@@ -77,6 +82,7 @@ class LocalImageStorageService {
     return file.readAsBytes();
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   Future<String?> resolveAbsolutePath(String? relativePath) async {
     if (relativePath == null || relativePath.isEmpty) {
       return null;

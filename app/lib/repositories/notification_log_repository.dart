@@ -1,9 +1,13 @@
+// 알림 인박스용 로그 저장소.
+//
+// 실제 OS 예약 알림과 별개로, 사용자가 앱 안에서 보는 "기록"을 관리한다.
 import 'package:sqflite/sqflite.dart';
 
 import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
 import '../services/local_database_service.dart';
 import 'coupon_repository.dart';
 
+// NotificationLogEntry 관련 역할을 담당하는 클래스.
 class NotificationLogEntry {
   const NotificationLogEntry({
     required this.id,
@@ -26,6 +30,7 @@ class NotificationLogEntry {
   final CouponDetailModel coupon;
 }
 
+// 알림 인박스 기록을 저장하는 저장소.
 class NotificationLogRepository {
   NotificationLogRepository._();
 
@@ -146,10 +151,12 @@ class NotificationLogRepository {
     return items;
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   static Future<void> markAsRead(String id) async {
     await markAsReadById(id);
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   static Future<void> markAsReadById(String id) async {
     final db = await LocalDatabaseService.instance.database;
     await db.update(
@@ -163,6 +170,7 @@ class NotificationLogRepository {
     );
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   static Future<void> markLatestUnreadAsReadByCouponId(String couponId) async {
     final db = await LocalDatabaseService.instance.database;
     final rows = await db.query(
@@ -178,6 +186,7 @@ class NotificationLogRepository {
     await markAsRead(rows.first['id'] as String);
   }
 
+  // 대상 데이터를 삭제한다.
   static Future<void> deleteLog(String id) async {
     final db = await LocalDatabaseService.instance.database;
     await db.update(
@@ -191,6 +200,7 @@ class NotificationLogRepository {
     );
   }
 
+  // 대상 데이터를 삭제한다.
   static Future<void> deleteAllLogs() async {
     final db = await LocalDatabaseService.instance.database;
     await db.update(
@@ -203,6 +213,7 @@ class NotificationLogRepository {
     );
   }
 
+  // 대상 데이터를 삭제한다.
   static Future<void> deleteLogsByCouponId(String couponId) async {
     final db = await LocalDatabaseService.instance.database;
     await db.update(

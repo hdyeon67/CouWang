@@ -1,3 +1,8 @@
+// 쿠폰 등록/수정 화면.
+//
+// 수동 입력을 기본으로 두고, 이미지 OCR/바코드 인식은 보조 흐름으로 얹는다.
+// 인수인계 시에는 `_runImageOcr`, `_buildAutoFillResult`, `_submitForm`
+// 세 메서드를 먼저 읽으면 전체 데이터 흐름을 이해하기 쉽다.
 import 'dart:io';
 import 'package:barcode_widget/barcode_widget.dart' as bw;
 import 'package:flutter/cupertino.dart';
@@ -16,6 +21,7 @@ import '../../../../services/notification_service.dart';
 import 'coupon_detail_screen.dart';
 
 
+// CouponCreateScreen 화면 역할을 담당하는 클래스.
 class CouponCreateScreen extends StatefulWidget {
   const CouponCreateScreen({
     super.key,
@@ -30,7 +36,9 @@ class CouponCreateScreen extends StatefulWidget {
   State<CouponCreateScreen> createState() => _CouponCreateScreenState();
 }
 
+// CouponCreateScreenState 관련 역할을 담당하는 클래스.
 class _CouponCreateScreenState extends State<CouponCreateScreen> {
+  // OCR 결과에서 상단 상태바/앱 헤더가 제목으로 섞이는 것을 줄이기 위한 컷오프 비율.
   static const double _ocrTopExclusionRatio = 0.12;
   static const Color _fieldFillColor = Color(0xFFF0F0F0);
   static const Color _fieldIconColor = Color(0xFFBDBDBD);
@@ -100,6 +108,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       _selectedDate != null;
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     final coupon = widget.coupon;
@@ -127,6 +136,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     _barcodeController.dispose();
     _couponNameController.dispose();
@@ -135,6 +145,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     super.dispose();
   }
 
+  // 사용자에게 선택 흐름을 열고 결과를 반영한다.
   Future<void> _pickImage() async {
     final granted = await AppPermissionService.ensurePhotoPermission(context);
     if (!granted || !mounted) {
@@ -160,6 +171,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     });
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showImageFullScreen() {
     if (_selectedImageBytes == null && (_selectedImagePath == null || _selectedImagePath!.isEmpty)) {
       return;
@@ -224,6 +236,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     );
   }
 
+  // 현재 상태를 바탕으로 표시용 데이터나 UI 조각을 만든다.
   Widget _buildSelectedImage(BoxFit fit) {
     if (kIsWeb || (_selectedImage == null && _selectedImageBytes != null)) {
       return Image.memory(_selectedImageBytes!, fit: fit);
@@ -234,11 +247,15 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return Image.file(File(_selectedImagePath!), fit: fit);
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   Future<void> _extractFromImage() async {
     await _runImageOcr();
   }
 
+  // 여러 단계를 포함한 주요 실행 흐름을 처리한다.
   Future<void> _runImageOcr() async {
+    // OCR은 "이미지 선택 -> 코드 감지 -> 텍스트 감지 -> 자동 입력 후보 생성"
+    // 순서로 동작한다. 여기서는 사용자에게 보이는 성공/실패 메시지까지 맡는다.
     const analyticsSource = 'coupon_create';
     await AnalyticsService().logImageExtractAttempted(source: analyticsSource);
 
@@ -308,7 +325,10 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     );
   }
 
+  // applyAutoFillResult 관련 처리를 수행한다.
   void _applyAutoFillResult(_AutoFillExtractionResult extracted) {
+    // 인식값만 선택적으로 폼에 주입한다.
+    // 부분 인식 상황이 많아서 기존 수동 입력값을 무조건 덮지 않도록 구성했다.
     setState(() {
       _usedAutoFill = true;
       if (!extracted.title.startsWith('인식 결과')) {
@@ -421,6 +441,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
+  // 사용자에게 선택 흐름을 열고 결과를 반영한다.
   Future<void> _pickDate() async {
     final minDate = DateTime(2000, 1, 1);
     final maxDate = DateTime(2099, 12, 31);
@@ -511,6 +532,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     }
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   Future<_DetectedCouponText?> _extractTextFromImage(String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer(
@@ -549,6 +571,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     }
   }
 
+  // 입력 데이터에서 필요한 값을 탐지한다.
   Future<_DetectedCouponCode?> _detectCodeFromImage(String imagePath) async {
     final scanner = BarcodeScanner(
       formats: const [
@@ -626,6 +649,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return usableBarcodes.first;
   }
 
+  // couponTypeLabelForBarcode 관련 처리를 수행한다.
   String _couponTypeLabelForBarcode(Barcode barcode) {
     if (barcode.format == BarcodeFormat.qrCode || barcode.type == BarcodeType.url) {
       return AppStrings.couponTypeQr;
@@ -633,6 +657,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return AppStrings.couponTypeBarcode;
   }
 
+  // barcodeFormatLabel 관련 처리를 수행한다.
   String _barcodeFormatLabel(BarcodeFormat format) {
     return switch (format) {
       BarcodeFormat.qrCode => AppStrings.couponTypeQr,
@@ -757,6 +782,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   String? _extractExpiryDate(String rawText) {
+    // 날짜는 점/하이픈/공백/한글 표기 등 변형이 많아서
+    // 키워드가 있는 줄을 먼저 보고, 못 찾으면 전체 텍스트에서 한 번 더 찾는다.
     final lines = rawText
         .split('\n')
         .map((line) => line.trim())
@@ -780,6 +807,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
+  // containsExpiryKeyword 관련 처리를 수행한다.
   bool _containsExpiryKeyword(String line) {
     const expiryKeywords = <String>[
       '유효기간',
@@ -799,6 +827,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return expiryKeywords.any(line.contains);
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   List<String> _extractAllDates(String rawText) {
     final normalizedText = rawText
         .replaceAll('·', '.')
@@ -843,6 +872,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   String? _extractTitle(List<_OcrLineCandidate> lines) {
+    // 제목은 기본 1줄, 최대 2줄까지만 허용한다.
+    // 그 이상 붙이면 상태바/설명 문구가 섞일 가능성이 높다.
     for (var i = 0; i < lines.length; i++) {
       final currentLine = lines[i].text;
       if (!_isTitleCandidate(currentLine)) {
@@ -868,10 +899,12 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
+  // normalizeOcrLine 관련 처리를 수행한다.
   String _normalizeOcrLine(String line) {
     return line.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   bool _isTitleCandidate(String line) {
     if (line.length < 4) {
       return false;
@@ -898,6 +931,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return true;
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   bool _isTitleContinuationCandidate(String line) {
     if (!_isTitleCandidate(line)) {
       return false;
@@ -921,12 +955,14 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return true;
   }
 
+  // containsDateLikeText 관련 처리를 수행한다.
   bool _containsDateLikeText(String line) {
     return RegExp(r'(20\d{2}|\d{2})[./-]\s?\d{1,2}[./-]\s?\d{1,2}')
             .hasMatch(line) ||
         RegExp(r'20\d{2}년\s*\d{1,2}월\s*\d{1,2}일').hasMatch(line);
   }
 
+  // looksLikeStatusBarText 관련 처리를 수행한다.
   bool _looksLikeStatusBarText(String line) {
     final normalized = line.toLowerCase();
     if (RegExp(r'^(오전|오후)?\s*\d{1,2}:\d{2}$').hasMatch(line)) {
@@ -942,6 +978,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return statusBarKeywords.any(normalized.contains);
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   Future<double?> _resolveImageHeight(String imagePath) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
@@ -998,11 +1035,15 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return lines;
   }
 
+  // UI 이벤트 진입점 역할을 한다.
   Future<void> _onSubmit() async {
     await _submitForm();
   }
 
+  // submitForm 관련 처리를 수행한다.
   Future<void> _submitForm() async {
+    // 저장은 "DB 저장"과 "저장 후 후처리"를 분리한다.
+    // 후처리(알림 재예약, analytics) 실패가 있어도 쿠폰 저장 자체는 성공으로 본다.
     if (_isSubmitting) {
       return;
     }
@@ -1154,6 +1195,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return CouponDetailStatus.available;
   }
 
+  // calculateDday 관련 처리를 수행한다.
   int _calculateDday(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -1161,6 +1203,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return target.difference(today).inDays;
   }
 
+  // 표시용 문자열로 값을 변환한다.
   String _formatSelectedDate(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
@@ -1185,6 +1228,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     return null;
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -1196,6 +1240,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
       );
   }
 
+  // 문자열 또는 원시 데이터를 앱 모델 값으로 변환한다.
   DateTime _parseDate(String formattedDate) {
     final parts = formattedDate.split('.');
     if (parts.length != 3) {
@@ -1209,6 +1254,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
     );
   }
 
+  // tryParseDate 관련 처리를 수행한다.
   DateTime? _tryParseDate(String formattedDate) {
     final parts = formattedDate.split('.');
     if (parts.length != 3) {
@@ -1221,6 +1267,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom + 24;
 
@@ -1463,6 +1510,7 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
   }
 }
 
+// DetectedCouponCode 관련 역할을 담당하는 클래스.
 class _DetectedCouponCode {
   const _DetectedCouponCode({
     required this.rawValue,
@@ -1475,6 +1523,7 @@ class _DetectedCouponCode {
   final String codeFormatLabel;
 }
 
+// DetectedCouponText 관련 역할을 담당하는 클래스.
 class _DetectedCouponText {
   const _DetectedCouponText({
     required this.rawText,
@@ -1489,6 +1538,7 @@ class _DetectedCouponText {
   final String? title;
 }
 
+// OcrLineCandidate 관련 역할을 담당하는 클래스.
 class _OcrLineCandidate {
   const _OcrLineCandidate({
     required this.text,
@@ -1501,6 +1551,7 @@ class _OcrLineCandidate {
   final double bottom;
 }
 
+// AutoFillExtractionResult 관련 역할을 담당하는 클래스.
 class _AutoFillExtractionResult {
   const _AutoFillExtractionResult({
     required this.title,
@@ -1523,6 +1574,7 @@ class _AutoFillExtractionResult {
   final bool isRecognized;
 }
 
+// CouponType 상태 값을 정의하는 enum.
 enum CouponType {
   barcode(AppStrings.couponTypeBarcode),
   qr(AppStrings.couponTypeQr),
@@ -1533,6 +1585,7 @@ enum CouponType {
   final String label;
 }
 
+// CouponImagePicker 관련 역할을 담당하는 클래스.
 class _CouponImagePicker extends StatelessWidget {
   const _CouponImagePicker({
     required this.selectedImage,
@@ -1549,6 +1602,7 @@ class _CouponImagePicker extends StatelessWidget {
   final VoidCallback onPreview;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     if (selectedImage != null || selectedImageBytes != null || (selectedImagePath?.isNotEmpty ?? false)) {
       return GestureDetector(
@@ -1707,6 +1761,7 @@ class _CouponImagePicker extends StatelessWidget {
   }
 }
 
+// ExtractButton 관련 역할을 담당하는 클래스.
 class _ExtractButton extends StatelessWidget {
   const _ExtractButton({
     required this.enabled,
@@ -1719,6 +1774,7 @@ class _ExtractButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final foreground =
         enabled ? const Color(0xFF64CAFA) : const Color(0xFFBDBDBD);
@@ -1771,12 +1827,14 @@ class _ExtractButton extends StatelessWidget {
   }
 }
 
+// RequiredLabel 관련 역할을 담당하는 클래스.
 class _RequiredLabel extends StatelessWidget {
   const _RequiredLabel(this.text);
 
   final String text;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1805,12 +1863,14 @@ class _RequiredLabel extends StatelessWidget {
   }
 }
 
+// OptionalLabel 관련 역할을 담당하는 클래스.
 class _OptionalLabel extends StatelessWidget {
   const _OptionalLabel(this.text);
 
   final String text;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Text(
       text,
@@ -1823,6 +1883,7 @@ class _OptionalLabel extends StatelessWidget {
   }
 }
 
+// FilledTextField 관련 역할을 담당하는 클래스.
 class _FilledTextField extends StatelessWidget {
   const _FilledTextField({
     required this.controller,
@@ -1843,6 +1904,7 @@ class _FilledTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -1877,6 +1939,7 @@ class _FilledTextField extends StatelessWidget {
   }
 }
 
+// CouponBarcodePreview 관련 역할을 담당하는 클래스.
 class CouponBarcodePreview extends StatelessWidget {
   const CouponBarcodePreview({
     super.key,
@@ -1892,6 +1955,7 @@ class CouponBarcodePreview extends StatelessWidget {
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     if (code.isEmpty) {
       return Container(
@@ -1980,8 +2044,10 @@ class CouponBarcodePreview extends StatelessWidget {
   }
 }
 
+// DashedBorderPainter 커스텀 페인터 역할을 담당하는 클래스.
 class DashedBorderPainter extends CustomPainter {
   @override
+  // paint 관련 처리를 수행한다.
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF64CAFA)
@@ -2012,5 +2078,6 @@ class DashedBorderPainter extends CustomPainter {
   }
 
   @override
+  // shouldRepaint 관련 처리를 수행한다.
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

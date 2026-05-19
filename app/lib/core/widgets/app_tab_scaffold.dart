@@ -1,3 +1,4 @@
+// 홈/멤버십/설정 하단 탭을 공통으로 감싸는 스캐폴드.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,8 +6,10 @@ import '../../app/router.dart';
 import '../resources/app_strings.dart';
 import 'couwang_banner_ad.dart';
 
+// BottomTabItem 상태 값을 정의하는 enum.
 enum BottomTabItem { membership, home, settings }
 
+// AppTabScaffold 관련 역할을 담당하는 클래스.
 class AppTabScaffold extends StatelessWidget {
   const AppTabScaffold({
     super.key,
@@ -31,10 +34,13 @@ class AppTabScaffold extends StatelessWidget {
   static const double _horizontalMargin = 20;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return PopScope(
+      // 하단 탭 루트에서는 Android back 동작을 제어해
+      // 홈에서는 앱 종료, 다른 탭에서는 홈 복귀로 맞춘다.
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
@@ -109,6 +115,7 @@ class AppTabScaffold extends StatelessWidget {
   }
 }
 
+// BottomTabBarContainer 관련 역할을 담당하는 클래스.
 class BottomTabBarContainer extends StatelessWidget {
   const BottomTabBarContainer({
     super.key,
@@ -126,6 +133,7 @@ class BottomTabBarContainer extends StatelessWidget {
   final VoidCallback onSettingsTabClick;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.transparent,
@@ -145,6 +153,7 @@ class BottomTabBarContainer extends StatelessWidget {
   }
 }
 
+// FloatingTabCard 관련 역할을 담당하는 클래스.
 class FloatingTabCard extends StatelessWidget {
   const FloatingTabCard({
     super.key,
@@ -160,6 +169,7 @@ class FloatingTabCard extends StatelessWidget {
   final VoidCallback onSettingsTabClick;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: 76,
@@ -209,6 +219,7 @@ class FloatingTabCard extends StatelessWidget {
   }
 }
 
+// BottomTabNavItem 관련 역할을 담당하는 클래스.
 class BottomTabNavItem extends StatelessWidget {
   const BottomTabNavItem({
     super.key,
@@ -224,6 +235,7 @@ class BottomTabNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final foreground =
         isActive ? const Color(0xFF64CAFA) : const Color(0xFFBDBDBD);
@@ -268,6 +280,7 @@ class BottomTabNavItem extends StatelessWidget {
   }
 }
 
+// FloatingAddButton 관련 역할을 담당하는 클래스.
 class FloatingAddButton extends StatelessWidget {
   const FloatingAddButton({
     super.key,
@@ -277,6 +290,7 @@ class FloatingAddButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: 58,

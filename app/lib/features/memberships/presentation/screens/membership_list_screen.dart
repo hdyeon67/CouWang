@@ -1,3 +1,4 @@
+// 멤버십 리스트 메인 화면.
 import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
@@ -7,6 +8,7 @@ import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/membership_repository.dart';
 import 'membership_detail_screen.dart';
 
+// MembershipListScreen 화면 역할을 담당하는 클래스.
 class MembershipListScreen extends StatefulWidget {
   const MembershipListScreen({super.key});
 
@@ -14,6 +16,7 @@ class MembershipListScreen extends StatefulWidget {
   State<MembershipListScreen> createState() => _MembershipListScreenState();
 }
 
+// MembershipListScreenState 관련 역할을 담당하는 클래스.
 class _MembershipListScreenState extends State<MembershipListScreen> {
   List<MembershipCardItem> get _memberships {
     return MembershipRepository.getAll()
@@ -22,6 +25,7 @@ class _MembershipListScreenState extends State<MembershipListScreen> {
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final memberships = _memberships;
     final hasMemberships = memberships.isNotEmpty;
@@ -75,10 +79,12 @@ class _MembershipListScreenState extends State<MembershipListScreen> {
   }
 }
 
+// MembershipHeaderSection 관련 역할을 담당하는 클래스.
 class MembershipHeaderSection extends StatelessWidget {
   const MembershipHeaderSection({super.key});
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,6 +106,7 @@ class MembershipHeaderSection extends StatelessWidget {
   }
 }
 
+// MembershipInfoText 관련 역할을 담당하는 클래스.
 class MembershipInfoText extends StatelessWidget {
   const MembershipInfoText({
     super.key,
@@ -109,6 +116,7 @@ class MembershipInfoText extends StatelessWidget {
   final String text;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Text(
       text,
@@ -122,10 +130,12 @@ class MembershipInfoText extends StatelessWidget {
   }
 }
 
+// MembershipEmptyState 관련 역할을 담당하는 클래스.
 class MembershipEmptyState extends StatelessWidget {
   const MembershipEmptyState({super.key});
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.52,
@@ -139,6 +149,7 @@ class MembershipEmptyState extends StatelessWidget {
   }
 }
 
+// MembershipCardList 관련 역할을 담당하는 클래스.
 class MembershipCardList extends StatelessWidget {
   const MembershipCardList({
     super.key,
@@ -150,6 +161,7 @@ class MembershipCardList extends StatelessWidget {
   final ValueChanged<MembershipCardItem> onMembershipTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -178,6 +190,7 @@ class MembershipCardList extends StatelessWidget {
   }
 }
 
+// MembershipCard 관련 역할을 담당하는 클래스.
 class MembershipCard extends StatelessWidget {
   const MembershipCard({
     super.key,
@@ -193,6 +206,7 @@ class MembershipCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
@@ -269,6 +283,7 @@ class MembershipCard extends StatelessWidget {
   }
 }
 
+// MembershipCardItem 관련 역할을 담당하는 클래스.
 class MembershipCardItem {
   const MembershipCardItem({
     required this.id,
@@ -308,6 +323,7 @@ class MembershipCardItem {
   }
 }
 
+// MembershipVisualStyle 관련 역할을 담당하는 클래스.
 class _MembershipVisualStyle {
   const _MembershipVisualStyle({
     required this.barColor,

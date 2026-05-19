@@ -1,3 +1,7 @@
+// 로컬 알림 예약과 알림 탭 라우팅을 담당하는 서비스.
+//
+// 인수인계 시에는 `scheduleCouponNotifications`, `handleNotificationTap`,
+// `rescheduleAllCouponNotifications` 세 메서드를 먼저 읽으면 흐름이 잡힌다.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -13,6 +17,7 @@ import '../repositories/notification_log_repository.dart';
 import '../repositories/settings_repository.dart';
 import 'analytics_service.dart';
 
+// 로컬 알림 예약과 알림 탭 라우팅을 담당하는 서비스.
 class NotificationService {
   NotificationService._internal();
 
@@ -33,6 +38,7 @@ class NotificationService {
 
   bool get launchedFromNotification => _launchedFromNotification;
 
+  // init 관련 처리를 수행한다.
   Future<void> init() async {
     if (_initialized) {
       return;
@@ -49,6 +55,7 @@ class NotificationService {
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
+      // iOS는 앱 시작 시 로컬 알림 권한을 자연스럽게 요청할 수 있도록 세팅한다.
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
@@ -87,6 +94,7 @@ class NotificationService {
     _initialized = true;
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   Future<void> handlePendingLaunchPayload() async {
     if (_launchPayload == null) {
       return;
@@ -97,6 +105,7 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   Future<void> handlePendingNotificationTap() async {
     final payload = _pendingTapPayload;
     if (payload == null) {
@@ -106,10 +115,12 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   void markLaunchSplashHandled() {
     _launchedFromNotification = false;
   }
 
+  // 한 번만 처리해야 하는 상태를 읽고 비운다.
   bool consumeNotificationDetailResumeReset() {
     if (!_showingNotificationDetail) {
       return false;
@@ -124,7 +135,10 @@ class NotificationService {
     return true;
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   Future<void> handleNotificationTap(String? payload) async {
+    // payload는 `couponId|type` 형식을 기본으로 하되, 과거 호환을 위해
+    // couponId 단독 payload도 계속 허용한다.
     if (payload == null || payload.isEmpty) {
       return;
     }
@@ -182,6 +196,7 @@ class NotificationService {
         AppRouter.home,
         (route) => false,
       );
+      // 홈을 먼저 루트로 정리한 뒤 상세를 push해야 back stack이 예측 가능하다.
       navigatorKey.currentState!.pushNamed(
         AppRouter.couponDetail,
         arguments: coupon,
@@ -197,6 +212,7 @@ class NotificationService {
   bool get _isNavigatorReady =>
       navigatorKey.currentState != null && navigatorKey.currentContext != null;
 
+  // queueNotificationTap 관련 처리를 수행한다.
   void _queueNotificationTap(String payload) {
     _pendingTapPayload = payload;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -211,6 +227,7 @@ class NotificationService {
     bool cancelExistingNotifications = true,
     bool deleteExistingLogs = true,
   }) async {
+    // D-30 / D-7 / D-3 / D-1 / D-day / 만료 다음날 알림 구조를 한 메서드에서 통일한다.
     if (kIsWeb) {
       return;
     }
@@ -315,6 +332,7 @@ class NotificationService {
     }
   }
 
+  // 현재 조건에서 동작 가능 여부를 판단한다.
   Future<void> cancelAllNotifications() async {
     if (kIsWeb) {
       await NotificationLogRepository.deleteAllLogs();
@@ -324,6 +342,7 @@ class NotificationService {
     await NotificationLogRepository.deleteAllLogs();
   }
 
+  // rescheduleAllCouponNotifications 관련 처리를 수행한다.
   Future<void> rescheduleAllCouponNotifications() async {
     if (kIsWeb) {
       return;
@@ -403,6 +422,7 @@ class NotificationService {
     );
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   Future<void> showTestNotification(String couponName) async {
     await showImmediateNotification(
       id: 99999,
@@ -412,6 +432,7 @@ class NotificationService {
     );
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   Future<void> showAllTestNotifications(String couponName) async {
     const orderedTypes = ['d30', 'd7', 'd3', 'd1', 'dday', 'expire'];
     for (var i = 0; i < orderedTypes.length; i++) {
@@ -425,6 +446,7 @@ class NotificationService {
     }
   }
 
+  // 현재 조건에서 동작 가능 여부를 판단한다.
   Future<void> cancelScheduledTestNotifications() async {
     if (kIsWeb) {
       return;
@@ -526,8 +548,10 @@ class NotificationService {
     );
   }
 
+  // payloadFor 관련 처리를 수행한다.
   String _payloadFor(String couponId, String type) => '$couponId|$type';
 
+  // shouldSchedule 관련 처리를 수행한다.
   bool _shouldSchedule(String type, NotificationSettingsModel settings) {
     switch (type) {
       case 'd30':
@@ -546,6 +570,7 @@ class NotificationService {
     }
   }
 
+  // notificationId 관련 처리를 수행한다.
   int _notificationId(String couponId, String type) {
     const typeIndex = <String, int>{
       'd30': 0,
@@ -558,8 +583,10 @@ class NotificationService {
     return couponId.hashCode.abs() % 100000 * 10 + (typeIndex[type] ?? 0);
   }
 
+  // logId 관련 처리를 수행한다.
   String _logId(String couponId, String type) => '${couponId}_$type';
 
+  // testCouponIdForType 관련 처리를 수행한다.
   String _testCouponIdForType(String type) {
     switch (type) {
       case 'd30':
@@ -579,6 +606,7 @@ class NotificationService {
     }
   }
 
+  // getTitle 관련 처리를 수행한다.
   String _getTitle(String type) {
     switch (type) {
       case 'd30':
@@ -598,6 +626,7 @@ class NotificationService {
     }
   }
 
+  // getBody 관련 처리를 수행한다.
   String _getBody(String type, String couponName) {
     switch (type) {
       case 'd30':
@@ -618,6 +647,7 @@ class NotificationService {
   }
 }
 
+// NotificationPayload 관련 역할을 담당하는 클래스.
 class _NotificationPayload {
   const _NotificationPayload({
     required this.couponId,

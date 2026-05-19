@@ -1,7 +1,9 @@
+// 쿠왕 전역 색상, 버튼, 입력창 스타일을 모아둔 테마 정의.
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_spacing.dart';
 
+// CouWangTheme 관련 역할을 담당하는 클래스.
 class CouWangTheme {
   static ThemeData light() {
     const primary = Color(0xFF2F6BFF);

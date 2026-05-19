@@ -1,3 +1,7 @@
+// 홈 대시보드이자 쿠폰 리스트 메인 화면.
+//
+// 정렬/검색/필터와 함께, 앱 foreground 진입 시 갤러리 자동 감지 팝업을
+// 띄우는 진입점 역할도 겸한다.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -15,10 +19,13 @@ import '../../../../utils/scanned_image_store.dart';
 import 'coupon_create_screen.dart';
 import 'coupon_detail_screen.dart';
 
+// HomeCouponSortType 상태 값을 정의하는 enum.
 enum HomeCouponSortType { expiry, name }
 
+// HomeCouponFilterType 상태 값을 정의하는 enum.
 enum HomeCouponFilterType { available, used, expired }
 
+// HomeDashboardScreen 화면 역할을 담당하는 클래스.
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
     super.key,
@@ -33,6 +40,7 @@ class HomeDashboardScreen extends StatefulWidget {
   State<HomeDashboardScreen> createState() => _HomeDashboardScreenState();
 }
 
+// HomeDashboardScreenState 관련 역할을 담당하는 클래스.
 class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     with WidgetsBindingObserver {
   static const double _horizontalPadding = 20;
@@ -47,6 +55,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   HomeCouponFilterType _filterType = HomeCouponFilterType.available;
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -62,6 +71,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 
   @override
+  // 앱 lifecycle 변화에 맞춰 후속 동작을 처리한다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _runGalleryScan();
@@ -69,13 +79,17 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
 
+  // 여러 단계를 포함한 주요 실행 흐름을 처리한다.
   Future<void> _runGalleryScan() async {
+    // 자동 감지는 사용자가 설정에서 켠 경우에만 실행한다.
+    // resumed 직후 중복 호출이 쉬워서 플래그로 재진입을 막는다.
     if (_isScanningGallery || _isShowingDetectedDialog) {
       return;
     }
@@ -107,7 +121,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     }
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showNextDetectedPopup() {
+    // 감지 결과는 한 장씩 순차 처리해야 사용자가 저장/거절 여부를 명확히 선택할 수 있다.
     if (_pendingImages.isEmpty || !mounted || _isShowingDetectedDialog) {
       return;
     }
@@ -232,6 +248,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     return HomeCouponFilterType.available;
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   void _handleCouponClick(HomeCouponItem coupon) {
     FocusScope.of(context).unfocus();
     if (widget.onCouponClick != null) {
@@ -250,6 +267,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     });
   }
 
+  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
   void _handleFabClick() {
     FocusScope.of(context).unfocus();
     if (widget.onFabClick != null) {
@@ -269,6 +287,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return AppTabScaffold(
       currentTab: BottomTabItem.home,
@@ -350,15 +369,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 }
 
+// CouponListScreen 화면 역할을 담당하는 클래스.
 class CouponListScreen extends StatelessWidget {
   const CouponListScreen({super.key});
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return const HomeDashboardScreen();
   }
 }
 
+// CouponDetectedDialog 관련 역할을 담당하는 클래스.
 class _CouponDetectedDialog extends StatelessWidget {
   const _CouponDetectedDialog({
     required this.detectedImage,
@@ -373,6 +395,7 @@ class _CouponDetectedDialog extends StatelessWidget {
   final VoidCallback onReject;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -473,6 +496,7 @@ class _CouponDetectedDialog extends StatelessWidget {
   }
 }
 
+// HomeCouponItem 관련 역할을 담당하는 클래스.
 class HomeCouponItem {
   const HomeCouponItem({
     required this.id,
@@ -497,6 +521,7 @@ class HomeCouponItem {
   final CouponDetailModel detail;
 }
 
+// TopMascotHeader 관련 역할을 담당하는 클래스.
 class TopMascotHeader extends StatelessWidget {
   const TopMascotHeader({
     super.key,
@@ -508,6 +533,7 @@ class TopMascotHeader extends StatelessWidget {
   final VoidCallback onNotificationClick;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Row(
       children: [
@@ -551,6 +577,7 @@ class TopMascotHeader extends StatelessWidget {
   }
 }
 
+// SavingSpeechBubbleCard 관련 역할을 담당하는 클래스.
 class SavingSpeechBubbleCard extends StatelessWidget {
   const SavingSpeechBubbleCard({
     super.key,
@@ -560,6 +587,7 @@ class SavingSpeechBubbleCard extends StatelessWidget {
   final String message;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(left: 24),
@@ -595,6 +623,7 @@ class SavingSpeechBubbleCard extends StatelessWidget {
   }
 }
 
+// FilterAndSortRow 관련 역할을 담당하는 클래스.
 class FilterAndSortRow extends StatelessWidget {
   const FilterAndSortRow({
     super.key,
@@ -610,6 +639,7 @@ class FilterAndSortRow extends StatelessWidget {
   final ValueChanged<HomeCouponSortType> onSortChanged;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -690,6 +720,7 @@ class FilterAndSortRow extends StatelessWidget {
   }
 }
 
+// FilterChipButton 관련 역할을 담당하는 클래스.
 class FilterChipButton extends StatelessWidget {
   const FilterChipButton({
     super.key,
@@ -703,6 +734,7 @@ class FilterChipButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
@@ -728,6 +760,7 @@ class FilterChipButton extends StatelessWidget {
   }
 }
 
+// CouponSearchField 관련 역할을 담당하는 클래스.
 class CouponSearchField extends StatelessWidget {
   const CouponSearchField({
     super.key,
@@ -737,6 +770,7 @@ class CouponSearchField extends StatelessWidget {
   final TextEditingController controller;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -792,6 +826,7 @@ class CouponSearchField extends StatelessWidget {
   }
 }
 
+// CouponSortDropdown 관련 역할을 담당하는 클래스.
 class CouponSortDropdown extends StatelessWidget {
   const CouponSortDropdown({
     super.key,
@@ -803,6 +838,7 @@ class CouponSortDropdown extends StatelessWidget {
   final ValueChanged<HomeCouponSortType> onChanged;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -844,6 +880,7 @@ class CouponSortDropdown extends StatelessWidget {
   }
 }
 
+// CouponListSection 관련 역할을 담당하는 클래스.
 class CouponListSection extends StatelessWidget {
   const CouponListSection({
     super.key,
@@ -855,6 +892,7 @@ class CouponListSection extends StatelessWidget {
   final ValueChanged<HomeCouponItem> onCouponClick;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     if (coupons.isEmpty) {
       return Container(
@@ -889,6 +927,7 @@ class CouponListSection extends StatelessWidget {
   }
 }
 
+// CouponCard 관련 역할을 담당하는 클래스.
 class CouponCard extends StatelessWidget {
   const CouponCard({
     super.key,
@@ -902,6 +941,7 @@ class CouponCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final borderSide = isHighlighted
         ? const BorderSide(color: Color(0xFF64CAFA), width: 1.8)
@@ -991,6 +1031,7 @@ class CouponCard extends StatelessWidget {
   }
 }
 
+// CouponThumbnail 관련 역할을 담당하는 클래스.
 class CouponThumbnail extends StatelessWidget {
   const CouponThumbnail({
     super.key,
@@ -1002,6 +1043,7 @@ class CouponThumbnail extends StatelessWidget {
   final Uint8List? imageBytes;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final hasImage = imageBytes != null || imagePath.isNotEmpty;
 
@@ -1033,6 +1075,7 @@ class CouponThumbnail extends StatelessWidget {
   }
 }
 
+// DdayBadge 관련 역할을 담당하는 클래스.
 class DdayBadge extends StatelessWidget {
   const DdayBadge({
     super.key,
@@ -1042,6 +1085,7 @@ class DdayBadge extends StatelessWidget {
   final CouponDetailModel coupon;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final style = _badgeStyleForCoupon(coupon);
 
@@ -1095,6 +1139,7 @@ class DdayBadge extends StatelessWidget {
   }
 }
 
+// BadgeStyle 관련 역할을 담당하는 클래스.
 class _BadgeStyle {
   const _BadgeStyle({
     required this.label,

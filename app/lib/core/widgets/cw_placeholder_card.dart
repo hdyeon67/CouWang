@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
+/// 로딩/빈 상태에서 쓰는 공통 placeholder 카드.
 import 'package:flutter/material.dart';
 
 import '../constants/app_spacing.dart';
 
+// CwPlaceholderCard 관련 역할을 담당하는 클래스.
 class CwPlaceholderCard extends StatelessWidget {
   const CwPlaceholderCard({
     super.key,
@@ -16,6 +18,7 @@ class CwPlaceholderCard extends StatelessWidget {
   final IconData icon;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 

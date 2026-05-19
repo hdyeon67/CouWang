@@ -1,3 +1,4 @@
+/// 반복해서 쓰는 간격/라운드 값을 모아둔 상수 파일.
 class AppSpacing {
   static const double xs = 8;
   static const double sm = 12;

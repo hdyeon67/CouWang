@@ -1,3 +1,6 @@
+// 멤버십 로컬 저장소.
+//
+// 쿠폰 저장소와 같은 패턴으로 sqflite + 메모리 캐시를 함께 사용한다.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -8,6 +11,7 @@ import '../features/memberships/presentation/screens/membership_detail_screen.da
 import '../services/local_database_service.dart';
 import '../services/local_image_storage_service.dart';
 
+// MembershipDraft 초안 데이터 모델 역할을 담당하는 클래스.
 class MembershipDraft {
   const MembershipDraft({
     this.id,
@@ -30,12 +34,14 @@ class MembershipDraft {
   final String? createdAt;
 }
 
+// 멤버십 로컬 데이터와 메모리 캐시를 관리하는 저장소.
 class MembershipRepository {
   MembershipRepository._();
 
   static final List<MembershipDetailModel> _cache = <MembershipDetailModel>[];
   static bool _initialized = false;
 
+  // initialize 관련 처리를 수행한다.
   static Future<void> initialize() async {
     if (_initialized) {
       return;
@@ -53,8 +59,10 @@ class MembershipRepository {
     _initialized = true;
   }
 
+  // getAll 관련 처리를 수행한다.
   static List<MembershipDetailModel> getAll() => List.unmodifiable(_cache);
 
+  // 조건에 맞는 항목을 찾는다.
   static MembershipDetailModel? findById(String id) {
     for (final membership in _cache) {
       if (membership.id == id) {
@@ -64,7 +72,9 @@ class MembershipRepository {
     return null;
   }
 
+  // 변경된 데이터나 상태를 저장한다.
   static Future<MembershipDetailModel> saveDraft(MembershipDraft draft) async {
+    // 멤버십도 수정/생성을 같은 upsert 흐름으로 처리한다.
     final db = await LocalDatabaseService.instance.database;
     final now = DateTime.now().toIso8601String();
     final membershipId =
@@ -152,6 +162,7 @@ class MembershipRepository {
     return saved;
   }
 
+  // 대상 데이터를 삭제한다.
   static Future<void> delete(String id) async {
     final db = await LocalDatabaseService.instance.database;
     final imageAssetId = await _findImageAssetId(db, id);
@@ -175,7 +186,10 @@ class MembershipRepository {
     _cache.removeWhere((membership) => membership.id == id);
   }
 
+  // addVirtualMemberships 관련 처리를 수행한다.
   static Future<void> addVirtualMemberships() async {
+    // 스토어 캡처/QA용 더미 데이터.
+    // 동일 id를 써서 여러 번 눌러도 중복 생성되지 않는다.
     final now = DateTime.now().toIso8601String();
     final memberships = <MembershipDraft>[
       const MembershipDraft(
@@ -222,6 +236,7 @@ class MembershipRepository {
     }
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   static Future<Uint8List?> _resolveImageBytes(MembershipDraft draft) async {
     if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
       return draft.imageBytes;
@@ -283,6 +298,7 @@ class MembershipRepository {
     return mapped;
   }
 
+  // 조건에 맞는 항목을 찾는다.
   static Future<String?> _findImageAssetId(Database db, String membershipId) async {
     final rows = await db.query(
       'memberships',
@@ -297,6 +313,7 @@ class MembershipRepository {
     return rows.first['image_asset_id'] as String?;
   }
 
+  // 기존 데이터를 갱신하거나 없으면 새로 추가한다.
   static void _upsertCache(MembershipDetailModel membership) {
     final index = _cache.indexWhere((item) => item.id == membership.id);
     if (index >= 0) {

@@ -1,3 +1,7 @@
+// 멤버십 등록/수정 화면.
+//
+// 쿠폰 등록 화면과 비슷한 구조를 가지지만, 만료일 대신 카드 번호 중심으로
+// OCR/바코드 보조 입력을 제공한다.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,6 +15,7 @@ import '../../../../core/services/app_permission_service.dart';
 import '../../../../repositories/membership_repository.dart';
 import 'membership_detail_screen.dart';
 
+// MembershipCreateScreen 화면 역할을 담당하는 클래스.
 class MembershipCreateScreen extends StatefulWidget {
   const MembershipCreateScreen({
     super.key,
@@ -23,6 +28,7 @@ class MembershipCreateScreen extends StatefulWidget {
   State<MembershipCreateScreen> createState() => _MembershipCreateScreenState();
 }
 
+// MembershipCreateScreenState 관련 역할을 담당하는 클래스.
 class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   static const double _ocrTopExclusionRatio = 0.12;
 
@@ -37,6 +43,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   bool _isSubmitting = false;
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     final membership = widget.membership;
@@ -51,6 +58,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     _nameController.dispose();
     _cardNumberController.dispose();
@@ -58,6 +66,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     super.dispose();
   }
 
+  // 사용자에게 선택 흐름을 열고 결과를 반영한다.
   Future<void> _pickImage() async {
     final granted = await AppPermissionService.ensurePhotoPermission(context);
     if (!granted || !mounted) {
@@ -82,6 +91,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     });
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   Future<void> _extractFromImage() async {
     if (_selectedImagePath == null) {
       return;
@@ -115,6 +125,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     );
   }
 
+  // 입력 데이터에서 필요한 값을 탐지한다.
   Future<String?> _detectCodeFromImage(String imagePath) async {
     final scanner = BarcodeScanner(
       formats: const [
@@ -185,6 +196,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return usableBarcodes.first;
   }
 
+  // 입력값에서 필요한 정보만 추출한다.
   Future<String?> _extractTitleFromImage(String imagePath) async {
     final recognizer = TextRecognizer(script: TextRecognitionScript.korean);
     try {
@@ -204,6 +216,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     }
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   Future<double?> _resolveImageHeight(String imagePath) async {
     try {
       final bytes = await File(imagePath).readAsBytes();
@@ -286,10 +299,12 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return null;
   }
 
+  // normalizeOcrLine 관련 처리를 수행한다.
   String _normalizeOcrLine(String line) {
     return line.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   bool _isMembershipTitleCandidate(String line) {
     if (line.length < 2) {
       return false;
@@ -326,6 +341,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return true;
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   bool _isMembershipTitleContinuationCandidate(String line) {
     if (!_isMembershipTitleCandidate(line)) {
       return false;
@@ -342,12 +358,14 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return true;
   }
 
+  // containsDateLikeText 관련 처리를 수행한다.
   bool _containsDateLikeText(String line) {
     return RegExp(r'(20\d{2}|\d{2})[./-]\s?\d{1,2}[./-]\s?\d{1,2}')
             .hasMatch(line) ||
         RegExp(r'20\d{2}년\s*\d{1,2}월\s*\d{1,2}일').hasMatch(line);
   }
 
+  // looksLikeStatusBarText 관련 처리를 수행한다.
   bool _looksLikeStatusBarText(String line) {
     final normalized = line.toLowerCase();
     if (RegExp(r'^(오전|오후)?\s*\d{1,2}:\d{2}$').hasMatch(line)) {
@@ -366,6 +384,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return statusBarKeywords.any(normalized.contains);
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showImageFullScreen() {
     if (_selectedImageBytes == null && (_selectedImagePath == null || _selectedImagePath!.isEmpty)) {
       return;
@@ -428,6 +447,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     );
   }
 
+  // 현재 상태를 바탕으로 표시용 데이터나 UI 조각을 만든다.
   Widget _buildSelectedImage(BoxFit fit) {
     if (_selectedImageBytes != null) {
       return Image.memory(_selectedImageBytes!, fit: fit);
@@ -435,6 +455,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     return Image.file(File(_selectedImagePath!), fit: fit);
   }
 
+  // submitForm 관련 처리를 수행한다.
   Future<void> _submitForm() async {
     if (_isSubmitting) {
       return;
@@ -491,6 +512,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
     }
   }
 
+  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -502,6 +524,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
       );
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   String _resolveBrand(String membershipName) {
     final normalized = membershipName.toLowerCase();
     if (normalized.contains('스타벅스')) {
@@ -520,6 +543,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).viewPadding.bottom + 24;
 
@@ -633,6 +657,7 @@ class _MembershipCreateScreenState extends State<MembershipCreateScreen> {
   }
 }
 
+// MembershipImagePicker 관련 역할을 담당하는 클래스.
 class MembershipImagePicker extends StatelessWidget {
   const MembershipImagePicker({
     super.key,
@@ -648,6 +673,7 @@ class MembershipImagePicker extends StatelessWidget {
   final VoidCallback onPreview;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     if (selectedImageBytes != null || (selectedImagePath?.isNotEmpty ?? false)) {
       return GestureDetector(
@@ -801,6 +827,7 @@ class MembershipImagePicker extends StatelessWidget {
   }
 }
 
+// ExtractButton 관련 역할을 담당하는 클래스.
 class _ExtractButton extends StatelessWidget {
   const _ExtractButton({
     required this.enabled,
@@ -813,6 +840,7 @@ class _ExtractButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final active = enabled && !isLoading;
     return Container(
@@ -848,12 +876,14 @@ class _ExtractButton extends StatelessWidget {
   }
 }
 
+// FieldLabel 관련 역할을 담당하는 클래스.
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel(this.label);
 
   final String label;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Text(
       label,
@@ -866,6 +896,7 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
+// FilledTextField 관련 역할을 담당하는 클래스.
 class _FilledTextField extends StatelessWidget {
   const _FilledTextField({
     required this.controller,
@@ -884,6 +915,7 @@ class _FilledTextField extends StatelessWidget {
   final int maxLines;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -917,8 +949,10 @@ class _FilledTextField extends StatelessWidget {
   }
 }
 
+// DashedBorderPainter 커스텀 페인터 역할을 담당하는 클래스.
 class DashedBorderPainter extends CustomPainter {
   @override
+  // paint 관련 처리를 수행한다.
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = const Color(0xFF64CAFA)
@@ -951,9 +985,11 @@ class DashedBorderPainter extends CustomPainter {
   }
 
   @override
+  // shouldRepaint 관련 처리를 수행한다.
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
+// MembershipOcrLineCandidate 관련 역할을 담당하는 클래스.
 class _MembershipOcrLineCandidate {
   const _MembershipOcrLineCandidate({
     required this.text,

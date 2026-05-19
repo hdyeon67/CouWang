@@ -1,3 +1,4 @@
+// 앱 시작 시 초기 권한 정리와 첫 진입 라우팅을 담당하는 스플래시 화면.
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
@@ -5,6 +6,7 @@ import '../../../../core/services/app_permission_service.dart';
 import '../../../../services/notification_service.dart';
 import '../../../coupons/presentation/screens/coupon_list_screen.dart';
 
+// SplashScreen 화면 역할을 담당하는 클래스.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -12,12 +14,14 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
+// SplashScreenState 관련 역할을 담당하는 클래스.
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _progressAnimation;
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     _controller = AnimationController(
@@ -36,6 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  // startIntroFlow 관련 처리를 수행한다.
   Future<void> _startIntroFlow() async {
     _controller.forward();
     await Future.wait<void>([
@@ -60,12 +65,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final barWidth = MediaQuery.of(context).size.width * 0.55;
 

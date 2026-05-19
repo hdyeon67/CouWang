@@ -1,8 +1,10 @@
+// 절약 리포트/통계 성격의 인사이트 화면.
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 
+// InsightScreen 화면 역할을 담당하는 클래스.
 class InsightScreen extends StatelessWidget {
   const InsightScreen({super.key});
 
@@ -42,6 +44,7 @@ class InsightScreen extends StatelessWidget {
   ];
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -96,6 +99,7 @@ class InsightScreen extends StatelessWidget {
   }
 }
 
+// KpiCard 관련 역할을 담당하는 클래스.
 class _KpiCard extends StatelessWidget {
   const _KpiCard({
     required this.kpi,
@@ -104,6 +108,7 @@ class _KpiCard extends StatelessWidget {
   final _InsightKpi kpi;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -156,6 +161,7 @@ class _KpiCard extends StatelessWidget {
   }
 }
 
+// ChartCard 관련 역할을 담당하는 클래스.
 class _ChartCard extends StatelessWidget {
   const _ChartCard({
     required this.brandRates,
@@ -164,6 +170,7 @@ class _ChartCard extends StatelessWidget {
   final List<_BrandExpireRate> brandRates;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final maxRate = brandRates
         .map((item) => item.rate)
@@ -212,6 +219,7 @@ class _ChartCard extends StatelessWidget {
   }
 }
 
+// BarChartRow 관련 역할을 담당하는 클래스.
 class _BarChartRow extends StatelessWidget {
   const _BarChartRow({
     required this.label,
@@ -224,6 +232,7 @@ class _BarChartRow extends StatelessWidget {
   final int maxValue;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final widthFactor = value / maxValue;
 
@@ -278,6 +287,7 @@ class _BarChartRow extends StatelessWidget {
   }
 }
 
+// InsightSummaryCard 관련 역할을 담당하는 클래스.
 class _InsightSummaryCard extends StatelessWidget {
   const _InsightSummaryCard({
     required this.message,
@@ -286,6 +296,7 @@ class _InsightSummaryCard extends StatelessWidget {
   final String message;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -335,6 +346,7 @@ class _InsightSummaryCard extends StatelessWidget {
   }
 }
 
+// InsightKpi 관련 역할을 담당하는 클래스.
 class _InsightKpi {
   const _InsightKpi({
     required this.label,
@@ -349,6 +361,7 @@ class _InsightKpi {
   final Color accentColor;
 }
 
+// BrandExpireRate 관련 역할을 담당하는 클래스.
 class _BrandExpireRate {
   const _BrandExpireRate({
     required this.brand,

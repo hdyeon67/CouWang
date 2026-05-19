@@ -1,8 +1,13 @@
+// 앱 전체 로컬 DB를 여는 단일 진입점.
+//
+// schema 생성과 migration을 한 파일에 모아둬서, 저장소 레이어는
+// "어떤 테이블이 있는지"보다 "어떻게 읽고 쓰는지"에 집중하게 만든다.
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
+// sqflite 데이터베이스 초기화와 migration을 담당하는 서비스.
 class LocalDatabaseService {
   LocalDatabaseService._();
 
@@ -18,13 +23,16 @@ class LocalDatabaseService {
     return _database!;
   }
 
+  // init 관련 처리를 수행한다.
   Future<void> init() async {
     if (kIsWeb) {
+      // 웹에서는 sqlite wasm 팩토리를 명시적으로 교체해야 같은 코드로 동작한다.
       databaseFactory = databaseFactoryFfiWebNoWebWorker;
     }
     await database;
   }
 
+  // openDatabase 관련 처리를 수행한다.
   Future<Database> _openDatabase() async {
     final databasesPath = await getDatabasesPath();
     final dbPath = p.join(databasesPath, 'kuwang_local.db');
@@ -33,6 +41,7 @@ class LocalDatabaseService {
       dbPath,
       version: 3,
       onCreate: (db, version) async {
+        // image_assets는 coupon/membership 본문과 분리해 파일 메타데이터만 보관한다.
         await db.execute('''
           CREATE TABLE image_assets (
             id TEXT PRIMARY KEY,
@@ -111,6 +120,7 @@ class LocalDatabaseService {
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        // 운영 앱이므로 destructive migration 대신 점진적 추가만 허용한다.
         if (oldVersion < 2) {
           await db.execute('''
             CREATE TABLE IF NOT EXISTS notification_logs (

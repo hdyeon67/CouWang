@@ -1,3 +1,7 @@
+// 쿠폰 로컬 저장소.
+//
+// sqflite 테이블과 메모리 캐시를 함께 관리한다. 화면은 대부분 이 캐시를
+// 읽고, 저장/삭제 시에만 DB와 이미지 파일 시스템을 갱신한다.
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -7,6 +11,7 @@ import '../features/coupons/presentation/screens/coupon_detail_screen.dart';
 import '../services/local_database_service.dart';
 import '../services/local_image_storage_service.dart';
 
+// CouponDraft 초안 데이터 모델 역할을 담당하는 클래스.
 class CouponDraft {
   const CouponDraft({
     this.id,
@@ -41,13 +46,16 @@ class CouponDraft {
   final String? usedAt;
 }
 
+// 쿠폰 로컬 데이터와 메모리 캐시를 관리하는 저장소.
 class CouponRepository {
   CouponRepository._();
 
   static final List<CouponDetailModel> _cache = <CouponDetailModel>[];
   static bool _initialized = false;
 
+  // initialize 관련 처리를 수행한다.
   static Future<void> initialize() async {
+    // 앱 시작 시 한 번만 DB -> 메모리 캐시로 적재한다.
     if (_initialized) {
       return;
     }
@@ -64,8 +72,10 @@ class CouponRepository {
     _initialized = true;
   }
 
+  // getAll 관련 처리를 수행한다.
   static List<CouponDetailModel> getAll() => List.unmodifiable(_cache);
 
+  // 조건에 맞는 항목을 찾는다.
   static CouponDetailModel? findById(String id) {
     for (final coupon in _cache) {
       if (coupon.id == id) {
@@ -95,7 +105,10 @@ class CouponRepository {
     return null;
   }
 
+  // 변경된 데이터나 상태를 저장한다.
   static Future<CouponDetailModel> saveDraft(CouponDraft draft) async {
+    // 저장 시에는 이미지 자산 저장 -> coupons row upsert -> 메모리 캐시 반영 순서다.
+    // 수정 저장도 같은 메서드를 타므로 createdAt/usedAt 보존에 주의한다.
     final db = await LocalDatabaseService.instance.database;
     final now = DateTime.now().toIso8601String();
     final couponId = draft.id ?? 'coupon_${DateTime.now().microsecondsSinceEpoch}';
@@ -202,7 +215,10 @@ class CouponRepository {
     return saved;
   }
 
+  // 대상 데이터를 삭제한다.
   static Future<void> delete(String id) async {
+    // 쿠폰 row만 지우면 orphan image가 남을 수 있어
+    // 이미지 자산 테이블과 실제 파일까지 함께 정리한다.
     final db = await LocalDatabaseService.instance.database;
     final imageAssetId = await _findImageAssetId(db, id);
 
@@ -225,6 +241,7 @@ class CouponRepository {
     _cache.removeWhere((coupon) => coupon.id == id);
   }
 
+  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
   static Future<Uint8List?> _resolveImageBytes(CouponDraft draft) async {
     if (draft.imageBytes != null && draft.imageBytes!.isNotEmpty) {
       return draft.imageBytes;
@@ -243,6 +260,7 @@ class CouponRepository {
     return file.readAsBytes();
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   static Future<CouponDetailModel?> markUsed(String id) async {
     final coupon = findById(id);
     if (coupon == null) {
@@ -269,6 +287,7 @@ class CouponRepository {
     );
   }
 
+  // 특정 상태를 기록하거나 갱신한다.
   static Future<CouponDetailModel?> markUnused(String id) async {
     final coupon = findById(id);
     if (coupon == null) {
@@ -295,6 +314,7 @@ class CouponRepository {
     );
   }
 
+  // addInternalNotificationTestCoupons 관련 처리를 수행한다.
   static Future<void> addInternalNotificationTestCoupons() async {
     final now = DateTime.now();
     final testCoupons = <CouponDraft>[
@@ -422,6 +442,7 @@ class CouponRepository {
     return mapped;
   }
 
+  // 조건에 맞는 항목을 찾는다.
   static Future<String?> _findImageAssetId(Database db, String couponId) async {
     final rows = await db.query(
       'coupons',
@@ -436,6 +457,7 @@ class CouponRepository {
     return rows.first['image_asset_id'] as String?;
   }
 
+  // 기존 데이터를 갱신하거나 없으면 새로 추가한다.
   static void _upsertCache(CouponDetailModel coupon) {
     final index = _cache.indexWhere((item) => item.id == coupon.id);
     if (index >= 0) {
@@ -445,6 +467,7 @@ class CouponRepository {
     }
   }
 
+  // 문자열 또는 원시 데이터를 앱 모델 값으로 변환한다.
   static DateTime _parseDate(String value) {
     final parts = value.split('.');
     return DateTime(
@@ -454,6 +477,7 @@ class CouponRepository {
     );
   }
 
+  // calculateDday 관련 처리를 수행한다.
   static int _calculateDday(DateTime target) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -486,6 +510,7 @@ class CouponRepository {
     }
   }
 
+  // 표시용 문자열로 값을 변환한다.
   static String _formatDate(DateTime value) {
     final normalized = DateTime(value.year, value.month, value.day);
     final year = normalized.year.toString().padLeft(4, '0');
@@ -494,6 +519,7 @@ class CouponRepository {
     return '$year.$month.$day';
   }
 
+  // normalizeCodeValue 관련 처리를 수행한다.
   static String _normalizeCodeValue(String value) {
     return value.replaceAll(RegExp(r'\s+'), '').trim().toLowerCase();
   }

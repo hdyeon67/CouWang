@@ -1,3 +1,6 @@
+// 알림 인박스 화면.
+//
+// 실제 예약 알림과 별개로, 사용자가 앱 안에서 볼 알림 기록을 로컬 DB 기준으로 보여준다.
 import 'package:flutter/material.dart';
 
 import '../../../../core/resources/app_strings.dart';
@@ -6,6 +9,7 @@ import '../../../../repositories/notification_log_repository.dart';
 import '../../../../services/analytics_service.dart';
 import '../../../coupons/presentation/screens/coupon_detail_screen.dart';
 
+// NotificationListScreen 화면 역할을 담당하는 클래스.
 class NotificationListScreen extends StatefulWidget {
   const NotificationListScreen({super.key});
 
@@ -13,11 +17,13 @@ class NotificationListScreen extends StatefulWidget {
   State<NotificationListScreen> createState() => _NotificationListScreenState();
 }
 
+// NotificationListScreenState 관련 역할을 담당하는 클래스.
 class _NotificationListScreenState extends State<NotificationListScreen>
     with WidgetsBindingObserver {
   List<_NotificationItem> _notifications = <_NotificationItem>[];
 
   @override
+  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -25,18 +31,21 @@ class _NotificationListScreenState extends State<NotificationListScreen>
   }
 
   @override
+  // 사용이 끝난 리소스를 정리한다.
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
+  // 앱 lifecycle 변화에 맞춰 후속 동작을 처리한다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _loadNotifications();
     }
   }
 
+  // 필요한 데이터나 상태를 불러온다.
   Future<void> _loadNotifications() async {
     final logs = await NotificationLogRepository.loadVisibleLogs();
     if (!mounted) {
@@ -59,6 +68,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
     });
   }
 
+  // badgeLabel 관련 처리를 수행한다.
   String _badgeLabel(CouponDetailModel coupon) {
     if (coupon.isUsed) {
       return AppStrings.couponUsed;
@@ -79,6 +89,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
     return _NotificationBadgeType.activeOutline;
   }
 
+  // openCouponDetail 관련 처리를 수행한다.
   Future<void> _openCouponDetail(_NotificationItem item) async {
     await NotificationLogRepository.markAsRead(item.id);
     await AnalyticsService().logNotificationOpened(
@@ -104,6 +115,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
     await _loadNotifications();
   }
 
+  // removeNotification 관련 처리를 수행한다.
   void _removeNotification(_NotificationItem item) {
     _showDeleteConfirmDialog(
       title: '알림 삭제',
@@ -120,6 +132,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
     );
   }
 
+  // clearAllNotifications 관련 처리를 수행한다.
   void _clearAllNotifications() {
     _showDeleteConfirmDialog(
       title: '전체 삭제',
@@ -136,6 +149,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
     );
   }
 
+  // 표시용 문자열로 값을 변환한다.
   String _formatTimeText(DateTime scheduledAt) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -212,6 +226,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
   }
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
@@ -303,6 +318,7 @@ class _NotificationListScreenState extends State<NotificationListScreen>
   }
 }
 
+// NotificationCard 관련 역할을 담당하는 클래스.
 class _NotificationCard extends StatelessWidget {
   const _NotificationCard({
     required this.item,
@@ -315,6 +331,7 @@ class _NotificationCard extends StatelessWidget {
   final VoidCallback? onRemove;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final titleColor = item.isUnread
         ? const Color(0xFF1A1A1A)
@@ -402,6 +419,7 @@ class _NotificationCard extends StatelessWidget {
   }
 }
 
+// DdayBadge 관련 역할을 담당하는 클래스.
 class _DdayBadge extends StatelessWidget {
   const _DdayBadge({
     required this.label,
@@ -412,6 +430,7 @@ class _DdayBadge extends StatelessWidget {
   final _NotificationBadgeType type;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     final style = switch (type) {
       _NotificationBadgeType.dDayActive => (
@@ -464,6 +483,7 @@ class _DdayBadge extends StatelessWidget {
   }
 }
 
+// NotificationItem 관련 역할을 담당하는 클래스.
 class _NotificationItem {
   const _NotificationItem({
     required this.id,
@@ -499,6 +519,7 @@ class _NotificationItem {
   }
 }
 
+// NotificationBadgeType 상태 값을 정의하는 enum.
 enum _NotificationBadgeType {
   dDayActive,
   activeOutline,

@@ -1,8 +1,13 @@
+// Firebase Analytics / Crashlytics 래퍼.
+//
+// 앱 코드 곳곳에서 Firebase SDK를 직접 부르지 않고, 이 서비스 하나를 통해
+// 활성화 여부와 실패 처리를 공통화한다.
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
+// Firebase Analytics와 Crashlytics 연동을 감싸는 서비스.
 class AnalyticsService {
   AnalyticsService._internal();
 
@@ -22,6 +27,7 @@ class AnalyticsService {
 
   Object? get initError => _initError;
 
+  // init 관련 처리를 수행한다.
   Future<void> init() async {
     if (_initialized) {
       return;
@@ -29,6 +35,7 @@ class AnalyticsService {
     _initialized = true;
 
     if (!_firebaseEnabled || kIsWeb) {
+      // 빌드 옵션이 없으면 앱은 로컬 전용 모드처럼 동작한다.
       return;
     }
 
@@ -45,7 +52,9 @@ class AnalyticsService {
     }
   }
 
+  // configureCrashReporting 관련 처리를 수행한다.
   void configureCrashReporting() {
+    // Flutter zone 밖에서 나는 fatal error까지 Crashlytics로 보내기 위한 훅.
     if (!_available) {
       return;
     }
@@ -145,6 +154,7 @@ class AnalyticsService {
     );
   }
 
+  // recordNonFatal 관련 처리를 수행한다.
   Future<void> recordNonFatal(Object error, StackTrace stackTrace) async {
     if (!_available) {
       return;
@@ -152,6 +162,7 @@ class AnalyticsService {
     await FirebaseCrashlytics.instance.recordError(error, stackTrace);
   }
 
+  // crashForTesting 관련 처리를 수행한다.
   void crashForTesting() {
     if (!_available) {
       throw StateError(
@@ -165,6 +176,7 @@ class AnalyticsService {
     FirebaseCrashlytics.instance.crash();
   }
 
+  // logEvent 관련 처리를 수행한다.
   Future<void> _logEvent(String name, Map<String, Object> parameters) async {
     if (!_available) {
       return;

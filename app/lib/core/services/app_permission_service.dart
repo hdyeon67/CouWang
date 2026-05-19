@@ -1,3 +1,7 @@
+// 알림/사진 권한 요청 UX를 통일하는 서비스.
+//
+// 앱 내부 안내 다이얼로그 -> 시스템 권한 요청 -> 필요 시 설정 앱 이동 흐름을
+// 한 곳에서 관리한다.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +11,7 @@ import '../resources/app_strings.dart';
 import '../../repositories/settings_repository.dart';
 import '../../services/notification_service.dart';
 
+// 알림과 사진 권한 요청 흐름을 통일하는 서비스.
 class AppPermissionService {
   const AppPermissionService._();
 
@@ -14,6 +19,7 @@ class AppPermissionService {
       MethodChannel('com.fineboll.couwangApp/device');
   static const int _androidNotificationRuntimePermissionSdk = 33;
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   static Future<bool> isNotificationPermissionGranted() async {
     if (kIsWeb) {
       return true;
@@ -22,12 +28,15 @@ class AppPermissionService {
     return _isGranted(await Permission.notification.status);
   }
 
+  // 외부 권한이나 리소스를 요청한다.
   static Future<void> requestStartupPermissions(BuildContext context) async {
     if (kIsWeb || !context.mounted) {
       return;
     }
 
     if (await _usesAndroidLegacyNotificationConsent()) {
+      // Android 12 이하는 시스템 알림 런타임 권한이 없어서
+      // 앱 내부 동의 여부를 별도로 관리한다.
       if (!context.mounted) {
         return;
       }
@@ -41,6 +50,7 @@ class AppPermissionService {
     }
   }
 
+  // 외부 권한이나 리소스를 요청한다.
   static Future<bool> requestNotificationPermissionSilently() async {
     if (kIsWeb) {
       return true;
@@ -55,7 +65,10 @@ class AppPermissionService {
     return _isGranted(requestedStatus);
   }
 
+  // enableDefaultCouponNotificationsIfNeeded 관련 처리를 수행한다.
   static Future<void> _enableDefaultCouponNotificationsIfNeeded() async {
+    // iPhone 첫 실행처럼 시스템 권한을 먼저 허용한 경우, 사용자가 아직 앱 내
+    // 알림 토글을 건드리지 않았다면 기본 알림 세트를 켠다.
     final saved = SettingsRepository.load();
     if (saved.notificationConsentAsked || saved.masterEnabled) {
       return;
@@ -75,6 +88,7 @@ class AppPermissionService {
     await NotificationService().rescheduleAllCouponNotifications();
   }
 
+  // ensureNotificationPermission 관련 처리를 수행한다.
   static Future<bool> ensureNotificationPermission(BuildContext context) async {
     if (kIsWeb) {
       return true;
@@ -122,6 +136,7 @@ class AppPermissionService {
     return false;
   }
 
+  // ensurePhotoPermission 관련 처리를 수행한다.
   static Future<bool> ensurePhotoPermission(BuildContext context) async {
     if (kIsWeb) {
       return true;
@@ -162,7 +177,9 @@ class AppPermissionService {
     return false;
   }
 
+  // currentPhotoPermissionStatus 관련 처리를 수행한다.
   static Future<PermissionStatus> _currentPhotoPermissionStatus() async {
+    // Android/iOS의 사진 권한 이름 차이를 이 레이어에서 흡수한다.
     final photoStatus = await Permission.photos.status;
     if (_isGranted(photoStatus)) {
       return photoStatus;
@@ -172,6 +189,7 @@ class AppPermissionService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
+  // 외부 권한이나 리소스를 요청한다.
   static Future<PermissionStatus> _requestPhotoPermission() async {
     final photoStatus = await Permission.photos.request();
     if (_isGranted(photoStatus)) {
@@ -182,10 +200,12 @@ class AppPermissionService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
+  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
   static bool _isGranted(PermissionStatus status) {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
+  // usesAndroidLegacyNotificationConsent 관련 처리를 수행한다.
   static Future<bool> _usesAndroidLegacyNotificationConsent() async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return false;
@@ -197,6 +217,7 @@ class AppPermissionService {
     return sdkInt < _androidNotificationRuntimePermissionSdk;
   }
 
+  // androidSdkInt 관련 처리를 수행한다.
   static Future<int?> _androidSdkInt() async {
     try {
       return await _deviceChannel.invokeMethod<int>('getAndroidSdkInt');

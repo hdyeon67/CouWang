@@ -1,5 +1,7 @@
+// 빈 화면에서 마스코트와 안내 문구를 함께 보여주는 공통 위젯.
 import 'package:flutter/material.dart';
 
+// EmptyStateMascot 관련 역할을 담당하는 클래스.
 class EmptyStateMascot extends StatelessWidget {
   const EmptyStateMascot({
     super.key,
@@ -13,6 +15,7 @@ class EmptyStateMascot extends StatelessWidget {
   final double spacing;
 
   @override
+  // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
