@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../services/local_database_service.dart';
 
-// NotificationSettingsModel 모델 역할을 담당하는 클래스.
+// 알림 설정 1개 row를 앱에서 다루기 쉬운 객체로 표현한 모델.
 class NotificationSettingsModel {
   const NotificationSettingsModel({
     required this.masterEnabled,
@@ -57,6 +57,8 @@ class NotificationSettingsModel {
 }
 
 // 앱 알림 설정을 저장하고 불러오는 저장소.
+//
+// Provider 없이도 repository를 두어 UI와 SQLite 접근을 분리했다.
 class SettingsRepository {
   SettingsRepository._();
 
@@ -64,7 +66,7 @@ class SettingsRepository {
       const NotificationSettingsModel.defaults();
   static bool _initialized = false;
 
-  // initialize 관련 처리를 수행한다.
+  // 앱 시작 시 SQLite에 저장된 설정을 메모리 캐시로 올린다.
   static Future<void> initialize() async {
     // 첫 실행에는 기본값 row를 하나 만든 뒤 메모리 캐시에 보관한다.
     if (_initialized) {
@@ -97,10 +99,10 @@ class SettingsRepository {
     _initialized = true;
   }
 
-  // 필요한 데이터나 상태를 불러온다.
+  // 현재 메모리 캐시에 있는 설정을 반환한다.
   static NotificationSettingsModel load() => _settings;
 
-  // 변경된 데이터나 상태를 저장한다.
+  // 설정 값을 SQLite와 메모리 캐시에 동시에 반영한다.
   static Future<void> save(NotificationSettingsModel settings) async {
     final db = await LocalDatabaseService.instance.database;
     final now = DateTime.now().toIso8601String();

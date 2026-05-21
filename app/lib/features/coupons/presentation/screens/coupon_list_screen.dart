@@ -25,7 +25,10 @@ enum HomeCouponSortType { expiry, name }
 // HomeCouponFilterType 상태 값을 정의하는 enum.
 enum HomeCouponFilterType { available, used, expired }
 
-// HomeDashboardScreen 화면 역할을 담당하는 클래스.
+// 쿠폰 홈 화면을 그리는 StatefulWidget이다.
+//
+// 검색어, 정렬, 필터, 갤러리 자동 감지 팝업처럼 화면 안에서 변하는 값이 많아서
+// 이 화면은 StatefulWidget으로 관리한다.
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
     super.key,
@@ -40,7 +43,7 @@ class HomeDashboardScreen extends StatefulWidget {
   State<HomeDashboardScreen> createState() => _HomeDashboardScreenState();
 }
 
-// HomeDashboardScreenState 관련 역할을 담당하는 클래스.
+// 홈 화면의 검색/필터 상태와 foreground 복귀 후 스캔 흐름을 관리한다.
 class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     with WidgetsBindingObserver {
   static const double _horizontalPadding = 20;
@@ -55,7 +58,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   HomeCouponFilterType _filterType = HomeCouponFilterType.available;
 
   @override
-  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
+  // initState에서는 listener 등록과 앱 진입 직후 필요한 비동기 후처리를 연결한다.
+  //
+  // 검색 입력값 감시, 알림 재예약, 갤러리 자동 감지 시작처럼 build에 두면 안 되는
+  // 1회성 작업을 여기로 분리한다.
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -71,7 +77,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 
   @override
-  // 앱 lifecycle 변화에 맞춰 후속 동작을 처리한다.
+  // resumed 시점에만 갤러리 자동 감지를 다시 돌린다.
+  //
+  // 백그라운드에서 새 쿠폰 이미지를 저장하고 앱으로 복귀하는 사용자 흐름을
+  // 자연스럽게 연결하려는 목적이다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _runGalleryScan();
@@ -86,7 +95,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     super.dispose();
   }
 
-  // 여러 단계를 포함한 주요 실행 흐름을 처리한다.
+  // 설정 확인 -> 스캔 실행 -> 팝업 표시까지 이어지는 비동기 메인 흐름이다.
+  //
+  // async/await를 사용해 권한, 환경, 결과를 순차적으로 읽되 중복 실행은 플래그로 막는다.
   Future<void> _runGalleryScan() async {
     // 자동 감지는 사용자가 설정에서 켠 경우에만 실행한다.
     // resumed 직후 중복 호출이 쉬워서 플래그로 재진입을 막는다.
@@ -248,7 +259,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     return HomeCouponFilterType.available;
   }
 
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
+  // 쿠폰 카드 탭 시 상세 화면으로 이동하고, 복귀 후 목록을 다시 그린다.
+  //
+  // Navigator.push(...).then(...) 패턴을 써서 상세 화면에서 수정/삭제가 발생해도
+  // 홈 목록이 최신 상태를 반영하도록 했다.
   void _handleCouponClick(HomeCouponItem coupon) {
     FocusScope.of(context).unfocus();
     if (widget.onCouponClick != null) {
@@ -267,7 +281,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     });
   }
 
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
+  // FAB 탭 시 등록 화면으로 이동하고, 저장 후 돌아오면 목록을 새로 그린다.
   void _handleFabClick() {
     FocusScope.of(context).unfocus();
     if (widget.onFabClick != null) {
@@ -287,7 +301,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   }
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 현재 검색/필터 상태를 기반으로 홈 화면 UI를 조합한다.
+  //
+  // 화면 상태가 바뀌면 setState를 통해 build가 다시 호출되고, 그 결과 필터링된
+  // 쿠폰 목록과 배지/버블 메시지가 함께 갱신된다.
   Widget build(BuildContext context) {
     return AppTabScaffold(
       currentTab: BottomTabItem.home,

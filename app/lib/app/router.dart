@@ -15,7 +15,10 @@ import '../features/notifications/presentation/screens/notification_list_screen.
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/splash/presentation/screens/splash_screen.dart';
 
-// 앱 라우트 이름과 화면 전환 경로를 관리하는 클래스.
+// Navigator 라우트 문자열과 실제 화면 매핑을 한곳에 모은다.
+//
+// 알림 진입, 상세 화면 복귀, 탭 교체가 서로 다른 파일에 흩어지지 않도록
+// 라우팅 규칙을 중앙화한다.
 class AppRouter {
   static const home = '/';
   static const splash = '/splash';
@@ -27,7 +30,9 @@ class AppRouter {
   static const notificationList = '/notifications';
   static const settingsRoute = '/settings';
 
-  // UI 이벤트 진입점 역할을 한다.
+  // named route가 들어왔을 때 어떤 화면을 띄울지 결정한다.
+  //
+  // route name과 arguments를 받아 타입에 맞는 화면으로 연결한다.
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case splash:
@@ -62,17 +67,23 @@ class AppRouter {
     }
   }
 
-  // 현재 맥락에서 사용할 값을 계산하거나 선택한다.
+  // 앱 시작 시 첫 진입 라우트를 반환한다.
+  //
+  // 현재는 스플래시를 먼저 거치지만, 추후 로그인/온보딩 분기가 생기면 여기서
+  // 앱 시작 경로를 한곳에서 바꿀 수 있다.
   static String resolveAppStartRoute() {
     return splash;
   }
 
-  // pageRoute 관련 처리를 수행한다.
+  // iOS 감성에 맞춘 Cupertino 전환 라우트를 공통 생성한다.
   static PageRoute<dynamic> _pageRoute(Widget child) {
     return CupertinoPageRoute<void>(builder: (_) => child);
   }
 
-  // replaceWithTabRoute 관련 처리를 수행한다.
+  // 하단 탭 전환 시 기존 스택을 비우고 새 탭을 루트처럼 교체한다.
+  //
+  // 탭 화면은 보통 "뒤로가기를 누르면 이전 탭 히스토리"보다 "현재 탭 기준 루트"
+  // 로 동작하는 편이 자연스러워서 pushAndRemoveUntil을 사용한다.
   static void replaceWithTabRoute(BuildContext context, BottomTabItem tab) {
     // 하단 탭은 뒤로가기 스택 누적보다 "현재 탭을 새 루트로 교체"하는 쪽이
     // 사용자 경험과 상태 관리가 단순하다.

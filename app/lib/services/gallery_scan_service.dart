@@ -1,6 +1,9 @@
 // 갤러리 자동 감지 핵심 서비스.
 //
 // 최근 저장 이미지 조회, 쿠폰 후보 판별, 중복 감지, 스캔 빈도 제한을 한곳에 모은다.
+//
+// 성능 최적화를 위해 최근 기간, 최대 이미지 수, 일일 스캔 횟수를 제한하고,
+// OCR/바코드 분석은 모두 Future 기반 비동기로 수행한다.
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
@@ -15,7 +18,7 @@ import '../utils/scanned_image_store.dart';
 // CouponConfidence 상태 값을 정의하는 enum.
 enum CouponConfidence { high, medium, low }
 
-// DetectedCouponImage 관련 역할을 담당하는 클래스.
+// 자동 감지에서 "등록 후보로 보여줄 이미지 1건"을 표현하는 모델.
 class DetectedCouponImage {
   const DetectedCouponImage({
     required this.asset,
@@ -62,7 +65,7 @@ class GalleryScanService {
   BarcodeScanner? _barcodeScanner;
   TextRecognizer? _textRecognizer;
 
-  // warmUp 관련 처리를 수행한다.
+  // ML Kit 인스턴스를 미리 준비해 첫 스캔 지연을 줄인다.
   void warmUp() {
     if (kIsWeb) {
       return;
@@ -80,7 +83,7 @@ class GalleryScanService {
     _textRecognizer = null;
   }
 
-  // checkAndRequestPermission 관련 처리를 수행한다.
+  // 자동 감지 시작 전에 사진 권한을 확인하고, 없으면 요청한다.
   Future<bool> checkAndRequestPermission() async {
     if (kIsWeb) {
       return false;
@@ -94,7 +97,7 @@ class GalleryScanService {
     return _isGranted(requestedStatus);
   }
 
-  // hasPermission 관련 처리를 수행한다.
+  // 현재 사진 접근 권한이 있는지만 빠르게 확인한다.
   Future<bool> hasPermission() async {
     if (kIsWeb) {
       return false;
@@ -130,10 +133,12 @@ class GalleryScanService {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
+  // 기본 자동 감지 진입점. 실제 구현은 옵션 메서드로 위임한다.
   Future<List<DetectedCouponImage>> scanNewImages() async {
     return scanNewImagesWithOptions();
   }
 
+  // QA나 강제 재스캔 같은 경우를 위해 옵션을 받는 실제 구현 메서드.
   Future<List<DetectedCouponImage>> scanNewImagesWithOptions({
     bool respectAutoSetting = true,
     bool respectDailyLimit = true,

@@ -2,6 +2,9 @@
 //
 // 앱 내부 안내 다이얼로그 -> 시스템 권한 요청 -> 필요 시 설정 앱 이동 흐름을
 // 한 곳에서 관리한다.
+//
+// Flutter 공통 로직과 플랫폼 분기를 한곳에 모아 UI 코드를 단순화하고,
+// Android SDK 확인에는 MethodChannel을 사용해 런타임 분기를 정확히 처리한다.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +22,7 @@ class AppPermissionService {
       MethodChannel('com.fineboll.couwangApp/device');
   static const int _androidNotificationRuntimePermissionSdk = 33;
 
-  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
+  // 현재 시스템 알림 권한이 실제 허용 상태인지 확인한다.
   static Future<bool> isNotificationPermissionGranted() async {
     if (kIsWeb) {
       return true;
@@ -28,7 +31,7 @@ class AppPermissionService {
     return _isGranted(await Permission.notification.status);
   }
 
-  // 외부 권한이나 리소스를 요청한다.
+  // 앱 첫 실행 시 필요한 권한 흐름을 조용히 정리한다.
   static Future<void> requestStartupPermissions(BuildContext context) async {
     if (kIsWeb || !context.mounted) {
       return;
@@ -50,7 +53,7 @@ class AppPermissionService {
     }
   }
 
-  // 외부 권한이나 리소스를 요청한다.
+  // 별도 안내 없이 시스템 알림 권한만 요청하는 내부 헬퍼다.
   static Future<bool> requestNotificationPermissionSilently() async {
     if (kIsWeb) {
       return true;
@@ -65,7 +68,7 @@ class AppPermissionService {
     return _isGranted(requestedStatus);
   }
 
-  // enableDefaultCouponNotificationsIfNeeded 관련 처리를 수행한다.
+  // 시스템 권한이 먼저 허용된 경우 앱 내부 알림 기본값도 함께 맞춘다.
   static Future<void> _enableDefaultCouponNotificationsIfNeeded() async {
     // iPhone 첫 실행처럼 시스템 권한을 먼저 허용한 경우, 사용자가 아직 앱 내
     // 알림 토글을 건드리지 않았다면 기본 알림 세트를 켠다.
@@ -88,7 +91,7 @@ class AppPermissionService {
     await NotificationService().rescheduleAllCouponNotifications();
   }
 
-  // ensureNotificationPermission 관련 처리를 수행한다.
+  // 설정 화면 등에서 알림 권한이 꼭 필요할 때 안내 -> 시스템 요청 흐름을 수행한다.
   static Future<bool> ensureNotificationPermission(BuildContext context) async {
     if (kIsWeb) {
       return true;
@@ -136,7 +139,7 @@ class AppPermissionService {
     return false;
   }
 
-  // ensurePhotoPermission 관련 처리를 수행한다.
+  // 쿠폰/멤버십 이미지 선택 전에 사진 접근 권한을 확보한다.
   static Future<bool> ensurePhotoPermission(BuildContext context) async {
     if (kIsWeb) {
       return true;
@@ -177,7 +180,7 @@ class AppPermissionService {
     return false;
   }
 
-  // currentPhotoPermissionStatus 관련 처리를 수행한다.
+  // Android/iOS에서 사진 권한 이름이 달라도 동일한 방식으로 현재 상태를 읽는다.
   static Future<PermissionStatus> _currentPhotoPermissionStatus() async {
     // Android/iOS의 사진 권한 이름 차이를 이 레이어에서 흡수한다.
     final photoStatus = await Permission.photos.status;
@@ -189,7 +192,7 @@ class AppPermissionService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
-  // 외부 권한이나 리소스를 요청한다.
+  // 사진 권한을 실제로 요청한다.
   static Future<PermissionStatus> _requestPhotoPermission() async {
     final photoStatus = await Permission.photos.request();
     if (_isGranted(photoStatus)) {
@@ -200,12 +203,12 @@ class AppPermissionService {
     return _isGranted(storageStatus) ? storageStatus : photoStatus;
   }
 
-  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
+  // permission_handler의 여러 허용 상태를 앱 기준의 granted로 통합한다.
   static bool _isGranted(PermissionStatus status) {
     return status.isGranted || status.isLimited || status.isProvisional;
   }
 
-  // usesAndroidLegacyNotificationConsent 관련 처리를 수행한다.
+  // Android 13 미만인지 확인해 알림 권한 UX를 분기한다.
   static Future<bool> _usesAndroidLegacyNotificationConsent() async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return false;
@@ -217,7 +220,7 @@ class AppPermissionService {
     return sdkInt < _androidNotificationRuntimePermissionSdk;
   }
 
-  // androidSdkInt 관련 처리를 수행한다.
+  // MethodChannel로 네이티브 Android SDK 버전을 받아온다.
   static Future<int?> _androidSdkInt() async {
     try {
       return await _deviceChannel.invokeMethod<int>('getAndroidSdkInt');

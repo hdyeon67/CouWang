@@ -8,7 +8,10 @@ import '../../../../core/widgets/empty_state_mascot.dart';
 import '../../../../repositories/membership_repository.dart';
 import 'membership_detail_screen.dart';
 
-// MembershipListScreen 화면 역할을 담당하는 클래스.
+// 멤버십 목록 메인 화면을 그리는 StatefulWidget이다.
+//
+// 목록 자체는 repository에서 읽지만, 상세/등록 화면 복귀 후 즉시 다시 그려야 해서
+// StatefulWidget으로 두고 setState로 새로고침한다.
 class MembershipListScreen extends StatefulWidget {
   const MembershipListScreen({super.key});
 
@@ -16,7 +19,7 @@ class MembershipListScreen extends StatefulWidget {
   State<MembershipListScreen> createState() => _MembershipListScreenState();
 }
 
-// MembershipListScreenState 관련 역할을 담당하는 클래스.
+// 멤버십 목록 조회와 화면 복귀 후 재렌더링 타이밍을 관리한다.
 class _MembershipListScreenState extends State<MembershipListScreen> {
   List<MembershipCardItem> get _memberships {
     return MembershipRepository.getAll()
@@ -25,7 +28,9 @@ class _MembershipListScreenState extends State<MembershipListScreen> {
   }
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build에서는 repository에서 읽은 멤버십 목록을 empty state 또는 카드 리스트로 분기한다.
+  //
+  // Navigator로 등록/상세 화면에 다녀온 뒤 setState가 호출되면 최신 목록 기준으로 다시 그려진다.
   Widget build(BuildContext context) {
     final memberships = _memberships;
     final hasMemberships = memberships.isNotEmpty;
@@ -79,12 +84,12 @@ class _MembershipListScreenState extends State<MembershipListScreen> {
   }
 }
 
-// MembershipHeaderSection 관련 역할을 담당하는 클래스.
+// 멤버십 화면 상단 제목/설명 영역을 담당하는 StatelessWidget이다.
 class MembershipHeaderSection extends StatelessWidget {
   const MembershipHeaderSection({super.key});
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 고정 텍스트만 렌더링하므로 별도 상태 없이 가볍게 유지한다.
   Widget build(BuildContext context) {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +111,7 @@ class MembershipHeaderSection extends StatelessWidget {
   }
 }
 
-// MembershipInfoText 관련 역할을 담당하는 클래스.
+// 회색 보조 안내 문구 스타일을 재사용하기 위한 텍스트 위젯이다.
 class MembershipInfoText extends StatelessWidget {
   const MembershipInfoText({
     super.key,
@@ -116,7 +121,7 @@ class MembershipInfoText extends StatelessWidget {
   final String text;
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 전달받은 문자열에 공통 안내문 스타일만 적용한다.
   Widget build(BuildContext context) {
     return Text(
       text,
@@ -130,12 +135,12 @@ class MembershipInfoText extends StatelessWidget {
   }
 }
 
-// MembershipEmptyState 관련 역할을 담당하는 클래스.
+// 등록된 멤버십이 없을 때 보여주는 empty state 영역이다.
 class MembershipEmptyState extends StatelessWidget {
   const MembershipEmptyState({super.key});
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 mascot + 안내 문구 조합을 렌더링해 첫 사용자의 다음 행동을 유도한다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.52,

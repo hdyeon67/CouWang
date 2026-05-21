@@ -13,7 +13,9 @@ import 'app_navigator.dart';
 import 'router.dart';
 import 'theme.dart';
 
-// 앱 전역 lifecycle과 MaterialApp 구성을 감싸는 최상위 위젯.
+// 앱 전체를 감싸는 최상위 StatefulWidget이다.
+//
+// 화면별 상태가 아니라 앱 전역 lifecycle과 navigatorKey를 함께 관리한다.
 class CouWangApp extends StatefulWidget {
   const CouWangApp({super.key});
 
@@ -21,10 +23,13 @@ class CouWangApp extends StatefulWidget {
   State<CouWangApp> createState() => _CouWangAppState();
 }
 
-// CouWangAppState 관련 역할을 담당하는 클래스.
+// 앱 resumed/detached lifecycle에 맞춰 공통 후처리를 관리한다.
 class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   @override
-  // 화면 또는 객체가 처음 생성될 때 필요한 초기 설정을 수행한다.
+  // initState에서는 observer 등록과 앱 런치 직후 1회성 후처리를 연결한다.
+  //
+  // build보다 먼저 한 번만 호출되므로 알림 payload 복구처럼 초기 진입 로직을
+  // 두기에 적합하다.
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -35,7 +40,9 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   }
 
   @override
-  // 사용이 끝난 리소스를 정리한다.
+  // dispose에서는 observer와 캐시성 리소스를 정리한다.
+  //
+  // initState에서 등록한 observer와 종료 시점 정리 대상 리소스를 함께 해제한다.
   void dispose() {
     GalleryScanService().dispose();
     PhotoManager.clearFileCache();
@@ -44,7 +51,10 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   }
 
   @override
-  // 앱 lifecycle 변화에 맞춰 후속 동작을 처리한다.
+  // 앱이 background/foreground를 오갈 때 공통 흐름을 이어 붙인다.
+  //
+  // 예를 들어 알림 탭으로 상세 화면에 들어간 뒤 resumed 되었을 때 어느 화면으로
+  // 돌아갈지 여기서 결정한다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
       // photo_manager가 남긴 캐시와 ML Kit 리소스를 종료 시점에 정리한다.
@@ -66,7 +76,9 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   }
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 현재 전역 설정을 기준으로 MaterialApp 트리를 구성한다.
+  //
+  // theme, locale, route generator처럼 앱 전역 의존성이 한 번에 보이는 자리다.
   Widget build(BuildContext context) {
     return MaterialApp(
       title: AppStrings.appTitle,

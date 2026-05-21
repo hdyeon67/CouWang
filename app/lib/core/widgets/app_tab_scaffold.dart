@@ -9,7 +9,10 @@ import 'couwang_banner_ad.dart';
 // BottomTabItem 상태 값을 정의하는 enum.
 enum BottomTabItem { membership, home, settings }
 
-// AppTabScaffold 관련 역할을 담당하는 클래스.
+// 하단 탭 3개를 공유하는 공통 레이아웃용 StatelessWidget이다.
+//
+// 자체 mutable state를 가지지 않고, 현재 탭/본문/body만 받아 조합하므로
+// StatelessWidget으로 유지하는 예시로 설명할 수 있다.
 class AppTabScaffold extends StatelessWidget {
   const AppTabScaffold({
     super.key,
@@ -34,7 +37,9 @@ class AppTabScaffold extends StatelessWidget {
   static const double _horizontalMargin = 20;
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build에서는 body, FAB, 배너광고, 하단 탭을 한 화면 구조로 합친다.
+  //
+  // 화면마다 중복되던 Scaffold 구성을 공통화해서 UI 일관성과 유지보수성을 높인다.
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
@@ -115,7 +120,7 @@ class AppTabScaffold extends StatelessWidget {
   }
 }
 
-// BottomTabBarContainer 관련 역할을 담당하는 클래스.
+// 실제 하단 탭 바 모양과 탭 버튼 클릭 이벤트를 그리는 위젯이다.
 class BottomTabBarContainer extends StatelessWidget {
   const BottomTabBarContainer({
     super.key,
@@ -133,7 +138,7 @@ class BottomTabBarContainer extends StatelessWidget {
   final VoidCallback onSettingsTabClick;
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build에서는 선택된 탭 상태에 따라 라벨/아이콘 스타일을 나눠 그린다.
   Widget build(BuildContext context) {
     return ColoredBox(
       color: Colors.transparent,
@@ -153,7 +158,7 @@ class BottomTabBarContainer extends StatelessWidget {
   }
 }
 
-// FloatingTabCard 관련 역할을 담당하는 클래스.
+// 둥근 카드 형태의 탭 바 배경과 내부 슬롯 배치를 담당한다.
 class FloatingTabCard extends StatelessWidget {
   const FloatingTabCard({
     super.key,
@@ -169,7 +174,7 @@ class FloatingTabCard extends StatelessWidget {
   final VoidCallback onSettingsTabClick;
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build는 purely presentational 역할만 맡고, 실제 탭 클릭 로직은 부모가 넘긴다.
   Widget build(BuildContext context) {
     return SizedBox(
       height: 76,
@@ -219,7 +224,7 @@ class FloatingTabCard extends StatelessWidget {
   }
 }
 
-// BottomTabNavItem 관련 역할을 담당하는 클래스.
+// 개별 탭 아이콘/라벨 한 칸을 표현하는 재사용 위젯이다.
 class BottomTabNavItem extends StatelessWidget {
   const BottomTabNavItem({
     super.key,
@@ -235,7 +240,7 @@ class BottomTabNavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  // 현재 상태를 기준으로 화면 UI를 구성한다.
+  // build에서는 선택 여부만 받아 스타일을 바꾸고, 라우팅은 부모 callback으로 위임한다.
   Widget build(BuildContext context) {
     final foreground =
         isActive ? const Color(0xFF64CAFA) : const Color(0xFFBDBDBD);

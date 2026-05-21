@@ -2,6 +2,8 @@
 //
 // schema 생성과 migration을 한 파일에 모아둬서, 저장소 레이어는
 // "어떤 테이블이 있는지"보다 "어떻게 읽고 쓰는지"에 집중하게 만든다.
+//
+// SQLite는 LocalDatabaseService -> Repository 순서로 감싸서 화면에서 직접 SQL을 다루지 않게 했다.
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
@@ -23,7 +25,7 @@ class LocalDatabaseService {
     return _database!;
   }
 
-  // init 관련 처리를 수행한다.
+  // 앱 시작 시 데이터베이스를 초기화한다.
   Future<void> init() async {
     if (kIsWeb) {
       // 웹에서는 sqlite wasm 팩토리를 명시적으로 교체해야 같은 코드로 동작한다.
@@ -32,7 +34,7 @@ class LocalDatabaseService {
     await database;
   }
 
-  // openDatabase 관련 처리를 수행한다.
+  // 실제 DB 파일을 열고 onCreate/onUpgrade를 연결한다.
   Future<Database> _openDatabase() async {
     final databasesPath = await getDatabasesPath();
     final dbPath = p.join(databasesPath, 'kuwang_local.db');

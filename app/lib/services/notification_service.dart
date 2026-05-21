@@ -2,6 +2,8 @@
 //
 // 인수인계 시에는 `scheduleCouponNotifications`, `handleNotificationTap`,
 // `rescheduleAllCouponNotifications` 세 메서드를 먼저 읽으면 흐름이 잡힌다.
+//
+// 알림 예약 로직과 UI 라우팅을 분리하되, payload 해석은 이 서비스에서 일관되게 처리한다.
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -38,7 +40,7 @@ class NotificationService {
 
   bool get launchedFromNotification => _launchedFromNotification;
 
-  // init 관련 처리를 수행한다.
+  // 로컬 알림 플러그인, 채널, 런치 payload 상태를 초기화한다.
   Future<void> init() async {
     if (_initialized) {
       return;
@@ -94,7 +96,7 @@ class NotificationService {
     _initialized = true;
   }
 
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
+  // 앱이 알림으로 실행된 경우, 보관 중인 launch payload를 실제 라우팅으로 연결한다.
   Future<void> handlePendingLaunchPayload() async {
     if (_launchPayload == null) {
       return;
@@ -105,7 +107,7 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
+  // navigator가 준비된 뒤 pending tap payload를 다시 처리한다.
   Future<void> handlePendingNotificationTap() async {
     final payload = _pendingTapPayload;
     if (payload == null) {
@@ -115,12 +117,12 @@ class NotificationService {
     await handleNotificationTap(payload);
   }
 
-  // 특정 상태를 기록하거나 갱신한다.
+  // 스플래시에서 "알림으로 들어왔다" 상태를 소비한 뒤 초기 플래그를 정리한다.
   void markLaunchSplashHandled() {
     _launchedFromNotification = false;
   }
 
-  // 한 번만 처리해야 하는 상태를 읽고 비운다.
+  // 알림 상세에서 앱 복귀 시 홈 스택을 재정리해야 하는지 판단하고 1회 소비한다.
   bool consumeNotificationDetailResumeReset() {
     if (!_showingNotificationDetail) {
       return false;
@@ -135,7 +137,7 @@ class NotificationService {
     return true;
   }
 
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
+  // 알림 payload를 해석해 홈 -> 상세 화면 순으로 Navigator 스택을 재구성한다.
   Future<void> handleNotificationTap(String? payload) async {
     // payload는 `couponId|type` 형식을 기본으로 하되, 과거 호환을 위해
     // couponId 단독 payload도 계속 허용한다.
