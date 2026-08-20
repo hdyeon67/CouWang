@@ -1,13 +1,13 @@
 // 설정 화면.
 //
-// 알림 주기, 갤러리 자동 감지, 테스트 도구, 앱 버전 표시처럼 운영/QA 성격의
-// 기능이 한 곳에 모여 있다.
+// 알림 주기, 테스트 도구, 앱 버전 표시처럼 운영/QA 성격의 기능이 한 곳에 모여 있다.
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/services/app_permission_service.dart';
@@ -42,11 +42,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _day3Enabled = false;
   bool _day7Enabled = false;
   bool _day30Enabled = false;
-  bool _autoScanEnabled = false;
-  bool _isHandlingAutoScanToggle = false;
   int _testNotificationDelaySeconds = 10;
   String _appVersionLabel = '';
   Timer? _foregroundTestNotificationTimer;
+  final ImagePicker _imagePicker = ImagePicker();
 
   static const List<({int seconds, String label})> _testDelayOptions = [
     (seconds: 10, label: AppStrings.settingsTestTime10Sec),
@@ -63,7 +62,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     WidgetsBinding.instance.addObserver(this);
     _syncNotificationPermissionState();
     _loadVersionInfo();
-    _loadAutoScanSetting();
   }
 
   @override
@@ -81,7 +79,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       return;
     }
     _syncNotificationPermissionState();
-    _loadAutoScanSetting();
   }
 
   // 필요한 데이터나 상태를 불러온다.
@@ -93,27 +90,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     setState(() {
       _appVersionLabel = 'v${packageInfo.version} (${packageInfo.buildNumber})';
-    });
-  }
-
-  // 필요한 데이터나 상태를 불러온다.
-  Future<void> _loadAutoScanSetting() async {
-    // 저장된 토글값만 믿지 않고 실제 사진 권한 상태와 교차 검증해서,
-    // "권한은 없는데 스위치만 켜진 상태"를 막는다.
-    final prefs = await SharedPreferences.getInstance();
-    final permissionGranted = await GalleryScanService().hasPermission();
-    final savedValue =
-        prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
-    final nextValue = savedValue && permissionGranted;
-
-    if (savedValue != nextValue) {
-      await prefs.setBool(GalleryScanService.autoScanEnabledKey, nextValue);
-    }
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _autoScanEnabled = nextValue;
     });
   }
 
@@ -296,17 +272,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   // 여러 단계를 포함한 주요 실행 흐름을 처리한다.
   Future<void> _runGalleryScanTest() async {
-    final service = GalleryScanService();
-    final hasPermission = await service.checkAndRequestPermission();
-    if (!hasPermission || !mounted) {
+    final picked = await _imagePicker.pickMultiImage(imageQuality: 90);
+    if (picked.isEmpty || !mounted) {
       return;
     }
 
-    final detected = await service.scanNewImagesWithOptions(
-      respectAutoSetting: false,
-      respectDailyLimit: false,
-      forceRescan: true,
-    );
+    final files = picked.map((image) => File(image.path)).toList();
+    final detected = await GalleryScanService().analyzePickedImages(files);
     if (!mounted) {
       return;
     }
@@ -378,177 +350,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       return;
     }
     analytics.crashForTesting();
-  }
-
-  // 사용자 입력이나 이벤트에 대한 후속 처리를 담당한다.
-  Future<void> _handleAutoScanToggle(bool value) async {
-    if (_isHandlingAutoScanToggle) {
-      return;
-    }
-
-    setState(() {
-      _isHandlingAutoScanToggle = true;
-    });
-
-    if (value) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final service = GalleryScanService();
-
-        if (!mounted) {
-          return;
-        }
-
-        final alreadyGranted = await service.hasPermission();
-        if (!alreadyGranted) {
-          final guideShown =
-              prefs.getBool(GalleryScanService.autoScanGuideShownKey) ?? false;
-          if (!guideShown) {
-            if (!mounted) {
-              return;
-            }
-            final shouldContinue = await _showPermissionGuideDialog(context);
-            if (shouldContinue != true || !mounted) {
-              return;
-            }
-            await prefs.setBool(
-              GalleryScanService.autoScanGuideShownKey,
-              true,
-            );
-          }
-
-          final hasPermission = await service.checkAndRequestPermission();
-          await Future<void>.delayed(const Duration(milliseconds: 150));
-          final confirmedPermission = hasPermission || await service.hasPermission();
-          if (!confirmedPermission || !mounted) {
-            await prefs.setBool(GalleryScanService.autoScanEnabledKey, false);
-            await _loadAutoScanSetting();
-            return;
-          }
-        }
-
-        await prefs.setBool(GalleryScanService.autoScanEnabledKey, true);
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _autoScanEnabled = true;
-        });
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isHandlingAutoScanToggle = false;
-          });
-        }
-      }
-      return;
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(GalleryScanService.autoScanEnabledKey, false);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _autoScanEnabled = false;
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isHandlingAutoScanToggle = false;
-        });
-      }
-    }
-  }
-
-  // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
-  Future<bool?> _showPermissionGuideDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/icon/4.png', width: 60, height: 60),
-                const SizedBox(height: 16),
-                const Text(
-                  '쿠왕이 쿠폰을 찾아드릴게요!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  '갤러리에 저장된 쿠폰·기프티콘을\n자동으로 찾아서 알려드려요.\n\n• 이미지는 기기 안에서만 분석해요\n• 수집하거나 전송하지 않아요\n• 설정에서 언제든 끌 수 있어요',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF666666),
-                    height: 1.6,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFE0E0E0)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text(
-                          '지금은 괜찮아요',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF9E9E9E),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF64CAFA),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text(
-                          '허용하기',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -676,77 +477,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                         apply: (value) => _day30Enabled = value,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEDF6FF),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFD0ECFF),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '갤러리 자동 감지',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A1A1A),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '갤러리에서 쿠폰을 자동으로 찾아드려요.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF9E9E9E),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _CouWangSwitch(
-                          value: _autoScanEnabled,
-                          onChanged: _isHandlingAutoScanToggle
-                              ? null
-                              : _handleAutoScanToggle,
-                        ),
-                      ],
-                    ),
-                    if (_autoScanEnabled) ...[
-                      const SizedBox(height: 12),
-                      const Divider(
-                        height: 1,
-                        color: Color(0xFFCCE8F8),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '• 이미지는 기기 안에서만 분석돼요\n• 서버로 전송되지 않아요\n• 앱 실행 시 새로운 쿠폰을 찾아드려요',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF9E9E9E),
-                          height: 1.8,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

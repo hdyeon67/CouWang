@@ -13,7 +13,6 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/resources/app_strings.dart';
-import '../../../../core/services/app_permission_service.dart';
 import '../../../../repositories/coupon_repository.dart';
 import '../../../../repositories/settings_repository.dart';
 import '../../../../services/analytics_service.dart';
@@ -147,11 +146,8 @@ class _CouponCreateScreenState extends State<CouponCreateScreen> {
 
   // 사용자에게 선택 흐름을 열고 결과를 반영한다.
   Future<void> _pickImage() async {
-    final granted = await AppPermissionService.ensurePhotoPermission(context);
-    if (!granted || !mounted) {
-      return;
-    }
-
+    // 포토 피커는 사진 접근 권한(READ_MEDIA_IMAGES)이 필요 없어서 별도 권한 요청
+    // 없이 바로 연다. Google Play 사진·동영상 권한 정책을 피하기 위한 방식이다.
     final image = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1080,

@@ -1,12 +1,12 @@
 // 홈 대시보드이자 쿠폰 리스트 메인 화면.
 //
-// 정렬/검색/필터와 함께, 앱 foreground 진입 시 갤러리 자동 감지 팝업을
-// 띄우는 진입점 역할도 겸한다.
+// 정렬/검색/필터와 함께, 사용자가 포토 피커로 고른 이미지에서 쿠폰을 찾아주는
+// "갤러리에서 쿠폰 찾기" 진입점을 함께 제공한다.
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/app_tab_scaffold.dart';
@@ -27,7 +27,7 @@ enum HomeCouponFilterType { available, used, expired }
 
 // 쿠폰 홈 화면을 그리는 StatefulWidget이다.
 //
-// 검색어, 정렬, 필터, 갤러리 자동 감지 팝업처럼 화면 안에서 변하는 값이 많아서
+// 검색어, 정렬, 필터, 갤러리 감지 팝업처럼 화면 안에서 변하는 값이 많아서
 // 이 화면은 StatefulWidget으로 관리한다.
 class HomeDashboardScreen extends StatefulWidget {
   const HomeDashboardScreen({
@@ -43,11 +43,11 @@ class HomeDashboardScreen extends StatefulWidget {
   State<HomeDashboardScreen> createState() => _HomeDashboardScreenState();
 }
 
-// 홈 화면의 검색/필터 상태와 foreground 복귀 후 스캔 흐름을 관리한다.
-class _HomeDashboardScreenState extends State<HomeDashboardScreen>
-    with WidgetsBindingObserver {
+// 홈 화면의 검색/필터 상태와 사용자 선택형 갤러리 감지 흐름을 관리한다.
+class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   static const double _horizontalPadding = 20;
   final TextEditingController _searchController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
   int _bubbleMessageIndex = 0;
   bool _isScanningGallery = false;
   bool _isShowingDetectedDialog = false;
@@ -60,11 +60,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
   @override
   // initState에서는 listener 등록과 앱 진입 직후 필요한 비동기 후처리를 연결한다.
   //
-  // 검색 입력값 감시, 알림 재예약, 갤러리 자동 감지 시작처럼 build에 두면 안 되는
-  // 1회성 작업을 여기로 분리한다.
+  // 검색 입력값 감시, 알림 재예약처럼 build에 두면 안 되는 1회성 작업을 분리한다.
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
@@ -72,54 +70,49 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationService().rescheduleAllCouponNotifications();
-      _runGalleryScan();
     });
-  }
-
-  @override
-  // resumed 시점에만 갤러리 자동 감지를 다시 돌린다.
-  //
-  // 백그라운드에서 새 쿠폰 이미지를 저장하고 앱으로 복귀하는 사용자 흐름을
-  // 자연스럽게 연결하려는 목적이다.
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _runGalleryScan();
-    }
   }
 
   @override
   // 사용이 끝난 리소스를 정리한다.
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     super.dispose();
   }
 
-  // 설정 확인 -> 스캔 실행 -> 팝업 표시까지 이어지는 비동기 메인 흐름이다.
+  // "갤러리에서 쿠폰 찾기" 흐름. 포토 피커로 고른 이미지만 분석한다.
   //
-  // async/await를 사용해 권한, 환경, 결과를 순차적으로 읽되 중복 실행은 플래그로 막는다.
-  Future<void> _runGalleryScan() async {
-    // 자동 감지는 사용자가 설정에서 켠 경우에만 실행한다.
-    // resumed 직후 중복 호출이 쉬워서 플래그로 재진입을 막는다.
+  // 포토 피커는 사진 접근 권한(READ_MEDIA_IMAGES)이 필요 없어서 정책 위반 없이
+  // 동작한다. 사용자가 고른 이미지에서 쿠폰 후보를 찾아 순차 팝업으로 보여준다.
+  Future<void> _pickAndScanGallery() async {
     if (_isScanningGallery || _isShowingDetectedDialog) {
       return;
     }
-    if ((ModalRoute.of(context)?.isCurrent ?? true) == false) {
+
+    final picked = await _imagePicker.pickMultiImage(imageQuality: 90);
+    if (picked.isEmpty || !mounted) {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final autoScanEnabled =
-        prefs.getBool(GalleryScanService.autoScanEnabledKey) ?? false;
-    if (!autoScanEnabled) {
-      return;
-    }
-
-    _isScanningGallery = true;
+    setState(() {
+      _isScanningGallery = true;
+    });
     try {
-      final service = GalleryScanService();
-      final detected = await service.scanNewImages();
-      if (detected.isEmpty || !mounted) {
+      final files = picked.map((image) => File(image.path)).toList();
+      final detected = await GalleryScanService().analyzePickedImages(files);
+      if (!mounted) {
+        return;
+      }
+
+      if (detected.isEmpty) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('쿠폰으로 보이는 이미지를 찾지 못했어요.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         return;
       }
 
@@ -128,7 +121,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
       });
       _showNextDetectedPopup();
     } finally {
-      _isScanningGallery = false;
+      if (mounted) {
+        setState(() {
+          _isScanningGallery = false;
+        });
+      }
     }
   }
 
@@ -344,6 +341,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen>
                 ),
                 const SizedBox(height: 16),
                 SavingSpeechBubbleCard(message: _monthlySavingText),
+                const SizedBox(height: 16),
+                GalleryScanButton(
+                  isScanning: _isScanningGallery,
+                  onTap: _pickAndScanGallery,
+                ),
                 const SizedBox(height: 28),
                 const Text(
                   AppStrings.homeSectionTitle,
@@ -394,6 +396,74 @@ class CouponListScreen extends StatelessWidget {
   // 현재 상태를 기준으로 화면 UI를 구성한다.
   Widget build(BuildContext context) {
     return const HomeDashboardScreen();
+  }
+}
+
+// GalleryScanButton 관련 역할을 담당하는 클래스.
+//
+// 포토 피커를 열어 사용자가 고른 이미지에서 쿠폰을 찾는 진입점 버튼이다.
+class GalleryScanButton extends StatelessWidget {
+  const GalleryScanButton({
+    super.key,
+    required this.isScanning,
+    required this.onTap,
+  });
+
+  final bool isScanning;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFD0ECFF), width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: isScanning ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              if (isScanning)
+                const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: Color(0xFF64CAFA),
+                  ),
+                )
+              else
+                const Icon(
+                  Icons.photo_library_outlined,
+                  size: 22,
+                  color: Color(0xFF64CAFA),
+                ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isScanning ? '쿠폰 이미지를 분석하고 있어요...' : '갤러리에서 쿠폰 찾기',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+              if (!isScanning)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 22,
+                  color: Color(0xFF9E9E9E),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

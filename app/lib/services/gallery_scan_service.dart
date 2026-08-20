@@ -1,16 +1,15 @@
-// 갤러리 자동 감지 핵심 서비스.
+// 갤러리 쿠폰 감지 핵심 서비스.
 //
-// 최근 저장 이미지 조회, 쿠폰 후보 판별, 중복 감지, 스캔 빈도 제한을 한곳에 모은다.
+// 사용자가 포토 피커로 직접 고른 이미지들만 받아서, 쿠폰 후보 판별과 중복 감지를
+// 수행한다. 갤러리 전체를 열거하던 자동 스캔 방식은 Google Play "사진 및 동영상
+// 권한 정책"을 피하기 위해 제거했고, READ_MEDIA_IMAGES 권한 없이 동작한다.
 //
-// 성능 최적화를 위해 최근 기간, 최대 이미지 수, 일일 스캔 횟수를 제한하고,
-// OCR/바코드 분석은 모두 Future 기반 비동기로 수행한다.
+// OCR/바코드 분석은 모두 Future 기반 비동기로 수행하고, 성능을 위해 한 번에
+// 분석하는 이미지 수를 제한한다.
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:photo_manager/photo_manager.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../repositories/coupon_repository.dart';
 import '../utils/scanned_image_store.dart';
@@ -18,22 +17,20 @@ import '../utils/scanned_image_store.dart';
 // CouponConfidence 상태 값을 정의하는 enum.
 enum CouponConfidence { high, medium, low }
 
-// 자동 감지에서 "등록 후보로 보여줄 이미지 1건"을 표현하는 모델.
+// 감지 결과에서 "등록 후보로 보여줄 이미지 1건"을 표현하는 모델.
 class DetectedCouponImage {
   const DetectedCouponImage({
-    required this.asset,
     required this.file,
     required this.imageHash,
     required this.confidence,
   });
 
-  final AssetEntity asset;
   final File file;
   final String imageHash;
   final CouponConfidence confidence;
 }
 
-// 갤러리 자동 감지 흐름을 담당하는 서비스.
+// 사용자가 고른 이미지에서 쿠폰 후보를 판별하는 서비스.
 class GalleryScanService {
   GalleryScanService._internal();
 
@@ -41,11 +38,8 @@ class GalleryScanService {
 
   factory GalleryScanService() => _instance;
 
-  static const String autoScanEnabledKey = 'auto_scan_enabled';
-  static const String autoScanGuideShownKey = 'auto_scan_guide_shown';
+  // 한 번에 분석하는 이미지 수 상한. 포토 피커에서 많은 장을 골라도 성능을 지킨다.
   static const int maxScanImages = 50;
-  static const int scanRangeDays = 30;
-  static const int maxDailyScans = 5;
 
   static const List<String> _couponKeywords = <String>[
     '유효기간',
@@ -83,94 +77,21 @@ class GalleryScanService {
     _textRecognizer = null;
   }
 
-  // 자동 감지 시작 전에 사진 권한을 확인하고, 없으면 요청한다.
-  Future<bool> checkAndRequestPermission() async {
-    if (kIsWeb) {
-      return false;
-    }
-    final currentStatus = await _currentPhotoPermissionStatus();
-    if (_isGranted(currentStatus)) {
-      return true;
-    }
-
-    final requestedStatus = await _requestPhotoPermission();
-    return _isGranted(requestedStatus);
-  }
-
-  // 현재 사진 접근 권한이 있는지만 빠르게 확인한다.
-  Future<bool> hasPermission() async {
-    if (kIsWeb) {
-      return false;
-    }
-    final currentStatus = await _currentPhotoPermissionStatus();
-    return _isGranted(currentStatus);
-  }
-
-  // currentPhotoPermissionStatus 관련 처리를 수행한다.
-  Future<PermissionStatus> _currentPhotoPermissionStatus() async {
-    final photoStatus = await Permission.photos.status;
-    if (_isGranted(photoStatus)) {
-      return photoStatus;
-    }
-
-    final storageStatus = await Permission.storage.status;
-    return _isGranted(storageStatus) ? storageStatus : photoStatus;
-  }
-
-  // 외부 권한이나 리소스를 요청한다.
-  Future<PermissionStatus> _requestPhotoPermission() async {
-    final photoStatus = await Permission.photos.request();
-    if (_isGranted(photoStatus)) {
-      return photoStatus;
-    }
-
-    final storageStatus = await Permission.storage.request();
-    return _isGranted(storageStatus) ? storageStatus : photoStatus;
-  }
-
-  // 주어진 값이나 상태가 조건을 만족하는지 검사한다.
-  bool _isGranted(PermissionStatus status) {
-    return status.isGranted || status.isLimited || status.isProvisional;
-  }
-
-  // 기본 자동 감지 진입점. 실제 구현은 옵션 메서드로 위임한다.
-  Future<List<DetectedCouponImage>> scanNewImages() async {
-    return scanNewImagesWithOptions();
-  }
-
-  // QA나 강제 재스캔 같은 경우를 위해 옵션을 받는 실제 구현 메서드.
-  Future<List<DetectedCouponImage>> scanNewImagesWithOptions({
-    bool respectAutoSetting = true,
-    bool respectDailyLimit = true,
-    bool forceRescan = false,
-  }) async {
-    // 자동 감지는 설정값, 권한, 일일 제한을 모두 통과해야 실제 스캔을 시작한다.
-    final prefs = await SharedPreferences.getInstance();
-    final autoScanEnabled = prefs.getBool(autoScanEnabledKey) ?? false;
-    if (respectAutoSetting && !autoScanEnabled) {
-      return const <DetectedCouponImage>[];
-    }
-
-    final hasPermission = await checkAndRequestPermission();
-    if (!hasPermission) {
-      return const <DetectedCouponImage>[];
-    }
-
-    final canScanToday = await _canScanToday();
-    if (respectDailyLimit && !canScanToday) {
+  // 사용자가 포토 피커로 직접 고른 이미지들을 분석해 쿠폰 후보만 골라 돌려준다.
+  //
+  // 갤러리 전체 접근 권한이 필요 없고, 넘어온 파일만 순차적으로 분석한다.
+  Future<List<DetectedCouponImage>> analyzePickedImages(
+    List<File> files,
+  ) async {
+    if (kIsWeb || files.isEmpty) {
       return const <DetectedCouponImage>[];
     }
 
     warmUp();
 
-    final assets = await _fetchNewImages(ignoreLastScan: forceRescan);
-    if (assets.isEmpty) {
-      return const <DetectedCouponImage>[];
-    }
-
     final detected = <DetectedCouponImage>[];
-    for (final asset in assets) {
-      final image = await _analyzeImage(asset);
+    for (final file in files.take(maxScanImages)) {
+      final image = await _analyzeImage(file);
       if (image != null) {
         detected.add(image);
       }
@@ -178,107 +99,22 @@ class GalleryScanService {
     return detected;
   }
 
-  // 현재 조건에서 동작 가능 여부를 판단한다.
-  Future<bool> _canScanToday() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    final key = 'scan_count_$today';
-    final count = prefs.getInt(key) ?? 0;
-    if (count >= maxDailyScans) {
-      return false;
-    }
-    await prefs.setInt(key, count + 1);
-    return true;
-  }
-
-  Future<List<AssetEntity>> _fetchNewImages({
-    bool ignoreLastScan = false,
-  }) async {
-    // photo_manager는 앨범별로 결과를 주기 때문에, id 중복 제거와 최근순 정렬을
-    // 서비스 레벨에서 다시 맞춰준다.
-    final lastScan = await ScannedImageStore.getLastScanTime();
-    final now = DateTime.now();
-    final minDate = now.subtract(const Duration(days: scanRangeDays));
-
-    final albums = await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-    );
-
-    final assets = <AssetEntity>[];
-    final seenIds = <String>{};
-
-    for (final album in albums) {
-      if (assets.length >= maxScanImages) {
-        break;
-      }
-      final items = await album.getAssetListRange(start: 0, end: maxScanImages);
-      for (final asset in items) {
-        if (assets.length >= maxScanImages) {
-          break;
-        }
-        if (!seenIds.add(asset.id)) {
-          continue;
-        }
-
-        final createdAt = asset.createDateTime;
-        final modifiedAt = asset.modifiedDateTime;
-        final latestDate = modifiedAt.isAfter(createdAt) ? modifiedAt : createdAt;
-
-        if (latestDate.isBefore(minDate)) {
-          continue;
-        }
-        if (!ignoreLastScan &&
-            lastScan != null &&
-            !latestDate.isAfter(lastScan)) {
-          continue;
-        }
-        assets.add(asset);
-      }
-    }
-
-    assets.sort((a, b) {
-      final aDate = a.modifiedDateTime.isAfter(a.createDateTime)
-          ? a.modifiedDateTime
-          : a.createDateTime;
-      final bDate = b.modifiedDateTime.isAfter(b.createDateTime)
-          ? b.modifiedDateTime
-          : b.createDateTime;
-      return bDate.compareTo(aDate);
-    });
-
-    await ScannedImageStore.saveLastScanTime(now);
-    return assets.take(maxScanImages).toList();
-  }
-
-  // 관련 상태를 초기값으로 되돌린다.
+  // 감지 이력(등록/거절 해시)을 초기화한다.
   Future<void> resetScanState() async {
     await ScannedImageStore.clearProcessedState();
-    final prefs = await SharedPreferences.getInstance();
-    for (final key in prefs.getKeys()) {
-      if (key.startsWith('scan_count_')) {
-        await prefs.remove(key);
-      }
-    }
   }
 
   // analyzeImage 관련 처리를 수행한다.
-  Future<DetectedCouponImage?> _analyzeImage(AssetEntity asset) async {
+  Future<DetectedCouponImage?> _analyzeImage(File file) async {
     // 후보 판정은 "해시 중복 확인 -> 바코드 감지 -> OCR 키워드 감지 ->
     // 기존 저장 쿠폰 비교" 순으로 진행한다.
-    final bytes = await asset.thumbnailDataWithSize(
-      const ThumbnailSize(800, 800),
-    );
-    if (bytes == null) {
+    if (!file.existsSync()) {
       return null;
     }
 
+    final bytes = await file.readAsBytes();
     final hash = generateImageHash(bytes);
     if (await ScannedImageStore.isProcessed(hash)) {
-      return null;
-    }
-
-    final file = await asset.file;
-    if (file == null) {
       return null;
     }
 
@@ -328,7 +164,6 @@ class GalleryScanService {
         : CouponConfidence.medium;
 
     return DetectedCouponImage(
-      asset: asset,
       file: file,
       imageHash: hash,
       confidence: confidence,

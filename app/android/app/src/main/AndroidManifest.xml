@@ -2,10 +2,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
+    <!-- 이미지는 Android 포토 피커로만 선택하므로 READ_MEDIA_IMAGES / READ_EXTERNAL_STORAGE
+         권한을 선언하지 않는다. Google Play 사진·동영상 권한 정책 위반을 피하기 위함이다. -->
     <application
         android:label="쿠왕"
         android:name="${applicationName}"

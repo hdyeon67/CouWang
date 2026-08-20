@@ -139,69 +139,8 @@ class AppPermissionService {
     return false;
   }
 
-  // 쿠폰/멤버십 이미지 선택 전에 사진 접근 권한을 확보한다.
-  static Future<bool> ensurePhotoPermission(BuildContext context) async {
-    if (kIsWeb) {
-      return true;
-    }
-
-    final currentStatus = await _currentPhotoPermissionStatus();
-    if (_isGranted(currentStatus)) {
-      return true;
-    }
-    if (!context.mounted) {
-      return false;
-    }
-
-    final shouldRequest = await _showPermissionRequestDialog(
-      context: context,
-      title: AppStrings.photoPermissionTitle,
-      description: AppStrings.photoPermissionDescription,
-    );
-
-    if (!shouldRequest || !context.mounted) {
-      return false;
-    }
-
-    final requestedStatus = await _requestPhotoPermission();
-    if (_isGranted(requestedStatus)) {
-      return true;
-    }
-
-    if (!context.mounted) {
-      return false;
-    }
-
-    await _showOpenSettingsDialog(
-      context: context,
-      title: AppStrings.photoPermissionTitle,
-      description: AppStrings.photoPermissionDenied,
-    );
-    return false;
-  }
-
-  // Android/iOS에서 사진 권한 이름이 달라도 동일한 방식으로 현재 상태를 읽는다.
-  static Future<PermissionStatus> _currentPhotoPermissionStatus() async {
-    // Android/iOS의 사진 권한 이름 차이를 이 레이어에서 흡수한다.
-    final photoStatus = await Permission.photos.status;
-    if (_isGranted(photoStatus)) {
-      return photoStatus;
-    }
-
-    final storageStatus = await Permission.storage.status;
-    return _isGranted(storageStatus) ? storageStatus : photoStatus;
-  }
-
-  // 사진 권한을 실제로 요청한다.
-  static Future<PermissionStatus> _requestPhotoPermission() async {
-    final photoStatus = await Permission.photos.request();
-    if (_isGranted(photoStatus)) {
-      return photoStatus;
-    }
-
-    final storageStatus = await Permission.storage.request();
-    return _isGranted(storageStatus) ? storageStatus : photoStatus;
-  }
+  // 이미지 선택은 포토 피커(권한 불필요)로 처리하므로 사진 접근 권한 요청 흐름은
+  // 두지 않는다. Google Play 사진·동영상 권한 정책을 피하기 위한 설계다.
 
   // permission_handler의 여러 허용 상태를 앱 기준의 granted로 통합한다.
   static bool _isGranted(PermissionStatus status) {

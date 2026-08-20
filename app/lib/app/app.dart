@@ -4,7 +4,6 @@
 // 여기서 처리한다.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:photo_manager/photo_manager.dart';
 
 import '../core/resources/app_strings.dart';
 import '../services/notification_service.dart';
@@ -45,7 +44,6 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   // initState에서 등록한 observer와 종료 시점 정리 대상 리소스를 함께 해제한다.
   void dispose() {
     GalleryScanService().dispose();
-    PhotoManager.clearFileCache();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -57,9 +55,8 @@ class _CouWangAppState extends State<CouWangApp> with WidgetsBindingObserver {
   // 돌아갈지 여기서 결정한다.
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
-      // photo_manager가 남긴 캐시와 ML Kit 리소스를 종료 시점에 정리한다.
+      // 종료 시점에 ML Kit 리소스를 정리한다.
       GalleryScanService().dispose();
-      PhotoManager.clearFileCache();
     }
     if (state != AppLifecycleState.resumed) {
       return;
