@@ -2,10 +2,10 @@
 //
 // 수정과 삭제 이후에는 화면 스택이 꼬이지 않도록 홈 복귀 기준을 명확히 둔다.
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/resources/app_strings.dart';
 import '../../../../core/widgets/empty_state_mascot.dart';
@@ -319,22 +319,52 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
 
   // 다이얼로그, 시트, 상세 화면 등 표시 흐름을 담당한다.
   void _showImageFullScreen() {
+    // 뷰포트를 화면 전체로 고정하고, 이미지는 가로 폭에 맞춘다(fitWidth).
+    // constrained: false 로 두면 세로로 긴 이미지가 뷰포트보다 커질 수 있어
+    // 위아래로 스크롤(pan)하며 전체를 확인할 수 있고, 핀치로 확대도 된다.
     _showFullscreenOverlay(
-      child: InteractiveViewer(
-        panEnabled: true,
-        minScale: 0.8,
-        maxScale: 4.0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: _CouponImage(
-            coupon: _coupon,
-            fit: BoxFit.contain,
-            fallbackWidth: 300,
-            fallbackHeight: 200,
-          ),
+      child: SizedBox.expand(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return InteractiveViewer(
+              constrained: false,
+              panEnabled: true,
+              minScale: 1.0,
+              maxScale: 5.0,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: _CouponImage(
+                  coupon: _coupon,
+                  fit: BoxFit.fitWidth,
+                  fallbackWidth: constraints.maxWidth,
+                  fallbackHeight: constraints.maxHeight,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  // 바코드/쿠폰 번호를 공백 없이 클립보드에 복사한다.
+  Future<void> _copyBarcodeNumber() async {
+    final digits = _coupon.barcodeNumber.replaceAll(RegExp(r'\s+'), '');
+    if (digits.isEmpty) {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: digits));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('번호를 복사했어요.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   // 표시용 문자열로 값을 변환한다.
@@ -390,6 +420,8 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            _CopyNumberButton(onTap: _copyBarcodeNumber),
           ],
         ),
       ),
@@ -744,6 +776,8 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                             ),
                             textAlign: TextAlign.center,
                           ),
+                          const SizedBox(height: 12),
+                          _CopyNumberButton(onTap: _copyBarcodeNumber),
                         ],
                       ),
                       const Positioned(
@@ -989,6 +1023,53 @@ enum CouponDetailStatus {
 }
 
 // CouponImage 관련 역할을 담당하는 클래스.
+// CopyNumberButton 관련 역할을 담당하는 클래스.
+//
+// 바코드/쿠폰 번호를 공백 없이 복사하는 작은 버튼. 상위 카드의 전체화면 탭과
+// 겹치지 않도록 자체 탭 영역을 가진다.
+class _CopyNumberButton extends StatelessWidget {
+  const _CopyNumberButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: const BorderSide(color: Color(0xFFD7DEE7), width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.copy_rounded,
+                size: 16,
+                color: Color(0xFF55C8FF),
+              ),
+              SizedBox(width: 6),
+              Text(
+                '번호 복사',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CouponImage extends StatelessWidget {
   const _CouponImage({
     required this.coupon,
