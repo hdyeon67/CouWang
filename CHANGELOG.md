@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-19
+
+### 버그 수정 — 쿠폰 사용 완료 처리 실패 (릴리스 전용)
+- 릴리스(R8/minify) 빌드에서 `flutter_local_notifications`가 Gson 제네릭 타입 정보 제거로 `java.lang.RuntimeException: Missing type parameter.`를 던지던 문제를 해결했습니다. `android/app/proguard-rules.pro`에 플러그인·Gson keep 룰을 추가해 릴리스에서도 알림 예약/취소가 정상 동작합니다. (디버그에서는 재현되지 않아 스토어 빌드에서만 발생)
+- 위 예외가 `_markAsUsed`의 `cancelCouponNotifications` 호출에서 터지면서 그 뒤의 `CouponRepository.markUsed`가 실행되지 않아 "사용 완료 처리"가 전혀 되지 않던 증상을 함께 수정했습니다.
+- 쿠폰 상세 화면의 완료/미완료/삭제 흐름에서 핵심 상태 변경(DB)을 먼저 확정하고, 알림 취소·재예약·analytics 같은 부가 작업 실패가 핵심 동작과 화면 갱신을 막지 않도록 각각 try/catch로 분리했습니다.
+
+### 버전 / 빌드
+- 앱 버전을 `1.1.14+18`로 갱신했습니다.
+
 ## 2026-04-17
 
 ### 홈 / 쿠폰 리스트 UI

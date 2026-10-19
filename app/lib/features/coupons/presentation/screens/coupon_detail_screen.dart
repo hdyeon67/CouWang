@@ -169,8 +169,12 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(ctx);
-                await CouponRepository.delete(_coupon.id);
-                await NotificationService().cancelCouponNotifications(_coupon.id);
+                final couponId = _coupon.id;
+                await CouponRepository.delete(couponId);
+                try {
+                  await NotificationService()
+                      .cancelCouponNotifications(couponId);
+                } catch (_) {}
                 if (!mounted) {
                   return;
                 }
@@ -465,12 +469,23 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(ctx);
-                await NotificationService().cancelCouponNotifications(_coupon.id);
-                await CouponRepository.markUsed(_coupon.id);
-                await AnalyticsService().logCouponUsed(
-                  category: _coupon.category,
-                  dday: _coupon.dday,
-                );
+                // 핵심인 완료 처리(DB)를 먼저 확정한다. 알림 취소/analytics 같은
+                // 부가 작업이 실패해도 완료 처리 자체는 막히지 않도록 분리하고,
+                // 각각 예외를 삼켜 UI 갱신까지 항상 이어지게 한다.
+                final category = _coupon.category;
+                final dday = _coupon.dday;
+                final couponId = _coupon.id;
+                await CouponRepository.markUsed(couponId);
+                try {
+                  await NotificationService()
+                      .cancelCouponNotifications(couponId);
+                } catch (_) {}
+                try {
+                  await AnalyticsService().logCouponUsed(
+                    category: category,
+                    dday: dday,
+                  );
+                } catch (_) {}
                 if (!mounted) {
                   return;
                 }
@@ -546,10 +561,12 @@ class _CouponDetailScreenState extends State<CouponDetailScreen> {
                 Navigator.pop(ctx);
                 final updated = await CouponRepository.markUnused(_coupon.id);
                 if (updated != null) {
-                  await NotificationService().scheduleCouponNotifications(
-                    updated,
-                    SettingsRepository.load(),
-                  );
+                  try {
+                    await NotificationService().scheduleCouponNotifications(
+                      updated,
+                      SettingsRepository.load(),
+                    );
+                  } catch (_) {}
                 }
                 if (!mounted) {
                   return;
